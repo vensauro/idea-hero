@@ -8,9 +8,6 @@ import {
   SocketData,
   handleSocket,
 } from "./socket";
-// import { join } from "node:path";
-
-// console.log(join(__dirname, "..", "..", "static"));
 
 export const server = async (PORT: number) => {
   const app = express();
@@ -21,7 +18,11 @@ export const server = async (PORT: number) => {
     ServerToClientEvents,
     InterServerEvents,
     SocketData
-  >(server);
+  >(server, {
+    cors: {
+      origin: "http://localhost:5173",
+    },
+  });
 
   io.on("connection", (socket) => {
     handleSocket(socket);

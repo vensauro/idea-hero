@@ -3,35 +3,18 @@ import { Game, GameUser, db } from "./db";
 import { uid } from "radash";
 import { EventEmitter } from "node:stream";
 import { getRandomWord } from "./words";
-
-export interface ServerToClientEvents {
-  noArg: () => void;
-  basicEmit: (a: number, b: string, c: Buffer) => void;
-  withAck: (d: string, callback: (e: number) => void) => void;
-}
-
-export interface ClientToServerEvents {
-  gameStateUpdate: (game: Game) => void;
-  startGame: (
-    body: { name: string; avatar: number },
-    callback: (game: Game) => void
-  ) => void;
-  enterGame: (
-    body: { name: string; avatar: number; code: string },
-    callback: (game: Game) => void
-  ) => void;
-}
-
-export interface InterServerEvents {
-  ping: () => void;
-}
+import type {
+  ClientToServerEvents,
+  ServerToClientEvents,
+  InterServerEvents,
+} from "../../shared/socket";
+export type * from "../../shared/socket";
 
 export interface SocketData {
   name: string;
-  avatar: number;
+  avatar: string;
+  room: string;
 }
-
-const eventEmitter = new EventEmitter();
 
 export function handleSocket(
   socket: Socket<
@@ -41,13 +24,14 @@ export function handleSocket(
     SocketData
   >
 ) {
-  socket.on("startGame", ({ name, avatar }, callback) => {
+  socket.on("start_game", ({ name, avatar }, callback) => {
     const code = getRandomWord();
     const user: GameUser = {
       avatar,
       name,
       id: uid(10),
-      // socketId: socket.id,
+      connected: true,
+      socketId: socket.id,
     };
 
     const newGame: Game = {
@@ -60,26 +44,65 @@ export function handleSocket(
     };
     db.set(code, newGame);
 
+    socket.data.name = name;
+    socket.data.avatar = avatar;
+    socket.data.room = code;
+    socket.join(code);
     return callback(newGame);
-    // db.set(code, {});
   });
 
-  socket.on("enterGame", ({ name, avatar, code }, callback) => {
+  socket.on("enter_game", ({ name, avatar, code }, callback) => {
     const dbGame = db.get(code);
     if (!dbGame) {
       return;
     }
 
     const hasUser = dbGame.users.find((e) => e.name === name);
+    const nameToSet = hasUser?.connected ? `${name} 2` : name;
     const user: GameUser = {
       avatar,
-      name: hasUser ? `${name} 2` : name,
+      name: nameToSet,
       id: uid(10),
-      // socketId: socket.id,
+      connected: true,
+      socketId: socket.id,
     };
-    dbGame.users.push(user);
+
+    if (hasUser === undefined || hasUser.connected) {
+      dbGame.users.push(user);
+    } else {
+      dbGame.users = dbGame.users.map((e) => {
+        if (e.name === nameToSet) {
+          return user;
+        }
+        return e;
+      });
+    }
     db.set(code, dbGame);
 
+    socket.data.name = nameToSet;
+    socket.data.avatar = avatar;
+    socket.data.room = code;
+    socket.to(code).emit("game_state_update", dbGame);
+    socket.join(code);
     return callback(dbGame);
+  });
+
+  socket.on("disconnect", (reason) => {
+    const dbGame = db.get(socket.data.room);
+    if (!dbGame) {
+      return;
+    }
+
+    dbGame.users = dbGame.users.map((e) => {
+      if (e.name === socket.data.name) {
+        return {
+          ...e,
+          connected: false,
+        };
+      }
+      return e;
+    });
+    db.set(socket.data.room, dbGame);
+    socket.to(socket.data.room).emit("game_state_update", dbGame);
   });
 }

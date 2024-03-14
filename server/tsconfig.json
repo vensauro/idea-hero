@@ -9,7 +9,7 @@
     // "alwaysStrict": true,
     // "allowUnreachableCode": false,
     // "noImplicitAny": true,
-    // "strictNullChecks": true,
+    "strictNullChecks": true,
     "experimentalDecorators": false,
     "emitDecoratorMetadata": false,
     "resolveJsonModule": true,

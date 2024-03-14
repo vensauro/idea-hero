@@ -4,23 +4,35 @@ import { ErrorPage } from "./error-page";
 import { EnterGamePage } from "./pages/enter-game";
 import { LobbyPage } from "./pages/lobby";
 import { BoardDetailPage } from "./pages/board-detail";
+import { AvatarsPage } from "./pages/avatars";
+import { Root } from "./pages/root";
 
 export const router = createBrowserRouter([
   {
     path: "/",
-    element: <StartGamePage />,
+    element: <Root />,
     errorElement: <ErrorPage />,
-  },
-  {
-    path: "/enter",
-    element: <EnterGamePage />,
-  },
-  {
-    path: "/lobby",
-    element: <LobbyPage />,
-  },
-  {
-    path: "/board/problem",
-    element: <BoardDetailPage />,
+    children: [
+      {
+        path: "/",
+        element: <StartGamePage />,
+      },
+      {
+        path: "/avatars",
+        element: <AvatarsPage />,
+      },
+      {
+        path: "/enter",
+        element: <EnterGamePage />,
+      },
+      {
+        path: "/lobby",
+        element: <LobbyPage />,
+      },
+      {
+        path: "/board/problem",
+        element: <BoardDetailPage />,
+      },
+    ],
   },
 ]);
