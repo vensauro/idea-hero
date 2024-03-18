@@ -18,7 +18,7 @@ export function StartGamePage() {
   function startGame() {
     socket.connect();
     socket.emit(
-      "start_game",
+      "create_game",
       {
         avatar: store.avatar,
         name: store.nickname,

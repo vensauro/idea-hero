@@ -8,7 +8,7 @@ export interface ServerToClientEvents {
 }
 
 export interface ClientToServerEvents {
-  start_game: (
+  create_game: (
     body: { name: string; avatar: string },
     callback: (game: Game) => void
   ) => void;
@@ -16,6 +16,7 @@ export interface ClientToServerEvents {
     body: { name: string; avatar: string; code: string },
     callback: (game: Game) => void
   ) => void;
+  start_game: () => void;
 }
 
 export interface InterServerEvents {

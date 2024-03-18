@@ -1,15 +1,29 @@
 import { BoardSvg } from "@/components/board/board-svg";
 import { Avatar } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import { socket } from "@/lib/socket";
 import { useGameStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
+import { useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 
 export function LobbyPage() {
   const store = useGameStore();
+  const navigate = useNavigate();
   function copyToClipboard() {
     navigator.clipboard.writeText(store.game?.code ?? "");
   }
+
+  useEffect(() => {
+    if (store.game?.state === "STARTED") {
+      navigate("/game");
+    }
+  }, [navigate, store.game?.state]);
   console.log(store);
+
+  function startCollaborativeGame() {
+    socket.emit("start_game");
+  }
   return (
     <main className="min-h-screen flex flex-col ">
       <div className="flex overflow-y-auto gap-3 bg-neutral-300 p-2">
@@ -52,8 +66,16 @@ export function LobbyPage() {
           <BoardSvg />
         </div>
         <div className="flex justify-evenly mt-4">
-          <Button>Jogo Colaborativo</Button>
-          <Button>Jogo Competitivo</Button>
+          {store.isOwner() ? (
+            <>
+              <Button onClick={startCollaborativeGame}>
+                Jogo Colaborativo
+              </Button>
+              <Button>Jogo Competitivo</Button>
+            </>
+          ) : (
+            <p>Aguarde o líder iniciar o jogo</p>
+          )}
         </div>
       </div>
     </main>

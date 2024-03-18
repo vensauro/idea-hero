@@ -6,6 +6,7 @@ import { LobbyPage } from "./pages/lobby";
 import { BoardDetailPage } from "./pages/board-detail";
 import { AvatarsPage } from "./pages/avatars";
 import { Root } from "./pages/root";
+import { CardPage } from "./pages/card-screen";
 
 export const router = createBrowserRouter([
   {
@@ -28,6 +29,10 @@ export const router = createBrowserRouter([
       {
         path: "/lobby",
         element: <LobbyPage />,
+      },
+      {
+        path: "/game",
+        element: <CardPage />,
       },
       {
         path: "/board/problem",
