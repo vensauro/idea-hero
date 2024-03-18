@@ -8,6 +8,7 @@ import {
   SocketData,
   handleSocket,
 } from "./socket";
+import { instrument } from "@socket.io/admin-ui";
 
 export const server = async (PORT: number) => {
   const app = express();
@@ -20,12 +21,18 @@ export const server = async (PORT: number) => {
     SocketData
   >(server, {
     cors: {
-      origin: "http://localhost:5173",
+      origin: ["http://localhost:5173", "https://admin.socket.io"],
+      credentials: true,
     },
   });
 
+  instrument(io, {
+    auth: false,
+    mode: "development",
+  });
+
   io.on("connection", (socket) => {
-    handleSocket(socket);
+    handleSocket(socket, io);
     console.log("a user connected 📸");
 
     socket.on("disconnect", () => {

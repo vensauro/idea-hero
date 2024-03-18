@@ -1,4 +1,4 @@
-import { Socket } from "socket.io";
+import { Server, Socket } from "socket.io";
 import { Game, GameUser, db } from "./db";
 import { uid } from "radash";
 import { EventEmitter } from "node:stream";
@@ -22,9 +22,21 @@ export function handleSocket(
     ServerToClientEvents,
     InterServerEvents,
     SocketData
+  >,
+  io: Server<
+    ClientToServerEvents,
+    ServerToClientEvents,
+    InterServerEvents,
+    SocketData
   >
 ) {
-  socket.on("start_game", ({ name, avatar }, callback) => {
+  function updateAndEmit(gameUpdate: Game) {
+    db.set(socket.data.room, gameUpdate);
+    socket.to(socket.data.room).emit("game_state_update", gameUpdate);
+    io.to(socket.id).emit("game_state_update", gameUpdate);
+  }
+
+  socket.on("create_game", ({ name, avatar }, callback) => {
     const code = getRandomWord();
     const user: GameUser = {
       avatar,
@@ -77,13 +89,15 @@ export function handleSocket(
         return e;
       });
     }
-    db.set(code, dbGame);
 
     socket.data.name = nameToSet;
     socket.data.avatar = avatar;
     socket.data.room = code;
-    socket.to(code).emit("game_state_update", dbGame);
     socket.join(code);
+
+    db.set(code, dbGame);
+    socket.to(code).emit("game_state_update", dbGame);
+
     return callback(dbGame);
   });
 
@@ -102,7 +116,19 @@ export function handleSocket(
       }
       return e;
     });
+
     db.set(socket.data.room, dbGame);
     socket.to(socket.data.room).emit("game_state_update", dbGame);
+  });
+
+  socket.on("start_game", () => {
+    const dbGame = db.get(socket.data.room);
+    if (!dbGame) {
+      return;
+    }
+
+    dbGame.state = "STARTED";
+
+    updateAndEmit(dbGame);
   });
 }
