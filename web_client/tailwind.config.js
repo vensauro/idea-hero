@@ -1,11 +1,14 @@
 /** @type {import('tailwindcss').Config} */
+
+const defaultTheme = require("tailwindcss/defaultTheme");
+
 module.exports = {
   darkMode: ["class"],
   content: [
-    './pages/**/*.{ts,tsx}',
-    './components/**/*.{ts,tsx}',
-    './app/**/*.{ts,tsx}',
-    './src/**/*.{ts,tsx}',
+    "./pages/**/*.{ts,tsx}",
+    "./components/**/*.{ts,tsx}",
+    "./app/**/*.{ts,tsx}",
+    "./src/**/*.{ts,tsx}",
   ],
   prefix: "",
   theme: {
@@ -16,7 +19,20 @@ module.exports = {
         "2xl": "1400px",
       },
     },
+    fontSize: {
+      sm: "1.25rem",
+      base: "1.5rem",
+      lg: "1.875rem",
+      xl: "2.25rem",
+      "2xl": "3rem",
+      "3xl": "4rem",
+      "4xl": "5rem",
+      "5xl": "6.75rem",
+    },
     extend: {
+      fontFamily: {
+        sans: ['"Palm Laker Print"', ...defaultTheme.fontFamily.sans],
+      },
       colors: {
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
@@ -74,4 +90,4 @@ module.exports = {
     },
   },
   plugins: [require("tailwindcss-animate")],
-}
+};

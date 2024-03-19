@@ -4,14 +4,13 @@ import { Label } from "@/components/ui/label";
 import { socket } from "@/lib/socket";
 import { useGameStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
-import { useEffect, useRef } from "react";
+import { useEffect } from "react";
 import toast from "react-hot-toast";
 import { Link, useNavigate } from "react-router-dom";
 
 export function EnterGamePage() {
   const store = useGameStore();
   const navigate = useNavigate();
-  const codeRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     socket.disconnect();
@@ -27,7 +26,7 @@ export function EnterGamePage() {
       {
         avatar: store.avatar,
         name: store.nickname,
-        code: codeRef.current?.value ?? "",
+        code: store.gameCode,
       },
       store.updateGameState
     );
@@ -81,7 +80,8 @@ export function EnterGamePage() {
                 type="text"
                 placeholder="Código secreto!"
                 required
-                ref={codeRef}
+                value={store.gameCode}
+                onChange={(e) => store.setCode(e.target.value)}
                 className="bg-primary text-primary-foreground placeholder:text-primary-foreground border-2 border-border rounded-sm"
               />
             </div>

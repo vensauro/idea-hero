@@ -11,12 +11,14 @@ interface GameState {
   game: Game | null;
   nickname: string;
   avatar: null | Avatar;
+  gameCode: string;
   connect: () => void;
   disconnect: () => void;
   isOwner: () => boolean;
   updateGameState: (game: Game) => void;
   setAvatar: (avatar: Avatar) => void;
   setNick: (nickname: string) => void;
+  setCode: (gameCode: string) => void;
 }
 
 export const useGameStore = create<GameState>()((set, get) => ({
@@ -24,12 +26,14 @@ export const useGameStore = create<GameState>()((set, get) => ({
   game: null,
   nickname: "",
   avatar: null,
+  gameCode: "",
   isOwner: () => get().game?.owner.name === get().nickname,
   connect: () => set({ isConnected: true }),
   disconnect: () => set({ isConnected: false }),
   updateGameState: (game: Game) => set({ game }),
   setAvatar: (avatar) => set({ avatar }),
   setNick: (nickname) => set({ nickname }),
+  setCode: (gameCode) => set({ gameCode }),
 }));
 
 const isOwnerStore = derive<boolean>(

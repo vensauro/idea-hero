@@ -2,6 +2,11 @@
 @tailwind components;
 @tailwind utilities;
 
+@font-face {
+  font-family: "Palm Laker Print";
+  src: url("/fonts/PalmerLakePrint-Regular.otf");
+}
+
 @layer base {
   :root {
     --background: 0 0% 100%;

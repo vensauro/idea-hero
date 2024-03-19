@@ -13,19 +13,18 @@ export interface GameUserAvatar {
 }
 
 export interface GameAction {
-  card: number;
-  user: GameUser;
+  activeUser: GameUser;
 }
 
 export interface ActualGameAction extends GameAction {
   startedAt: Date;
 }
 
-export interface Game {
+export interface Game<T extends GameAction = GameAction> {
   code: string;
   users: GameUser[];
   owner: GameUser;
-  gameAction: GameAction[];
-  actualAction: ActualGameAction;
   state: GameState;
+  gameActions: T[];
+  actualAction: T;
 }

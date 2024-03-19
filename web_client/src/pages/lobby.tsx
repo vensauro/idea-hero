@@ -1,9 +1,8 @@
 import { BoardSvg } from "@/components/board/board-svg";
-import { Avatar, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import { UsersBar } from "@/components/users-bar/users-bar";
 import { socket } from "@/lib/socket";
 import { useGameStore } from "@/lib/store";
-import { cn } from "@/lib/utils";
 import { useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 
@@ -36,70 +35,10 @@ export function LobbyPage() {
   }
   return (
     <main className="min-h-screen flex flex-col ">
-      <div className="flex items-center overflow-y-auto gap-3 bg-accent p-2 h-[146px]">
-        {store.game?.users
-          .filter((e) => e.id !== store.game?.owner.id)
-          .slice(0, (store.game?.users.length - 1) / 2)
-          .map((user) => (
-            <div key={user.id}>
-              <Avatar
-                className={cn(
-                  user.avatar.color,
-                  user.connected ? "opacity-100" : "opacity-25"
-                )}
-              >
-                <AvatarImage
-                  src={user.avatar.image}
-                  alt={`${user.name} avatar`}
-                />
-              </Avatar>
-              <div className="-mt-2 z-10 w-full flex justify-center relative">
-                <span className="bg-slate-400 p-1">{user.name}</span>
-              </div>
-            </div>
-          ))}
-        <div>
-          <Avatar
-            className={cn(
-              store.game?.owner.avatar.color,
-              store.game?.owner.connected ? "opacity-100" : "opacity-25",
-              "h-24 w-24"
-            )}
-          >
-            <AvatarImage
-              src={store.game?.owner.avatar.image}
-              alt={`${store.game?.owner.name} avatar`}
-            />
-          </Avatar>
-          <div className="-mt-2 z-10 w-full flex justify-center relative">
-            <span className="bg-slate-400 p-1">{store.game?.owner.name}</span>
-          </div>
-        </div>
-        {store.game?.users
-          .filter((e) => e.id !== store.game?.owner.id)
-          .slice((store.game?.users.length - 1) / 2)
-          .map((user) => (
-            <div key={user.id}>
-              <Avatar
-                className={cn(
-                  user.avatar.color,
-                  user.connected ? "opacity-100" : "opacity-25"
-                )}
-              >
-                <AvatarImage
-                  src={user.avatar.image}
-                  alt={`${user.name} avatar`}
-                />
-              </Avatar>
-              <div className="-mt-2 z-10 w-full flex justify-center relative">
-                <span className="bg-slate-400 p-1">{user.name}</span>
-              </div>
-            </div>
-          ))}
-      </div>
+      <UsersBar activeUser={store.game?.owner} users={store.game?.users} />
       <div>
         <p className="flex items-center px-4 my-6 uppercase">
-          <span className="text-secondary font-bold text-nowrap">
+          <span className="text-secondary text-lg text-nowrap">
             Sala: {store.game?.code}{" "}
           </span>
           <Button onClick={copyToClipboard} variant="ghost">
@@ -123,7 +62,7 @@ export function LobbyPage() {
             </Button>
           </div>
         ) : (
-          <p className="text-center uppercase text-secondary font-bold">
+          <p className="text-center text-lg my-2 uppercase text-secondary font-bold">
             Aguarde o líder iniciar o jogo
           </p>
         )}

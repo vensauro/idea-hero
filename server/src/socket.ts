@@ -43,10 +43,10 @@ export function handleSocket(
 
     const newGame: Game = {
       code,
-      gameAction: [],
+      gameActions: [],
       owner: user,
       users: [user],
-      actualAction: { card: -1, user, startedAt: new Date() },
+      actualAction: { activeUser: user },
       state: "LOBBY",
     };
     db.set(code, newGame);
@@ -123,6 +123,7 @@ export function handleSocket(
     }
 
     dbGame.state = "STARTED";
+    // dbGame.actualAction = { activeUser: dbGame.owner };
 
     updateAndEmit(dbGame);
   });

@@ -17,8 +17,8 @@ export function BoardSvg() {
         fontVariant: "normal",
         fontWeight: "normal",
         fontStretch: "normal",
-        fontFamily: "BLOMBERG",
-        fontSize: "5.07721px",
+        fontFamily: "Palm Laker Print",
+        fontSize: ".56rem",
       }}
     >
       <defs id="defs1" />

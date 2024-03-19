@@ -27,10 +27,10 @@ export function AvatarsPage() {
 
   return (
     <div>
-      <h1 className="scroll-m-20 text-4xl font-extrabold tracking-tight lg:text-5xl text-center py-10">
+      <h1 className="scroll-m-20 text-4xl font-extrabold tracking-tight lg:text-5xl text-center bg-primary text-white">
         Avatares
       </h1>
-      <div className="grid grid-cols-2 gap-4  place-content-center">
+      <div className="grid grid-cols-2 gap-4  place-content-center mt-2">
         {Array.from({ length: 8 }, (_, idx) => {
           const bgColor = getRandomBgColor();
           const imageUrl = `/avatars/avatar_${idx + 1}.png`;
