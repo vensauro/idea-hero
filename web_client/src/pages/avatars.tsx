@@ -1,11 +1,24 @@
-import { useGameStore } from "@/lib/store";
+import { Avatar, useGameStore } from "@/lib/store";
+import { cn } from "@/lib/utils";
+import { draw } from "radash";
 import { useNavigate } from "react-router-dom";
 
+function getRandomBgColor() {
+  return draw([
+    "bg-red-300",
+    "bg-yellow-300",
+    "bg-blue-300",
+    "bg-orange-300",
+    "bg-green-300",
+    "bg-indigo-300",
+    "bg-[#ccf0f2]",
+  ]) as string;
+}
 export function AvatarsPage() {
   const store = useGameStore();
   const navigate = useNavigate();
 
-  function updateAvatar(avatar: string) {
+  function updateAvatar(avatar: Avatar) {
     return () => {
       store.setAvatar(avatar);
       navigate(-1);
@@ -18,38 +31,22 @@ export function AvatarsPage() {
         Avatares
       </h1>
       <div className="grid grid-cols-2 gap-4  place-content-center">
-        <div
-          className="h-36 w-36 rounded-md bg-red-300 justify-self-end"
-          onClick={updateAvatar("bg-red-300")}
-        />
-        <div
-          className="h-36 w-36 rounded-md bg-yellow-300"
-          onClick={updateAvatar("bg-yellow-300")}
-        />
-        <div
-          className="h-36 w-36 rounded-md bg-pink-300 justify-self-end"
-          onClick={updateAvatar("bg-pink-300")}
-        />
-        <div
-          className="h-36 w-36 rounded-md bg-orange-300"
-          onClick={updateAvatar("bg-orange-300")}
-        />
-        <div
-          className="h-36 w-36 rounded-md bg-blue-300 justify-self-end"
-          onClick={updateAvatar("bg-blue-300")}
-        />
-        <div
-          className="h-36 w-36 rounded-md bg-purple-300"
-          onClick={updateAvatar("bg-purple-300")}
-        />
-        <div
-          className="h-36 w-36 rounded-md bg-green-300 justify-self-end"
-          onClick={updateAvatar("bg-green-300")}
-        />
-        <div
-          className="h-36 w-36 rounded-md bg-indigo-300"
-          onClick={updateAvatar("bg-indigo-300")}
-        />
+        {Array.from({ length: 8 }, (_, idx) => {
+          const bgColor = getRandomBgColor();
+          const imageUrl = `/avatars/avatar_${idx + 1}.png`;
+          return (
+            <div
+              className={cn(
+                "h-36 w-36 flex justify-center items-center rounded-md",
+                idx % 2 === 0 ? "justify-self-end" : "justify-self-start",
+                bgColor
+              )}
+              onClick={updateAvatar({ image: imageUrl, color: bgColor })}
+            >
+              <img src={imageUrl} className="h-32" />
+            </div>
+          );
+        })}
       </div>
     </div>
   );

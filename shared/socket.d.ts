@@ -1,4 +1,10 @@
-import { Game } from "./game";
+import { Game, GameUserAvatar } from "./game";
+
+export interface SocketData {
+  name: string;
+  avatar: GameUserAvatar;
+  room: string;
+}
 
 export interface ServerToClientEvents {
   // noArg: () => void;
@@ -9,11 +15,15 @@ export interface ServerToClientEvents {
 
 export interface ClientToServerEvents {
   create_game: (
-    body: { name: string; avatar: string },
+    body: { name: string; avatar: GameUserAvatar },
     callback: (game: Game) => void
   ) => void;
   enter_game: (
-    body: { name: string; avatar: string; code: string },
+    body: {
+      name: string;
+      avatar: GameUserAvatar;
+      code: string;
+    },
     callback: (game: Game) => void
   ) => void;
   start_game: () => void;

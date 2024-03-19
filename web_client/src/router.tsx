@@ -7,6 +7,7 @@ import { BoardDetailPage } from "./pages/board-detail";
 import { AvatarsPage } from "./pages/avatars";
 import { Root } from "./pages/root";
 import { CardPage } from "./pages/card-screen";
+import { HomePage } from "./pages/home";
 
 export const router = createBrowserRouter([
   {
@@ -16,15 +17,19 @@ export const router = createBrowserRouter([
     children: [
       {
         path: "/",
-        element: <StartGamePage />,
+        element: <HomePage />,
       },
       {
-        path: "/avatars",
-        element: <AvatarsPage />,
+        path: "/start",
+        element: <StartGamePage />,
       },
       {
         path: "/enter",
         element: <EnterGamePage />,
+      },
+      {
+        path: "/avatars",
+        element: <AvatarsPage />,
       },
       {
         path: "/lobby",

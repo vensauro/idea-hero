@@ -2,16 +2,20 @@ import { Game } from "#/game";
 import { create, useStore } from "zustand";
 import { derive } from "derive-zustand";
 
+export interface Avatar {
+  image: string;
+  color: string;
+}
 interface GameState {
   isConnected: boolean;
   game: Game | null;
   nickname: string;
-  avatar: string;
+  avatar: null | Avatar;
   connect: () => void;
   disconnect: () => void;
   isOwner: () => boolean;
   updateGameState: (game: Game) => void;
-  setAvatar: (avatar: string) => void;
+  setAvatar: (avatar: Avatar) => void;
   setNick: (nickname: string) => void;
 }
 
@@ -19,7 +23,7 @@ export const useGameStore = create<GameState>()((set, get) => ({
   isConnected: false,
   game: null,
   nickname: "",
-  avatar: "bg-slate-300",
+  avatar: null,
   isOwner: () => get().game?.owner.name === get().nickname,
   connect: () => set({ isConnected: true }),
   disconnect: () => set({ isConnected: false }),

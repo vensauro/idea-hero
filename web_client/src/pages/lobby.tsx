@@ -1,5 +1,5 @@
 import { BoardSvg } from "@/components/board/board-svg";
-import { Avatar } from "@/components/ui/avatar";
+import { Avatar, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { socket } from "@/lib/socket";
 import { useGameStore } from "@/lib/store";
@@ -31,11 +31,14 @@ export function LobbyPage() {
           <div key={user.id}>
             <Avatar
               className={cn(
-                user.avatar,
+                user.avatar.color,
                 user.connected ? "opacity-100" : "opacity-25"
               )}
             >
-              {/* <AvatarImage src="https://github.com/shadcn.png" alt="@shadcn" /> */}
+              <AvatarImage
+                src={user.avatar.image}
+                alt={`${user.name} avatar`}
+              />
             </Avatar>
             <div className="-mt-2 z-10 w-full flex justify-center relative">
               <span className="bg-slate-400 p-1">{user.name}</span>

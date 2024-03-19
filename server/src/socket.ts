@@ -7,14 +7,9 @@ import type {
   ClientToServerEvents,
   ServerToClientEvents,
   InterServerEvents,
+  SocketData,
 } from "../../shared/socket";
 export type * from "../../shared/socket";
-
-export interface SocketData {
-  name: string;
-  avatar: string;
-  room: string;
-}
 
 export function handleSocket(
   socket: Socket<

@@ -1,6 +1,7 @@
 import { socket } from "@/lib/socket";
 import { useGameStore } from "@/lib/store";
 import { useEffect } from "react";
+import { Toaster } from "react-hot-toast";
 import { Outlet } from "react-router-dom";
 
 export function Root() {
@@ -16,5 +17,10 @@ export function Root() {
       socket.off("game_state_update", store.updateGameState);
     };
   }, [store.connect, store.disconnect, store.updateGameState]);
-  return <Outlet />;
+  return (
+    <div className="bg-[#ffecd4] bg-[url(/graph-paper.svg)]">
+      <Outlet />
+      <Toaster />
+    </div>
+  );
 }
