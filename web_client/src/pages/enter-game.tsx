@@ -48,9 +48,12 @@ export function EnterGamePage() {
         <div className="max-w-72 w-full">
           {/* window top bar */}
           <div className="h-8 border-2 rounded-t-md w-full bg-secondary border-b-0 flex justify-end items-center">
-            <span className="text-white mx-4 h-5 w-5 bg-border flex justify-center items-center font-bold">
+            <button
+              className="text-white mx-4 h-5 w-5 bg-border flex justify-center items-center font-bold"
+              onClick={() => navigate(-1)}
+            >
               <span className="mb-1">x</span>
-            </span>
+            </button>
           </div>
 
           {/* window */}
@@ -82,13 +85,15 @@ export function EnterGamePage() {
                 className="bg-primary text-primary-foreground placeholder:text-primary-foreground border-2 border-border rounded-sm"
               />
             </div>
-            <Button
-              className="border-t-[3px] border-l-[5px] border-b-[6px] border-r-[8px] my-4"
-              onClick={startGame}
-              variant={"secondary"}
-            >
-              ENTRAR
-            </Button>
+            <div className="flex justify-center">
+              <Button
+                className="border-t-[3px] border-l-[5px] border-b-[6px] border-r-[8px] my-4"
+                onClick={startGame}
+                variant={"secondary"}
+              >
+                ENTRAR
+              </Button>
+            </div>
             <Link
               className={cn(
                 "h-20 w-20 rounded-md bg-white absolute -bottom-10 -right-10 border-2 border-primary p-2",
