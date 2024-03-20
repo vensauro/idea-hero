@@ -1,6 +1,5 @@
 import { cn } from "@/lib/utils";
-import { Avatar } from "../ui/avatar";
-import { AvatarImage } from "@radix-ui/react-avatar";
+import { Avatar, AvatarImage } from "../ui/avatar";
 
 interface UserAvatarProps {
   connected?: boolean;
@@ -9,6 +8,7 @@ interface UserAvatarProps {
   name: string;
   points?: number;
   showPoints?: boolean;
+  big?: boolean;
 }
 export function UserAvatar({
   connected = false,
@@ -17,6 +17,7 @@ export function UserAvatar({
   name,
   points = 0,
   showPoints = false,
+  big = false,
 }: UserAvatarProps) {
   return (
     <div className="flex flex-col justify-center items-center">
@@ -27,7 +28,13 @@ export function UserAvatar({
           </span>
         </div>
       )}
-      <Avatar className={cn(color, connected ? "opacity-100" : "opacity-25")}>
+      <Avatar
+        className={cn(
+          color,
+          connected ? "opacity-100" : "opacity-25",
+          big && "w-24 h-24"
+        )}
+      >
         <AvatarImage src={avatarImage} alt={`${name} avatar`} />
       </Avatar>
       <div className="-mt-2 z-10 w-full flex justify-center relative">

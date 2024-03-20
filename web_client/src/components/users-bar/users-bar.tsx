@@ -1,5 +1,3 @@
-import { cn } from "@/lib/utils";
-import { Avatar, AvatarImage } from "../ui/avatar";
 import { GameUser } from "#/game";
 import { UserAvatar } from "./user-avatar";
 
@@ -26,47 +24,31 @@ export function UsersBar({ activeUser, users = [] }: UsersBarProps) {
             points={user.points}
           />
         ))}
-      <div>
-        <Avatar
-          className={cn(
-            activeUser?.avatar.color,
-            activeUser?.connected ? "opacity-100" : "opacity-25",
-            "h-24 w-24"
-          )}
-        >
-          <AvatarImage
-            src={activeUser?.avatar.image}
-            alt={`${activeUser?.name} avatar`}
-          />
-        </Avatar>
-        <div className="-mt-2 z-10 w-full flex justify-center relative">
-          <span className="rounded-full min-w-16 text-base text-center text-white bg-primary">
-            {activeUser?.name}
-          </span>
-        </div>
-      </div>
+      {activeUser && (
+        <UserAvatar
+          key={activeUser.id}
+          color={activeUser.avatar.color}
+          connected={activeUser.connected}
+          avatarImage={activeUser.avatar.image}
+          name={activeUser.name}
+          points={activeUser.points}
+          showPoints
+          big
+        />
+      )}
+
       {notActiveUsers
         .filter((e) => e.id !== activeUser?.id)
         .slice(midLength)
         .map((user) => (
-          <div key={user.id}>
-            <Avatar
-              className={cn(
-                user.avatar.color,
-                user.connected ? "opacity-100" : "opacity-25"
-              )}
-            >
-              <AvatarImage
-                src={user.avatar.image}
-                alt={`${user.name} avatar`}
-              />
-            </Avatar>
-            <div className="-mt-2 z-10 w-full flex justify-center relative">
-              <span className="rounded-full min-w-16 text-base text-center text-white bg-secondary">
-                {user.name}
-              </span>
-            </div>
-          </div>
+          <UserAvatar
+            key={user.id}
+            color={user.avatar.color}
+            connected={user.connected}
+            avatarImage={user.avatar.image}
+            name={user.name}
+            points={user.points}
+          />
         ))}
     </div>
   );
