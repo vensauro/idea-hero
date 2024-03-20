@@ -24,11 +24,10 @@ export function LobbyPage() {
   }
 
   useEffect(() => {
-    if (store.game?.state === "STARTED") {
-      navigate("/game");
+    if (store.game?.state === "SCENARIO") {
+      navigate("/scenario");
     }
   }, [navigate, store.game?.state]);
-  console.log(store);
 
   function startCollaborativeGame() {
     socket.emit("start_game");

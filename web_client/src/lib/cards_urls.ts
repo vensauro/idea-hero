@@ -28,7 +28,6 @@ export const cardsUrls = [
   "6fd1ed32-1b66-4f73-99ef-3df48c6818a4.png",
   "76621a0b-0c9b-4b96-9519-8e0d58dfb5d2.png",
   "7855a143-d37e-4c47-9ab1-438425093d5f.png",
-  "7a48d04e-607c-47de-8ce1-f2c10917c7c4.png",
   "7fd539bc-54fa-4ed1-8320-e5d52ca5f15b.png",
   "80401720-3a8a-48d1-a67c-3c500eb15c2e.png",
   "89c8ab12-bca1-4d3b-a438-b063f460f515.png",

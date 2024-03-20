@@ -1,4 +1,13 @@
-type GameState = "LOBBY" | "STARTED" | "ENDED";
+type GameState = "LOBBY" | "SCENARIO" | "PROBLEM" | "ENDED";
+
+export interface Game {
+  code: string;
+  users: GameUser[];
+  owner: GameUser;
+  state: GameState;
+  gameActions: GameActions[];
+  actualAction: GameActions;
+}
 
 export interface GameUser {
   id: string;
@@ -13,18 +22,19 @@ export interface GameUserAvatar {
 }
 
 export interface GameAction {
+  state: GameState;
   activeUser: GameUser;
 }
 
-export interface ActualGameAction extends GameAction {
-  startedAt: Date;
+export interface ScenarioGameAction extends GameAction {
+  state: "SCENARIO";
+  scenario: string | null;
+  activeUser: GameUser;
 }
 
-export interface Game<T extends GameAction = GameAction> {
-  code: string;
-  users: GameUser[];
-  owner: GameUser;
-  state: GameState;
-  gameActions: T[];
-  actualAction: T;
+export interface ProblemsGameAction extends GameAction {
+  state: "PROBLEM";
+  activeUser: GameUser;
 }
+
+type GameActions = ScenarioGameAction | ProblemsGameAction;

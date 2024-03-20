@@ -27,6 +27,8 @@ export interface ClientToServerEvents {
     callback: (game: Game) => void
   ) => void;
   start_game: () => void;
+  get_scenario: (scenario: string | null) => void;
+  start_problems: () => void;
 }
 
 export interface InterServerEvents {

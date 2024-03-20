@@ -11,7 +11,7 @@ export function UsersBar({ activeUser, users = [] }: UsersBarProps) {
   const midLength = Math.round((notActiveUsers.length - 1) / 2);
 
   return (
-    <div className="flex items-center overflow-y-auto gap-3 bg-accent p-2 h-[146px]">
+    <div className="flex justify-center items-center overflow-y-auto gap-3 bg-accent p-2 h-[146px]">
       {notActiveUsers
         .filter((e) => e.id !== activeUser?.id)
         .slice(0, midLength)

@@ -1,5 +1,5 @@
 import { Server, Socket } from "socket.io";
-import { Game, GameUser, db } from "./db";
+import { Game, GameUser, ScenarioGameAction, db } from "./db";
 import { uid } from "radash";
 import { EventEmitter } from "node:stream";
 import { getRandomWord } from "./words";
@@ -46,7 +46,7 @@ export function handleSocket(
       gameActions: [],
       owner: user,
       users: [user],
-      actualAction: { activeUser: user },
+      actualAction: { activeUser: user, state: "SCENARIO", scenario: null },
       state: "LOBBY",
     };
     db.set(code, newGame);
@@ -60,7 +60,7 @@ export function handleSocket(
 
   socket.on("enter_game", ({ name, avatar, code }, callback) => {
     const dbGame = db.get(code);
-    if (!dbGame) {
+    if (!dbGame || dbGame.state !== "LOBBY") {
       return;
     }
 
@@ -122,9 +122,40 @@ export function handleSocket(
       return;
     }
 
-    dbGame.state = "STARTED";
-    // dbGame.actualAction = { activeUser: dbGame.owner };
+    dbGame.state = "SCENARIO";
 
+    updateAndEmit(dbGame);
+  });
+
+  socket.on("get_scenario", (scenario) => {
+    const dbGame = db.get(socket.data.room);
+    if (!dbGame) {
+      return;
+    }
+    dbGame.actualAction = {
+      activeUser: dbGame.actualAction.activeUser,
+      state: dbGame.actualAction.state,
+      scenario,
+    };
+
+    updateAndEmit(dbGame);
+  });
+
+  socket.on("start_problems", () => {
+    const dbGame = db.get(socket.data.room);
+    if (!dbGame) {
+      return;
+    }
+
+    dbGame.gameActions.push(dbGame.actualAction);
+
+    dbGame.state = "PROBLEM";
+    dbGame.actualAction = {
+      state: "PROBLEM",
+      activeUser: dbGame.users[0],
+    };
+
+    console.log(dbGame);
     updateAndEmit(dbGame);
   });
 }

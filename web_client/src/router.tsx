@@ -6,7 +6,7 @@ import { LobbyPage } from "./pages/lobby";
 import { BoardDetailPage } from "./pages/board-detail";
 import { AvatarsPage } from "./pages/avatars";
 import { Root } from "./pages/root";
-import { CardPage } from "./pages/card-screen";
+import { ScenarioPage } from "./pages/scenario";
 import { HomePage } from "./pages/home";
 
 export const router = createBrowserRouter([
@@ -36,8 +36,12 @@ export const router = createBrowserRouter([
         element: <LobbyPage />,
       },
       {
-        path: "/game",
-        element: <CardPage />,
+        path: "/scenario",
+        element: <ScenarioPage />,
+      },
+      {
+        path: "/board",
+        element: <BoardDetailPage />,
       },
       {
         path: "/board/problem",
