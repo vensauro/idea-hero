@@ -1,3 +1,4 @@
+import { ProblemsGA } from "#/game";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -10,43 +11,30 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { UsersBar } from "@/components/users-bar/users-bar";
-import { getRandomCardUrl } from "@/lib/cards_urls";
+import { cardsUrls } from "@/lib/cards_urls";
 import { socket } from "@/lib/socket";
 import { useGameStore } from "@/lib/store";
-import { useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 
-export function ScenarioPage() {
+export function InsightsPage() {
   const store = useGameStore();
-  const navigate = useNavigate();
-  const [cardUrl, setCardUrl] = useState<string | null>(null);
+  // const navigate = useNavigate();
 
-  const canGetCard = store.isOwner() && cardUrl === null;
-  function getCard() {
-    if (canGetCard) {
-      const card = getRandomCardUrl();
-      setCardUrl(card);
-      socket.emit("get_scenario", card);
-    }
-  }
+  const action = store.game?.actualAction as ProblemsGA;
+  const cardUrl = `/ia_cards/${cardsUrls[action.randomCard]}`;
+
+  console.log(store.game?.actualAction);
 
   function finishSelection() {
-    socket.emit("select_scenario");
+    socket.emit("run_problem");
   }
 
-  useEffect(() => {
-    if (store.game?.actualAction.state === "SCENARIO") {
-      setCardUrl(store.game.actualAction.scenario);
-    }
-  }, [store.game?.actualAction]);
+  // useEffect(() => {
+  //   if (store.game?.actualAction.state === "PROBLEM_INVESTMENT") {
+  //     navigate("/problems-investment");
+  //   }
+  // }, [navigate, store.game?.actualAction.state]);
 
-  useEffect(() => {
-    if (store.game?.state === "PROBLEM") {
-      navigate("/problems");
-    }
-  }, [navigate, store.game?.state]);
-
-  console.log(store.game);
   return (
     <main className="min-h-screen flex flex-col ">
       <UsersBar
@@ -102,82 +90,39 @@ export function ScenarioPage() {
           <div className="max-w-72 w-full">
             {/* window top bar */}
             <div className="h-8 border-2 rounded-t-xl w-full bg-secondary border-b-0 flex justify-center relative items-center">
-              <p className="text-white text-xl">CENÁRIO</p>
+              <p className="text-white text-xl">INSIGHTS</p>
               <button className="absolute right-0 text-white mx-4 h-5 w-5 bg-border flex justify-center items-center font-bold">
                 <span className="mb-1">x</span>
               </button>
             </div>
 
             {/* window */}
-            <div
-              className="flex w-full bg-accent border-2 rounded-b-xl p-6"
-              onClick={getCard}
-            >
+            <div className="flex w-full bg-accent border-2 rounded-b-xl p-6">
               <div className="relative border-dashed border-[3px] rounded-xl overflow-hidden w-[236px] h-[347px]">
-                {store.isOwner() &&
-                  (cardUrl === null ? (
-                    <div
-                      className="bg-slate-400 w-full h-full flex justify-center items-center flex-col border-[10px] border-secondary"
-                      onClick={getCard}
-                    >
-                      <img
-                        src="/idea-hero-logo.svg"
-                        alt="IDEA HERO"
-                        className="h-16"
-                      />
-                      <p className="text-base text-white">Tirar Carta</p>
-                    </div>
-                  ) : (
-                    <img
-                      src={cardUrl}
-                      className="aspect-[180/271] object-cover"
-                    />
-                  ))}
-                {!store.isOwner() &&
-                  (cardUrl === null ? (
-                    <div className="bg-slate-400 w-full h-full flex justify-center items-center flex-col border-[10px] border-secondary">
-                      <img
-                        src="/idea-hero-logo.svg"
-                        alt="IDEA HERO"
-                        className="h-16"
-                      />
-                      <p className="text-base text-white w-4/5 leading-3 my-2">
-                        Espere {store.game?.actualAction.activeUser.name}{" "}
-                        selecionar o cenário!
-                      </p>
-                      <p className="text-base text-white w-4/5 leading-3 my-2">
-                        O cenário pode ser um pre definido pelo grupo, ou
-                        baseado na carta tirada por{" "}
-                        {store.game?.actualAction.activeUser.name}
-                      </p>
-                    </div>
-                  ) : (
-                    <img
-                      src={cardUrl}
-                      className="aspect-[180/271] object-cover"
-                    />
-                  ))}
+                <img
+                  src={cardUrl}
+                  className="aspect-[180/271] object-cover object-center"
+                />
               </div>
             </div>
             {/* end centralize window */}
           </div>
         </div>
 
-        {store.game?.actualAction.activeUser.name === store.nickname ? (
-          <div className="flex flex-col items-center gap-2">
+        <div className="flex flex-col items-center gap-2">
+          {store.game?.actualAction.activeUser.name === store.nickname ? (
             <Button onClick={finishSelection} className="w-36">
               Terminar Jogada
             </Button>
-
-            <Button asChild variant={"secondary"} className="w-36">
-              <Link to="/board">Tabuleiro</Link>
-            </Button>
-          </div>
-        ) : (
-          <p className="text-center text-xl text-secondary">
-            esperando {store.game?.actualAction.activeUser.name}
-          </p>
-        )}
+          ) : (
+            <p className="text-center text-xl text-secondary">
+              esperando {store.game?.actualAction.activeUser.name}
+            </p>
+          )}
+          <Button asChild variant={"secondary"} className="w-36">
+            <Link to="/board">Tabuleiro</Link>
+          </Button>
+        </div>
       </div>
     </main>
   );

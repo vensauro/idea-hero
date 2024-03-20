@@ -1,79 +1,19 @@
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import { UsersBar } from "@/components/users-bar/users-bar";
+import { useGameStore } from "@/lib/store";
 import { useNavigate } from "react-router-dom";
 
 export function BoardDetailPage() {
+  const store = useGameStore();
+
   const navigate = useNavigate();
   return (
     <main className="min-h-screen flex flex-col ">
-      <div className="flex overflow-y-auto gap-3 bg-neutral-300 p-2">
-        <div>
-          <Avatar className="">
-            <AvatarImage src="https://github.com/shadcn.png" alt="@shadcn" />
-            <AvatarFallback>CN</AvatarFallback>
-          </Avatar>
-          <div className="-mt-3 z-10 w-full flex justify-center relative">
-            <span className="bg-slate-400">500</span>
-          </div>
-        </div>
-        <div>
-          <Avatar className="">
-            <AvatarImage src="https://github.com/shadcn.png" alt="@shadcn" />
-            <AvatarFallback>CN</AvatarFallback>
-          </Avatar>
-          <div className="-mt-3 z-10 w-full flex justify-center relative">
-            <span className="bg-slate-400">500</span>
-          </div>
-        </div>
-        <div>
-          <Avatar className="">
-            <AvatarImage src="https://github.com/shadcn.png" alt="@shadcn" />
-            <AvatarFallback>CN</AvatarFallback>
-          </Avatar>
-          <div className="-mt-3 z-10 w-full flex justify-center relative">
-            <span className="bg-slate-400">500</span>
-          </div>
-        </div>
-        <div>
-          <Avatar className="">
-            <AvatarImage src="https://github.com/shadcn.png" alt="@shadcn" />
-            <AvatarFallback>CN</AvatarFallback>
-          </Avatar>
-          <div className="-mt-3 z-10 w-full flex justify-center relative">
-            <span className="bg-slate-400">500</span>
-          </div>
-        </div>
-        <div>
-          <Avatar className="">
-            <AvatarImage src="https://github.com/shadcn.png" alt="@shadcn" />
-            <AvatarFallback>CN</AvatarFallback>
-          </Avatar>
-          <div className="-mt-3 z-10 w-full flex justify-center relative">
-            <span className="bg-slate-400">500</span>
-          </div>
-        </div>
-        <div>
-          <Avatar className="">
-            <AvatarImage src="https://github.com/shadcn.png" alt="@shadcn" />
-            <AvatarFallback>CN</AvatarFallback>
-          </Avatar>
-          <div className="-mt-3 z-10 w-full flex justify-center relative">
-            <span className="bg-slate-400">500</span>
-          </div>
-        </div>
-        <div>
-          <Avatar className="">
-            <AvatarImage src="https://github.com/shadcn.png" alt="@shadcn" />
-            <AvatarFallback>CN</AvatarFallback>
-          </Avatar>
-          <div className="-mt-3 z-10 w-full flex justify-center relative">
-            <span className="bg-slate-400">500</span>
-          </div>
-        </div>
-      </div>
+      <UsersBar
+        activeUser={store.game?.actualAction.activeUser}
+        users={store.game?.users}
+      />
       <div>
-        <p>Código: askjdghkewq</p>
-
         <a
           href="#"
           className="relative block overflow-hidden rounded-lg border border-gray-100 p-4 sm:p-6 lg:p-8"

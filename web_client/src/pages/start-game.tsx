@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { cardsUrls } from "@/lib/cards_urls";
 import { socket } from "@/lib/socket";
 import { useGameStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
@@ -26,6 +27,7 @@ export function StartGamePage() {
       {
         avatar: store.avatar,
         name: store.nickname,
+        cardQuantity: cardsUrls.length,
       },
       store.updateGameState
     );

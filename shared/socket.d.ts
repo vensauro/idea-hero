@@ -15,7 +15,7 @@ export interface ServerToClientEvents {
 
 export interface ClientToServerEvents {
   create_game: (
-    body: { name: string; avatar: GameUserAvatar },
+    body: { name: string; avatar: GameUserAvatar; cardQuantity: number },
     callback: (game: Game) => void
   ) => void;
   enter_game: (
@@ -28,7 +28,10 @@ export interface ClientToServerEvents {
   ) => void;
   start_game: () => void;
   get_scenario: (scenario: string | null) => void;
-  start_problems: () => void;
+  select_scenario: () => void;
+  run_problem: () => void;
+  new_problem_round: () => void;
+  problem_investment: (body: { userId: string; value: number }) => void;
 }
 
 export interface InterServerEvents {

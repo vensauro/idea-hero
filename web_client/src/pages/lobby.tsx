@@ -36,7 +36,7 @@ export function LobbyPage() {
     <main className="min-h-screen flex flex-col ">
       <UsersBar activeUser={store.game?.owner} users={store.game?.users} />
       <div>
-        <p className="flex items-center px-4 my-6 uppercase">
+        <p className="flex justify-center items-center px-4 my-6 uppercase">
           <span className="text-secondary text-lg text-nowrap">
             Sala: {store.game?.code}{" "}
           </span>
@@ -44,7 +44,7 @@ export function LobbyPage() {
             <img src="/copy-icon.svg" className="h-4" />
           </Button>
         </p>
-        <div className="flex justify-center">
+        <div className="flex justify-center px-2">
           <BoardSvg />
         </div>
         {store.isOwner() ? (

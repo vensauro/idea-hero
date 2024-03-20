@@ -8,6 +8,10 @@ import { AvatarsPage } from "./pages/avatars";
 import { Root } from "./pages/root";
 import { ScenarioPage } from "./pages/scenario";
 import { HomePage } from "./pages/home";
+import { ProblemsPage } from "./pages/problems";
+import { ProblemInvestment } from "./pages/problem-investment";
+import { ProblemFinishPage } from "./pages/problem-end";
+import { InsightsPage } from "./pages/insights";
 
 export const router = createBrowserRouter([
   {
@@ -38,6 +42,22 @@ export const router = createBrowserRouter([
       {
         path: "/scenario",
         element: <ScenarioPage />,
+      },
+      {
+        path: "/problems",
+        element: <ProblemsPage />,
+      },
+      {
+        path: "/problems-investment",
+        element: <ProblemInvestment />,
+      },
+      {
+        path: "/problems-end",
+        element: <ProblemFinishPage />,
+      },
+      {
+        path: "/insights",
+        element: <InsightsPage />,
       },
       {
         path: "/board",
