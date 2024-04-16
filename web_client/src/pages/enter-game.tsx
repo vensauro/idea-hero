@@ -28,7 +28,10 @@ export function EnterGamePage() {
         name: store.nickname,
         code: store.gameCode,
       },
-      store.updateGameState
+      ({ game, user }) => {
+        store.updateGameState(game);
+        store.setUser(user);
+      }
     );
     navigate("/lobby");
   }
@@ -56,7 +59,13 @@ export function EnterGamePage() {
           </div>
 
           {/* window */}
-          <div className="relative flex flex-col w-full bg-[#fff6e5] px-14 py-5 border-2 border-[#665e68] rounded-b-md">
+          <form
+            className="relative flex flex-col w-full bg-[#fff6e5] px-14 py-5 border-2 border-[#665e68] rounded-b-md"
+            onSubmit={(e) => {
+              e.preventDefault();
+              startGame();
+            }}
+          >
             <div className="">
               <Label htmlFor="nickname" className="text-border">
                 NOME
@@ -88,8 +97,8 @@ export function EnterGamePage() {
             <div className="flex justify-center">
               <Button
                 className="border-t-[3px] border-l-[5px] border-b-[6px] border-r-[8px] my-4"
-                onClick={startGame}
-                variant={"secondary"}
+                type="submit"
+                variant="secondary"
               >
                 ENTRAR
               </Button>
@@ -107,7 +116,7 @@ export function EnterGamePage() {
                 className="h-16"
               />
             </Link>
-          </div>
+          </form>
           {/* end centralize window */}
         </div>
       </div>

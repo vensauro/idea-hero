@@ -2,7 +2,9 @@ type GameState =
   | "LOBBY"
   | "SCENARIO"
   | "PROBLEM"
+  | "PROBLEM_END"
   | "INSIGHT"
+  | "INSIGHT_END"
   | "SOLUTION"
   | "PROTOTYPE"
   | "PILOT"
@@ -17,6 +19,10 @@ export interface Game {
   state: GameState;
   actions: GameActions[];
   actualAction: GameActions;
+  problemWinner: {
+    winner: GameUser;
+    value: number;
+  };
   actionIndex: number;
   cardQuantity: number;
 }
@@ -39,6 +45,7 @@ export interface GameAction {
   activeUser: GameUser;
 }
 
+// ACTIONS
 export interface ScenarioGA extends GameAction {
   state: "SCENARIO";
   scenario: string | null;
@@ -55,17 +62,22 @@ export interface ProblemsEndGA extends GameAction {
   state: "PROBLEM_END";
 }
 
-export type ProblemsInvestmentGA =
-  | {
-      state: "PROBLEM_INVESTMENT";
-      activeUser: GameUser;
-      toUser: GameUser;
-      investment: number;
-    }
-  | {
-      state: "PROBLEM_INVESTMENT";
-      activeUser: GameUser;
-    };
+export type ProblemInvestmentInvested = {
+  action: "invested";
+  from: GameUser;
+  to: GameUser;
+  investment: number;
+};
+export type ProblemInvestmentNewRound = { action: "new-round"; from: GameUser };
+
+export type ProblemInvestmentItem =
+  | ProblemInvestmentInvested
+  | ProblemInvestmentNewRound;
+
+export type ProblemsInvestmentGA = {
+  state: "PROBLEM_INVESTMENT";
+  usersInvestment: ProblemInvestmentItem[];
+};
 
 export interface InsightGA extends GameAction {
   state: "INSIGHT";
@@ -73,10 +85,8 @@ export interface InsightGA extends GameAction {
   randomCard: number;
 }
 
-export interface SolutionGameAction extends GameAction {
-  state: "SOLUTION";
-  activeUser: GameUser;
-  randomCard: number;
+export interface InsightEndGA extends GameAction {
+  state: "INSIGHT_END";
 }
 
 export interface SolutionGameAction extends GameAction {
@@ -90,4 +100,6 @@ type GameActions =
   | ProblemsGA
   | ProblemsInvestmentGA
   | ProblemsEndGA
-  | InsightGA;
+  | InsightGA
+  | InsightEndGA
+  | SolutionGameAction;

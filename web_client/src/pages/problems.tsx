@@ -24,8 +24,6 @@ export function ProblemsPage() {
   const action = store.game?.actualAction as ProblemsGA;
   const cardUrl = `/ia_cards/${cardsUrls[action.randomCard]}`;
 
-  console.log(store.game?.actualAction);
-
   function finishSelection() {
     socket.emit("run_problem");
   }
@@ -36,6 +34,8 @@ export function ProblemsPage() {
     }
   }, [navigate, store.game?.actualAction.state]);
 
+  if (store.game?.actualAction.state !== "PROBLEM") return;
+
   return (
     <main className="min-h-screen flex flex-col ">
       <UsersBar
@@ -43,7 +43,7 @@ export function ProblemsPage() {
         users={store.game?.users}
       />
 
-      <Dialog defaultOpen={store.isOwner() && store.game?.state === "SCENARIO"}>
+      <Dialog defaultOpen={store.isActive()} key={store.game?.actionIndex}>
         <div className="flex justify-end">
           <DialogTrigger asChild>
             <Button variant="ghost" className="text-border">
@@ -67,14 +67,10 @@ export function ProblemsPage() {
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
             <DialogTitle>Instruções</DialogTitle>
-            <DialogDescription>
+            <DialogDescription className="py-4">
               <p>
-                Retire uma carta de inspiração ou proponha um cenário especifico
-                em que deseje trabalhar.
-              </p>
-              <p>
-                Atenção! O cenário que você descrever será aquele com o qual o
-                grupo irá trabalhar
+                De acordo a carta de inspiração e o cenário, proponha um
+                problema especifico em que deseje trabalhar.
               </p>
             </DialogDescription>
           </DialogHeader>

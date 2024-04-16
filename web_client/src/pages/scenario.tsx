@@ -46,7 +46,8 @@ export function ScenarioPage() {
     }
   }, [navigate, store.game?.state]);
 
-  console.log(store.game);
+  if (store.game?.actualAction.state !== "SCENARIO") return;
+
   return (
     <main className="min-h-screen flex flex-col ">
       <UsersBar
@@ -77,8 +78,8 @@ export function ScenarioPage() {
         </div>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
-            <DialogTitle>Instruções</DialogTitle>
-            <DialogDescription>
+            <DialogTitle className="text-center">Instruções</DialogTitle>
+            <DialogDescription className="max-w-prose">
               <p>
                 Retire uma carta de inspiração ou proponha um cenário especifico
                 em que deseje trabalhar.

@@ -1,7 +1,8 @@
-import { Game, GameUserAvatar } from "./game";
+import { Game, GameUser, GameUserAvatar } from "./game";
 
 export interface SocketData {
   name: string;
+  id: string;
   avatar: GameUserAvatar;
   room: string;
 }
@@ -16,7 +17,7 @@ export interface ServerToClientEvents {
 export interface ClientToServerEvents {
   create_game: (
     body: { name: string; avatar: GameUserAvatar; cardQuantity: number },
-    callback: (game: Game) => void
+    callback: ({ game: Game, user: GameUser }) => void
   ) => void;
   enter_game: (
     body: {
@@ -24,7 +25,7 @@ export interface ClientToServerEvents {
       avatar: GameUserAvatar;
       code: string;
     },
-    callback: (game: Game) => void
+    callback: ({ game: Game, user: GameUser }) => void
   ) => void;
   start_game: () => void;
   get_scenario: (scenario: string | null) => void;
@@ -32,6 +33,7 @@ export interface ClientToServerEvents {
   run_problem: () => void;
   new_problem_round: () => void;
   problem_investment: (body: { userId: string; value: number }) => void;
+  new_insight_round: () => void;
 }
 
 export interface InterServerEvents {

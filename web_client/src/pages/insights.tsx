@@ -29,11 +29,21 @@ export function InsightsPage() {
     socket.emit("run_problem");
   }
 
+  function repeatRound() {
+    socket.emit("new_insight_round");
+  }
+
   // useEffect(() => {
   //   if (store.game?.actualAction.state === "PROBLEM_INVESTMENT") {
   //     navigate("/problems-investment");
   //   }
   // }, [navigate, store.game?.actualAction.state]);
+
+  if (
+    store.game?.actualAction.state !== "INSIGHT_END" &&
+    store.game?.actualAction.state !== "INSIGHT"
+  )
+    return;
 
   return (
     <main className="min-h-screen flex flex-col ">
@@ -42,7 +52,7 @@ export function InsightsPage() {
         users={store.game?.users}
       />
 
-      <Dialog defaultOpen={store.isOwner() && store.game?.state === "SCENARIO"}>
+      <Dialog defaultOpen={store.isActive()} key={store.game?.actionIndex}>
         <div className="flex justify-end">
           <DialogTrigger asChild>
             <Button variant="ghost" className="text-border">
@@ -66,15 +76,21 @@ export function InsightsPage() {
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
             <DialogTitle>Instruções</DialogTitle>
-            <DialogDescription>
-              <p>
-                Retire uma carta de inspiração ou proponha um cenário especifico
-                em que deseje trabalhar.
-              </p>
-              <p>
-                Atenção! O cenário que você descrever será aquele com o qual o
-                grupo irá trabalhar
-              </p>
+            <DialogDescription className="py-4">
+              {store.game.actualAction.state === "INSIGHT_END" ? (
+                <p>
+                  Arremate os insights escolhidos até aqui. Caso não esteja
+                  satisfeito com o resultado, você pode fazer suas considerações
+                  e propor uma nova rodada, mas lembre-se que a contribuição de
+                  cada jogador tem um custo de 1000 pontos
+                </p>
+              ) : (
+                <p>
+                  Busque um insight para resolver o problema na sua carta de
+                  inspiração. Lembre-se um insight ainda não é uma solução, mas
+                  um caminho possível para ser adotado.
+                </p>
+              )}
             </DialogDescription>
           </DialogHeader>
 
@@ -99,10 +115,23 @@ export function InsightsPage() {
             {/* window */}
             <div className="flex w-full bg-accent border-2 rounded-b-xl p-6">
               <div className="relative border-dashed border-[3px] rounded-xl overflow-hidden w-[236px] h-[347px]">
-                <img
-                  src={cardUrl}
-                  className="aspect-[180/271] object-cover object-center"
-                />
+                {store.game.actualAction.state === "INSIGHT_END" ? (
+                  <div className="bg-slate-400 w-full h-full flex justify-center items-center flex-col border-[10px] border-secondary">
+                    <img
+                      src="/idea-hero-logo.svg"
+                      alt="IDEA HERO"
+                      className="h-16"
+                    />
+                    <p className="text-base text-white">
+                      {store.game.owner.name} está escolhendo o insight!
+                    </p>
+                  </div>
+                ) : (
+                  <img
+                    src={cardUrl}
+                    className="aspect-[180/271] object-cover"
+                  />
+                )}
               </div>
             </div>
             {/* end centralize window */}
@@ -110,10 +139,21 @@ export function InsightsPage() {
         </div>
 
         <div className="flex flex-col items-center gap-2">
-          {store.game?.actualAction.activeUser.name === store.nickname ? (
-            <Button onClick={finishSelection} className="w-36">
-              Terminar Jogada
-            </Button>
+          {store.isActive() ? (
+            <>
+              {store.game.actualAction.state === "INSIGHT_END" &&
+                store.isOwner() && (
+                  <Button className="relative" onClick={repeatRound}>
+                    Mais uma rodada
+                    <span className="absolute top-0 right-0 bg-secondary leading-[0rem] -mt-3 -mr-6 h-4 p-2 rounded-md">
+                      -1000
+                    </span>
+                  </Button>
+                )}
+              <Button onClick={finishSelection} className="w-36">
+                Terminar Jogada
+              </Button>
+            </>
           ) : (
             <p className="text-center text-xl text-secondary">
               esperando {store.game?.actualAction.activeUser.name}
