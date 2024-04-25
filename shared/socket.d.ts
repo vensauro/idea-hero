@@ -34,6 +34,7 @@ export interface ClientToServerEvents {
   new_problem_round: () => void;
   problem_investment: (body: { userId: string; value: number }) => void;
   new_insight_round: () => void;
+  run_solution: () => void;
 }
 
 export interface InterServerEvents {

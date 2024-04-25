@@ -17,6 +17,7 @@ import {
   ProblemsGA,
   ProblemsInvestmentGA,
   ScenarioGA,
+  SolutionGA,
   db,
 } from "./db";
 import { getRandomWord } from "./words";
@@ -192,6 +193,15 @@ export function handleSocket(
       activeUser: dbGame.owner,
       state: "INSIGHT_END",
     } as InsightEndGA;
+
+    const solutions = users.map(
+      (u) =>
+        ({
+          activeUser: u,
+          state: "SOLUTION",
+          randomCard: rngCard(),
+        } as SolutionGA)
+    );
 
     dbGame.actions = [
       scenarioAction,
@@ -431,7 +441,34 @@ export function handleSocket(
       state: "INSIGHT_END",
     } as InsightEndGA;
 
-    game.actions.push(...insights, endInsight);
+    game.actions.splice(game.actionIndex + 1, 0, ...insights, endInsight);
+
+    game.actions[game.actionIndex] = game.actualAction;
+    game.actionIndex = game.actionIndex + 1;
+    game.actualAction = game.actions[game.actionIndex];
+
+    updateAndEmit(game);
+  });
+
+  socket.on("run_problem", () => {
+    const game = db.get(socket.data.room);
+    if (
+      !game ||
+      (game.actualAction.state !== "PROBLEM" &&
+        game.actualAction.state !== "INSIGHT" &&
+        game.actualAction.state !== "PROBLEM_END" &&
+        game.actualAction.state !== "INSIGHT_END")
+    ) {
+      return;
+    }
+
+    if (
+      game.actualAction.state === "PROBLEM" ||
+      game.actualAction.state === "INSIGHT"
+    ) {
+      const user = game.users.find((e) => e.name === socket.data.name);
+      game.users = changeUserPoints(game, -1000, user!);
+    }
 
     game.actions[game.actionIndex] = game.actualAction;
     game.actionIndex = game.actionIndex + 1;

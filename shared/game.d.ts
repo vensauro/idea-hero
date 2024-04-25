@@ -6,6 +6,8 @@ type GameState =
   | "INSIGHT"
   | "INSIGHT_END"
   | "SOLUTION"
+  | "SOLUTION_SELECTION"
+  | "SOLUTION_ADVOCATE"
   | "PROTOTYPE"
   | "PILOT"
   | "MARKETING"
@@ -89,10 +91,21 @@ export interface InsightEndGA extends GameAction {
   state: "INSIGHT_END";
 }
 
-export interface SolutionGameAction extends GameAction {
+export interface SolutionGA extends GameAction {
   state: "SOLUTION";
   activeUser: GameUser;
   randomCard: number;
+}
+
+export interface SolutionSelectionGA extends GameAction {
+  state: "SOLUTION_SELECTION";
+  activeUser: GameUser;
+  randomCard: number;
+}
+
+export interface SolutionAdvocateGA extends GameAction {
+  state: "SOLUTION_ADVOCATE";
+  activeUser: GameUser;
 }
 
 type GameActions =
@@ -102,4 +115,6 @@ type GameActions =
   | ProblemsEndGA
   | InsightGA
   | InsightEndGA
-  | SolutionGameAction;
+  | SolutionGA
+  | SolutionSelectionGA
+  | SolutionAdvocateGA;
