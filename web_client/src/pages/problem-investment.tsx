@@ -48,9 +48,6 @@ export function ProblemInvestment() {
       (e) => e.from.id === store.user?.id
     ) !== undefined;
 
-  console.log(store.game.actualAction);
-
-  console.log(store.gameCode);
   // const isMe = store.game?.actualAction.activeUser.name === store.nickname;
 
   return (
@@ -188,7 +185,7 @@ export function ProblemInvestment() {
                               setInvestmentValue(value)
                             }
                             max={10000}
-                            min={1000}
+                            min={0}
                             step={1000}
                           />
                           <div className="flex justify-center py-4">

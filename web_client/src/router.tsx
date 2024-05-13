@@ -12,6 +12,8 @@ import { ProblemsPage } from "./pages/problems";
 import { ProblemInvestment } from "./pages/problem-investment";
 import { ProblemFinishPage } from "./pages/problem-end";
 import { InsightsPage } from "./pages/insights";
+import { SolutionsPage } from "./pages/solutions";
+import { PrototypePage } from "./pages/prototype";
 
 export const router = createBrowserRouter([
   {
@@ -58,6 +60,14 @@ export const router = createBrowserRouter([
       {
         path: "/insights",
         element: <InsightsPage />,
+      },
+      {
+        path: "/solutions",
+        element: <SolutionsPage />,
+      },
+      {
+        path: "/prototype",
+        element: <PrototypePage />,
       },
       {
         path: "/board",

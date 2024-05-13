@@ -6,7 +6,7 @@
   "scripts": {
     "build": "swc src --out-dir dist",
     "typecheck": "tsc --pretty --noEmit",
-    "start": "node dist/index.js",
+    "start": "node dist/src/index.js",
     "dev": "concurrently \"nodemon\" \"tsc -w --pretty --noEmit\"",
     "lint": "eslint .  --ext .ts",
     "lint-fix": "eslint . --ext .ts --fix"

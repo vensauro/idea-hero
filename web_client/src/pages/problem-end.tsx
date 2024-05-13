@@ -19,8 +19,6 @@ export function ProblemFinishPage() {
   const store = useGameStore();
   const navigate = useNavigate();
 
-  console.log(store.game?.actualAction);
-
   const problemWinner = store.game?.problemWinner;
   function finishSelection() {
     socket.emit("run_problem");

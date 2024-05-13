@@ -16,20 +16,18 @@ import { socket } from "@/lib/socket";
 import { useGameStore } from "@/lib/store";
 import { useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { CountdownCircleTimer } from "react-countdown-circle-timer";
 
-export function InsightsPage() {
+export function PrototypePage() {
   const store = useGameStore();
   const navigate = useNavigate();
 
   const action = store.game?.actualAction as ProblemsGA;
   const cardUrl = `/ia_cards/${cardsUrls[action.randomCard]}`;
+  console.log(store.game?.actualAction);
 
   function finishSelection() {
     socket.emit("run_problem");
-  }
-
-  function repeatRound() {
-    socket.emit("new_insight_round");
   }
 
   useEffect(() => {
@@ -39,7 +37,7 @@ export function InsightsPage() {
   }, [navigate, store.game?.actualAction.state]);
 
   if (
-    store.game?.actualAction.state !== "INSIGHT_END" &&
+    store.game?.actualAction.state !== "PROTOTYPE" &&
     store.game?.actualAction.state !== "INSIGHT"
   )
     return;
@@ -76,20 +74,21 @@ export function InsightsPage() {
           <DialogHeader>
             <DialogTitle>Instruções</DialogTitle>
             <DialogDescription className="py-4">
-              {store.game.actualAction.state === "INSIGHT_END" ? (
-                <p>
-                  Arremate os insights escolhidos até aqui. Caso não esteja
-                  satisfeito com o resultado, você pode fazer suas considerações
-                  e propor uma nova rodada, mas lembre-se que a contribuição de
-                  cada jogador tem um custo de 1000 pontos
-                </p>
-              ) : (
+              {/* {store.game.actualAction.state === "PROTOTYPE" ? ( */}
+              <p>
+                Até agora, você foi quem menos investiu nesse projeto. Faça a
+                sua parte investindo 30% do que dispõe em mãos. Você pode
+                definir como a solução definida será prototipada. Pode ser com
+                desenhos, maquetes, encenações ou o que a sua criatividade e a
+                realidade á sua volta permitir.
+              </p>
+              {/* ) : (
                 <p>
                   Busque um insight para resolver o problema na sua carta de
                   inspiração. Lembre-se um insight ainda não é uma solução, mas
                   um caminho possível para ser adotado.
                 </p>
-              )}
+              )} */}
             </DialogDescription>
           </DialogHeader>
 
@@ -105,24 +104,25 @@ export function InsightsPage() {
           <div className="max-w-72 w-full">
             {/* window top bar */}
             <div className="h-8 border-2 rounded-t-xl w-full bg-secondary border-b-0 flex justify-center relative items-center">
-              <p className="text-white text-xl">INSIGHTS</p>
+              <p className="text-white text-xl">PROTÓTIPO</p>
               <button className="absolute right-0 text-white mx-4 h-5 w-5 bg-border flex justify-center items-center font-bold">
                 <span className="mb-1">x</span>
               </button>
             </div>
 
             {/* window */}
-            <div className="flex w-full bg-accent border-2 rounded-b-xl p-6">
+            <div className="relative flex w-full bg-accent border-2 rounded-b-xl p-6">
               <div className="relative border-dashed border-[3px] rounded-xl overflow-hidden w-[236px] h-[347px]">
-                {store.game.actualAction.state === "INSIGHT_END" ? (
+                {store.game.actualAction.state === "PROTOTYPE" ? (
                   <div className="bg-slate-400 w-full h-full flex justify-center items-center flex-col border-[10px] border-secondary">
                     <img
                       src="/idea-hero-logo.svg"
                       alt="IDEA HERO"
                       className="h-16"
                     />
-                    <p className="text-base text-white">
-                      {store.game.owner.name} está escolhendo o insight!
+                    ajude {store.game.actualAction.activeUser.name} na
+                    <p className="text-base text-white text-center leading-3 mt-3">
+                      produção do protótipo, o tempo está contando
                     </p>
                   </div>
                 ) : (
@@ -132,6 +132,26 @@ export function InsightsPage() {
                   />
                 )}
               </div>
+              <div className="absolute -bottom-8 -right-8 bg-secondary rounded-full">
+                <CountdownCircleTimer
+                  key={1}
+                  size={60}
+                  isPlaying
+                  duration={120}
+                  colors={["#F26389", "#F7B801", "#A30000", "#A30000"]}
+                  colorsTime={[7, 5, 2, 0]}
+                >
+                  {({ remainingTime }) =>
+                    remainingTime > 0 ? (
+                      <span className="text-white text-xl">
+                        {remainingTime}
+                      </span>
+                    ) : (
+                      <span className="text-white text-base">PARE!</span>
+                    )
+                  }
+                </CountdownCircleTimer>
+              </div>
             </div>
             {/* end centralize window */}
           </div>
@@ -140,7 +160,7 @@ export function InsightsPage() {
         <div className="flex flex-col items-center gap-2">
           {store.isActive() ? (
             <>
-              {store.game.actualAction.state === "INSIGHT_END" &&
+              {/* {store.game.actualAction.state === "INSIGHT_END" &&
                 store.isOwner() && (
                   <Button className="relative" onClick={repeatRound}>
                     Mais uma rodada
@@ -148,14 +168,14 @@ export function InsightsPage() {
                       -1000
                     </span>
                   </Button>
-                )}
+                )} */}
               <Button onClick={finishSelection} className="w-36">
-                Terminar Jogada
+                Invista no protótipo
               </Button>
             </>
           ) : (
             <p className="text-center text-xl text-secondary">
-              esperando {store.game?.actualAction.activeUser.name}
+              {store.game?.actualAction.activeUser.name} está com o protótipo
             </p>
           )}
           <Button asChild variant={"secondary"} className="w-36">

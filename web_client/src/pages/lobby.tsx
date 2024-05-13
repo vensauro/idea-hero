@@ -3,21 +3,12 @@ import { Button } from "@/components/ui/button";
 import { UsersBar } from "@/components/users-bar/users-bar";
 import { socket } from "@/lib/socket";
 import { useGameStore } from "@/lib/store";
-import { useEffect, useRef } from "react";
+import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
 export function LobbyPage() {
   const store = useGameStore();
   const navigate = useNavigate();
-  const ref = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    ref.current?.scrollIntoView({
-      behavior: "auto",
-      block: "center",
-      inline: "center",
-    });
-  }, [store.game?.users]);
 
   function copyToClipboard() {
     navigator.clipboard.writeText(store.game?.code ?? "");

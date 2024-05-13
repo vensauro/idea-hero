@@ -108,6 +108,11 @@ export interface SolutionAdvocateGA extends GameAction {
   activeUser: GameUser;
 }
 
+export interface PrototypeGA extends GameAction {
+  state: "PROTOTYPE";
+  // activeUser: GameUser;
+}
+
 type GameActions =
   | ScenarioGA
   | ProblemsGA
@@ -117,4 +122,5 @@ type GameActions =
   | InsightEndGA
   | SolutionGA
   | SolutionSelectionGA
-  | SolutionAdvocateGA;
+  | SolutionAdvocateGA
+  | PrototypeGA;

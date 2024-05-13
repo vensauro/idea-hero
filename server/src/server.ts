@@ -35,10 +35,6 @@ export const server = async (PORT: number) => {
     handleSocket(socket, io);
     console.log("a user connected 📸");
 
-    socket.onAny((eventName, ...args) => {
-      console.log({ eventName, args }); // 'hello'
-    });
-
     socket.on("disconnect", () => {
       console.log("user disconnected");
     });

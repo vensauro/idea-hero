@@ -1,4 +1,14 @@
-import { group, max, random, replace, shift, sum, uid } from "radash";
+import {
+  draw,
+  group,
+  max,
+  min,
+  random,
+  replace,
+  shift,
+  sum,
+  uid,
+} from "radash";
 import { Server, Socket } from "socket.io";
 import type {
   ClientToServerEvents,
@@ -8,6 +18,7 @@ import type {
 } from "../../shared/socket";
 import {
   Game,
+  GameState,
   GameUser,
   InsightEndGA,
   InsightGA,
@@ -16,12 +27,16 @@ import {
   ProblemsEndGA,
   ProblemsGA,
   ProblemsInvestmentGA,
+  PrototypeGA,
   ScenarioGA,
+  SolutionAdvocateGA,
   SolutionGA,
+  SolutionSelectionGA,
   db,
 } from "./db";
 import { getRandomWord } from "./words";
 export type * from "../../shared/socket";
+import { writeFile } from "fs/promises";
 
 export function handleSocket(
   socket: Socket<
@@ -210,6 +225,7 @@ export function handleSocket(
       // endProblems,
       insights,
       endInsight,
+      solutions,
     ].flat();
 
     updateAndEmit(dbGame);
@@ -253,12 +269,58 @@ export function handleSocket(
     const game = db.get(socket.data.room);
     if (
       !game ||
-      (game.actualAction.state !== "PROBLEM" &&
-        game.actualAction.state !== "INSIGHT" &&
-        game.actualAction.state !== "PROBLEM_END" &&
-        game.actualAction.state !== "INSIGHT_END")
+      (
+        [
+          "PROBLEM",
+          "PROBLEM_END",
+          "INSIGHT",
+          "INSIGHT_END",
+          "SOLUTION",
+          "SOLUTION_SELECTION",
+          "SOLUTION_ADVOCATE",
+        ] as GameState[]
+      ).every((e) => game.actualAction.state !== e)
     ) {
       return;
+    }
+
+    if (game.actualAction.state === "INSIGHT_END") {
+      const userWithLessPoints = min(game.users, (e) => e.points);
+      const userWithMorePoints = max(game.users, (e) => e.points);
+
+      const solutionSelection = {
+        activeUser: userWithLessPoints,
+        state: "SOLUTION_SELECTION",
+        randomCard: 0,
+      } as SolutionSelectionGA;
+
+      const usersThatCanAdvocate = game.users.filter(
+        (e) => e.id !== userWithLessPoints?.id
+      );
+      const advocate = draw(usersThatCanAdvocate);
+      const solutionAdvocate = {
+        activeUser: advocate,
+        state: "SOLUTION_ADVOCATE",
+      } as SolutionAdvocateGA;
+
+      const prototype = {
+        state: "PROTOTYPE",
+        activeUser: userWithMorePoints,
+      } as PrototypeGA;
+
+      const lastSolutionIndex = game.actions.findLastIndex(
+        (e) => e.state === "SOLUTION"
+      );
+      game.actions.splice(
+        lastSolutionIndex + 1,
+        0,
+        solutionSelection,
+        solutionAdvocate,
+        prototype
+      );
+    }
+
+    if (game.actualAction.state === "SOLUTION_ADVOCATE") {
     }
 
     if (
@@ -450,30 +512,35 @@ export function handleSocket(
     updateAndEmit(game);
   });
 
-  socket.on("run_problem", () => {
-    const game = db.get(socket.data.room);
-    if (
-      !game ||
-      (game.actualAction.state !== "PROBLEM" &&
-        game.actualAction.state !== "INSIGHT" &&
-        game.actualAction.state !== "PROBLEM_END" &&
-        game.actualAction.state !== "INSIGHT_END")
-    ) {
-      return;
-    }
+  // socket.on("run_problem", () => {
+  //   const game = db.get(socket.data.room);
+  //   if (
+  //     !game ||
+  //     (game.actualAction.state !== "PROBLEM" &&
+  //       game.actualAction.state !== "INSIGHT" &&
+  //       game.actualAction.state !== "PROBLEM_END" &&
+  //       game.actualAction.state !== "INSIGHT_END")
+  //   ) {
+  //     return;
+  //   }
 
-    if (
-      game.actualAction.state === "PROBLEM" ||
-      game.actualAction.state === "INSIGHT"
-    ) {
-      const user = game.users.find((e) => e.name === socket.data.name);
-      game.users = changeUserPoints(game, -1000, user!);
-    }
+  //   if (
+  //     game.actualAction.state === "PROBLEM" ||
+  //     game.actualAction.state === "INSIGHT"
+  //   ) {
+  //     const user = game.users.find((e) => e.name === socket.data.name);
+  //     game.users = changeUserPoints(game, -1000, user!);
+  //   }
 
-    game.actions[game.actionIndex] = game.actualAction;
-    game.actionIndex = game.actionIndex + 1;
-    game.actualAction = game.actions[game.actionIndex];
+  //   game.actions[game.actionIndex] = game.actualAction;
+  //   game.actionIndex = game.actionIndex + 1;
+  //   game.actualAction = game.actions[game.actionIndex];
 
-    updateAndEmit(game);
+  //   updateAndEmit(game);
+  // });
+
+  socket.onAny((eventName, ...args) => {
+    console.log({ eventName, args });
+    writeFile("./db-cache.json", JSON.stringify([...db]));
   });
 }

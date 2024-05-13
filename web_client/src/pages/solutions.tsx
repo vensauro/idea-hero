@@ -1,4 +1,4 @@
-import { ProblemsGA } from "#/game";
+import { SolutionGA } from "#/game";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -17,30 +17,27 @@ import { useGameStore } from "@/lib/store";
 import { useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
-export function InsightsPage() {
+export function SolutionsPage() {
   const store = useGameStore();
   const navigate = useNavigate();
 
-  const action = store.game?.actualAction as ProblemsGA;
+  const action = store.game?.actualAction as SolutionGA;
   const cardUrl = `/ia_cards/${cardsUrls[action.randomCard]}`;
 
   function finishSelection() {
     socket.emit("run_problem");
   }
 
-  function repeatRound() {
-    socket.emit("new_insight_round");
-  }
-
   useEffect(() => {
-    if (store.game?.actualAction.state === "SOLUTION") {
-      navigate("/solutions");
+    if (store.game?.actualAction.state === "PROTOTYPE") {
+      navigate("/prototype");
     }
   }, [navigate, store.game?.actualAction.state]);
 
   if (
-    store.game?.actualAction.state !== "INSIGHT_END" &&
-    store.game?.actualAction.state !== "INSIGHT"
+    store.game?.actualAction.state !== "SOLUTION" &&
+    store.game?.actualAction.state !== "SOLUTION_SELECTION" &&
+    store.game?.actualAction.state !== "SOLUTION_ADVOCATE"
   )
     return;
 
@@ -76,18 +73,22 @@ export function InsightsPage() {
           <DialogHeader>
             <DialogTitle>Instruções</DialogTitle>
             <DialogDescription className="py-4">
-              {store.game.actualAction.state === "INSIGHT_END" ? (
+              {store.game.actualAction.state === "SOLUTION" ? (
                 <p>
-                  Arremate os insights escolhidos até aqui. Caso não esteja
-                  satisfeito com o resultado, você pode fazer suas considerações
-                  e propor uma nova rodada, mas lembre-se que a contribuição de
-                  cada jogador tem um custo de 1000 pontos
+                  Transforme o insight escolhido em solução, utilize as ideias
+                  já existente dos outros jogadores
+                </p>
+              ) : store.game.actualAction.state === "SOLUTION_SELECTION" ? (
+                <p>
+                  Você foi o que mais investiu ao decorrer do caminho, assim
+                  investindo metade dos seus pontos você irá propor a solução
+                  definitiva!
                 </p>
               ) : (
                 <p>
-                  Busque um insight para resolver o problema na sua carta de
-                  inspiração. Lembre-se um insight ainda não é uma solução, mas
-                  um caminho possível para ser adotado.
+                  Você irá assumir o papel de advogado do diabo! Questione a
+                  solução proposta para que vocês entendam os problemas
+                  possíveis
                 </p>
               )}
             </DialogDescription>
@@ -105,7 +106,7 @@ export function InsightsPage() {
           <div className="max-w-72 w-full">
             {/* window top bar */}
             <div className="h-8 border-2 rounded-t-xl w-full bg-secondary border-b-0 flex justify-center relative items-center">
-              <p className="text-white text-xl">INSIGHTS</p>
+              <p className="text-white text-xl">SOLUÇÃO</p>
               <button className="absolute right-0 text-white mx-4 h-5 w-5 bg-border flex justify-center items-center font-bold">
                 <span className="mb-1">x</span>
               </button>
@@ -114,22 +115,24 @@ export function InsightsPage() {
             {/* window */}
             <div className="flex w-full bg-accent border-2 rounded-b-xl p-6">
               <div className="relative border-dashed border-[3px] rounded-xl overflow-hidden w-[236px] h-[347px]">
-                {store.game.actualAction.state === "INSIGHT_END" ? (
+                {store.game.actualAction.state === "SOLUTION" ? (
+                  <img
+                    src={cardUrl}
+                    className="aspect-[180/271] object-cover"
+                  />
+                ) : (
                   <div className="bg-slate-400 w-full h-full flex justify-center items-center flex-col border-[10px] border-secondary">
                     <img
                       src="/idea-hero-logo.svg"
                       alt="IDEA HERO"
                       className="h-16"
                     />
-                    <p className="text-base text-white">
-                      {store.game.owner.name} está escolhendo o insight!
+                    <p className="text-base text-white text-center leading-3 mt-3">
+                      {store.game.actualAction.state === "SOLUTION_SELECTION"
+                        ? `${store.game.owner.name} está definindo a solução`
+                        : `${store.game.owner.name} é o "advogado do diabo"`}
                     </p>
                   </div>
-                ) : (
-                  <img
-                    src={cardUrl}
-                    className="aspect-[180/271] object-cover"
-                  />
                 )}
               </div>
             </div>
@@ -140,22 +143,14 @@ export function InsightsPage() {
         <div className="flex flex-col items-center gap-2">
           {store.isActive() ? (
             <>
-              {store.game.actualAction.state === "INSIGHT_END" &&
-                store.isOwner() && (
-                  <Button className="relative" onClick={repeatRound}>
-                    Mais uma rodada
-                    <span className="absolute top-0 right-0 bg-secondary leading-[0rem] -mt-3 -mr-6 h-4 p-2 rounded-md">
-                      -1000
-                    </span>
-                  </Button>
-                )}
               <Button onClick={finishSelection} className="w-36">
                 Terminar Jogada
               </Button>
             </>
           ) : (
             <p className="text-center text-xl text-secondary">
-              esperando {store.game?.actualAction.activeUser.name}
+              É a vez de {store.game?.actualAction.activeUser.name} ajudar na
+              construção da solução
             </p>
           )}
           <Button asChild variant={"secondary"} className="w-36">

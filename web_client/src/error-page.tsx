@@ -1,4 +1,6 @@
-import { useRouteError } from "react-router-dom";
+import { Link, useRouteError } from "react-router-dom";
+import { buttonVariants } from "./components/ui/button";
+import { cn } from "./lib/utils";
 
 export function ErrorPage() {
   const error = useRouteError();
@@ -39,6 +41,16 @@ export function ErrorPage() {
               (error as Error).message}
           </i>
         </p>
+
+        <Link
+          className={cn(
+            buttonVariants({ variant: "default" }),
+            "border-t-[3px] border-l-[5px] border-b-[6px] border-r-[8px]"
+          )}
+          to="/"
+        >
+          Voltar ao Inicio
+        </Link>
       </div>
     </div>
   );
