@@ -1,56 +1,78 @@
+import { GameState } from "#/game";
 import { Button } from "@/components/ui/button";
-import { UsersBar } from "@/components/users-bar/users-bar";
-import { useGameStore } from "@/lib/store";
-import { useNavigate } from "react-router-dom";
+import { cn } from "@/lib/utils";
+import { Minus, Square, X } from "lucide-react";
+import { useNavigate, useParams } from "react-router-dom";
+
+const content: Record<
+  GameState,
+  {
+    title: string;
+    body: string;
+  }
+> = {
+  LOBBY: { title: "", body: "" },
+  SCENARIO: { title: "", body: "" },
+  PROBLEM: { title: "PROBLEMA", body: "PROBLEMA BODY" },
+  PROBLEM_END: { title: "", body: "" },
+  INSIGHT: { title: "", body: "" },
+  INSIGHT_END: {
+    title: "INSIGHTS",
+    body: `Arremate os insights escolhidos até aqui. Caso não esteja satisfeito
+  com o resultado, você pode fazer suas considerações e propor uma
+  nova rodada, mas lembre-se que a contribuição de cada jogador tem um
+  custo de 1000 pontos`,
+  },
+  SOLUTION: { title: "", body: "" },
+  SOLUTION_SELECTION: { title: "", body: "" },
+  SOLUTION_ADVOCATE: { title: "", body: "" },
+  PROTOTYPE: { title: "", body: "" },
+  PILOT: { title: "", body: "" },
+  MARKETING: { title: "", body: "" },
+  SALES: { title: "", body: "" },
+  ENDED: { title: "", body: "" },
+};
 
 export function BoardDetailPage() {
-  const store = useGameStore();
-
   const navigate = useNavigate();
+  const { state } = useParams();
+
+  const gameState = (state?.toUpperCase() ?? "PROBLEM") as GameState;
+
   return (
-    <main className="min-h-screen flex flex-col ">
-      <UsersBar
-        activeUser={store.game?.actualAction.activeUser}
-        users={store.game?.users}
-      />
-      <div>
-        <a
-          href="#"
-          className="relative block overflow-hidden rounded-lg border border-gray-100 p-4 sm:p-6 lg:p-8"
-        >
-          <span className="absolute inset-x-0 bottom-0 h-2 bg-gradient-to-r from-green-300 via-blue-500 to-purple-600"></span>
-
-          <h3 className="text-lg font-bold text-gray-900 sm:text-xl">
-            Problemas
-          </h3>
-
-          <div className="mt-4">
-            <p className="text-pretty text-sm text-gray-500">
-              A partir do sorteio de cartas, os jogadores seguintes descrevem
-              problemas ou detalhes de um problema no cenário. O problema
-              principal é escolhido por investimento
+    <div>
+      <div
+        className={cn(
+          "border-2 grid w-full max-w-lg gap-4 bg-background shadow-lg duration-200 sm:rounded-lg min-w-96"
+        )}
+      >
+        <div>
+          <div className="border-2 flex items-center p-1 bg-primary justify-between">
+            <p className="text-base text-white leading-3 mx-2">
+              {content[gameState].title}
+              {"props.title"}
             </p>
+            <div className="flex items-center gap-1">
+              <div className="bg-white border-2">
+                <Minus className="h-4 w-4" />
+              </div>
+              <div className="bg-white border-2">
+                <Square className="h-4 w-4" />
+              </div>
+              <div className="bg-white border-2 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground">
+                <X className="h-4 w-4" />
+                <span className="sr-only">Close</span>
+              </div>
+            </div>
           </div>
-
-          {/* <dl className="mt-6 flex gap-4 sm:gap-6">
-            <div className="flex flex-col-reverse">
-              <dt className="text-sm font-medium text-gray-600">Published</dt>
-              <dd className="text-xs text-gray-500">31st June, 2021</dd>
-            </div>
-
-            <div className="flex flex-col-reverse">
-              <dt className="text-sm font-medium text-gray-600">
-                Reading time
-              </dt>
-              <dd className="text-xs text-gray-500">3 minute</dd>
-            </div>
-          </dl> */}
-        </a>
-
-        <div className="flex justify-evenly mt-4">
+        </div>
+        <div className="px-4 text-base leading-3">
+          <p>{content[gameState].body}</p>
+        </div>
+        <div className="flex justify-end my-2 px-9">
           <Button onClick={() => navigate(-1)}>Voltar</Button>
         </div>
       </div>
-    </main>
+    </div>
   );
 }

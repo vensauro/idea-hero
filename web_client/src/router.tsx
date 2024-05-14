@@ -1,19 +1,21 @@
 import { createBrowserRouter } from "react-router-dom";
-import { StartGamePage } from "./pages/start-game";
 import { ErrorPage } from "./error-page";
-import { EnterGamePage } from "./pages/enter-game";
-import { LobbyPage } from "./pages/lobby";
-import { BoardDetailPage } from "./pages/board-detail";
 import { AvatarsPage } from "./pages/avatars";
+import { BoardPage } from "./pages/board";
+import { BoardDetailPage } from "./pages/board-detail";
+import { BoardIndex } from "./pages/board-index";
+import { EnterGamePage } from "./pages/enter-game";
+import { HomePage } from "./pages/home";
+import { InsightsPage } from "./pages/insights";
+import { LobbyPage } from "./pages/lobby";
+import { ProblemFinishPage } from "./pages/problem-end";
+import { ProblemInvestment } from "./pages/problem-investment";
+import { ProblemsPage } from "./pages/problems";
+import { PrototypePage } from "./pages/prototype";
 import { Root } from "./pages/root";
 import { ScenarioPage } from "./pages/scenario";
-import { HomePage } from "./pages/home";
-import { ProblemsPage } from "./pages/problems";
-import { ProblemInvestment } from "./pages/problem-investment";
-import { ProblemFinishPage } from "./pages/problem-end";
-import { InsightsPage } from "./pages/insights";
 import { SolutionsPage } from "./pages/solutions";
-import { PrototypePage } from "./pages/prototype";
+import { StartGamePage } from "./pages/start-game";
 
 export const router = createBrowserRouter([
   {
@@ -71,11 +73,17 @@ export const router = createBrowserRouter([
       },
       {
         path: "/board",
-        element: <BoardDetailPage />,
-      },
-      {
-        path: "/board/problem",
-        element: <BoardDetailPage />,
+        element: <BoardPage />,
+        children: [
+          {
+            index: true,
+            element: <BoardIndex />,
+          },
+          {
+            path: ":state",
+            element: <BoardDetailPage />,
+          },
+        ],
       },
     ],
   },

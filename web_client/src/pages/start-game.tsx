@@ -53,7 +53,7 @@ export function StartGamePage() {
           <div className="h-8 border-2 rounded-t-md w-full bg-secondary border-b-0 flex justify-end items-center">
             <button
               className="text-white mx-4 h-5 w-5 bg-border flex justify-center items-center font-bold"
-              onClick={() => navigate(-1)}
+              onClick={() => navigate("/")}
             >
               <span className="mb-1">x</span>
             </button>
