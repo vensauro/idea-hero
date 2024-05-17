@@ -49,9 +49,9 @@ export function SolutionsPage() {
       />
 
       <Dialog defaultOpen={store.isActive()} key={store.game?.actionIndex}>
-        <div className="flex justify-end">
+        <div className="relative">
           <DialogTrigger asChild>
-            <Button variant="ghost" className="text-border">
+            <Button variant="ghost" className="text-border absolute right-0">
               <svg
                 width="15"
                 height="15"
@@ -107,9 +107,6 @@ export function SolutionsPage() {
             {/* window top bar */}
             <div className="h-8 border-2 rounded-t-xl w-full bg-secondary border-b-0 flex justify-center relative items-center">
               <p className="text-white text-xl">SOLUÇÃO</p>
-              <button className="absolute right-0 text-white mx-4 h-5 w-5 bg-border flex justify-center items-center font-bold">
-                <span className="mb-1">x</span>
-              </button>
             </div>
 
             {/* window */}

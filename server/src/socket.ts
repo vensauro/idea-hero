@@ -22,12 +22,15 @@ import {
   GameUser,
   InsightEndGA,
   InsightGA,
+  MarketingGA,
+  PilotGA,
   ProblemInvestmentInvested,
   ProblemInvestmentItem,
   ProblemsEndGA,
   ProblemsGA,
   ProblemsInvestmentGA,
   PrototypeGA,
+  SalesGA,
   ScenarioGA,
   SolutionAdvocateGA,
   SolutionGA,
@@ -87,6 +90,7 @@ export function handleSocket(
       actions: [],
       owner: user,
       users: [user],
+      teamPoints: 0,
       actualAction: { activeUser: user, state: "SCENARIO", scenario: null },
       actionIndex: 0,
       state: "LOBBY",
@@ -278,6 +282,8 @@ export function handleSocket(
           "SOLUTION",
           "SOLUTION_SELECTION",
           "SOLUTION_ADVOCATE",
+          "PROTOTYPE",
+          "PILOT",
         ] as GameState[]
       ).every((e) => game.actualAction.state !== e)
     ) {
@@ -306,6 +312,8 @@ export function handleSocket(
       const prototype = {
         state: "PROTOTYPE",
         activeUser: userWithMorePoints,
+        started: false,
+        step: 1,
       } as PrototypeGA;
 
       const lastSolutionIndex = game.actions.findLastIndex(
@@ -321,6 +329,7 @@ export function handleSocket(
     }
 
     if (game.actualAction.state === "SOLUTION_ADVOCATE") {
+      game.teamPoints = sum(game.users, (u) => u.points);
     }
 
     if (
@@ -329,6 +338,50 @@ export function handleSocket(
     ) {
       const user = game.users.find((e) => e.name === socket.data.name);
       game.users = changeUserPoints(game, -1000, user!);
+    }
+
+    if (game.actualAction.state === "PROTOTYPE") {
+      game.actualAction.investment = game.teamPoints * 0.2;
+      game.teamPoints -= game.actualAction.investment;
+      game.users.map((u) => ({
+        ...u,
+        points: game.teamPoints / game.users.length,
+      }));
+
+      const newState = {
+        activeUser: game.owner,
+        passed: Boolean(random(0, 1)),
+        state: "PILOT",
+        value: random(1, 6),
+        started: "idle",
+      } as PilotGA;
+
+      game.actions.splice(game.actionIndex + 1, 0, newState);
+    }
+
+    if (game.actualAction.state === "PILOT") {
+      if (game.actualAction.passed) {
+        game.actions.splice(game.actionIndex + 1, 0, {
+          activeUser: game.owner,
+          state: "MARKETING",
+          investment: [],
+          productValues: [],
+        } as MarketingGA);
+      } else {
+        game.actions.splice(game.actionIndex + 1, 0, {
+          activeUser: game.owner,
+          state: "PROTOTYPE",
+          started: false,
+          step: 1,
+        } as PrototypeGA);
+      }
+    }
+
+    if (game.actualAction.state === "MARKETING") {
+      game.actions.splice(game.actionIndex + 1, 0, {
+        activeUser: game.owner,
+        state: "SALES",
+      } as SalesGA);
     }
 
     game.actions[game.actionIndex] = game.actualAction;
@@ -360,7 +413,7 @@ export function handleSocket(
     }
 
     game.users = changeUserPoints(game, -value, user!);
-    game.users = changeUserPoints(game, +value, toUser!);
+    // game.users = changeUserPoints(game, +value, toUser!);
 
     const investment: ProblemInvestmentItem = {
       action: "invested",
@@ -512,32 +565,107 @@ export function handleSocket(
     updateAndEmit(game);
   });
 
-  // socket.on("run_problem", () => {
-  //   const game = db.get(socket.data.room);
-  //   if (
-  //     !game ||
-  //     (game.actualAction.state !== "PROBLEM" &&
-  //       game.actualAction.state !== "INSIGHT" &&
-  //       game.actualAction.state !== "PROBLEM_END" &&
-  //       game.actualAction.state !== "INSIGHT_END")
-  //   ) {
-  //     return;
-  //   }
+  socket.on("start_prototype", (step = 1) => {
+    const game = db.get(socket.data.room);
+    if (!game || game.actualAction.state !== "PROTOTYPE") {
+      return;
+    }
 
-  //   if (
-  //     game.actualAction.state === "PROBLEM" ||
-  //     game.actualAction.state === "INSIGHT"
-  //   ) {
-  //     const user = game.users.find((e) => e.name === socket.data.name);
-  //     game.users = changeUserPoints(game, -1000, user!);
-  //   }
+    game.actualAction.started = true;
+    game.actualAction.step = step;
 
-  //   game.actions[game.actionIndex] = game.actualAction;
-  //   game.actionIndex = game.actionIndex + 1;
-  //   game.actualAction = game.actions[game.actionIndex];
+    updateAndEmit(game);
+  });
 
-  //   updateAndEmit(game);
-  // });
+  socket.on("run_project_test", () => {
+    const game = db.get(socket.data.room);
+    if (!game || game.actualAction.state !== "PILOT") {
+      return;
+    }
+
+    if (game.actualAction.started === "dice")
+      game.actualAction.started = "passed";
+    else if (game.actualAction.started === "idle")
+      game.actualAction.started = "dice";
+
+    updateAndEmit(game);
+  });
+
+  socket.on("product_value", ({ value }) => {
+    const game = db.get(socket.data.room);
+    if (!game || game.actualAction.state !== "MARKETING") {
+      return;
+    }
+
+    const activeUser = game.users.find((e) => e.id === socket.data.id);
+
+    if (!activeUser) {
+      return;
+    }
+
+    const userOldValue = game.actualAction.productValues.find(
+      (e) => e.from.id === activeUser.id
+    );
+
+    if (userOldValue) {
+      replace(
+        game.actualAction.productValues,
+        {
+          from: userOldValue.from,
+          value,
+        },
+        (u) => u.from.id === socket.data.id
+      );
+    } else {
+      game.actualAction.productValues.push({
+        from: activeUser,
+        value,
+      });
+    }
+
+    updateAndEmit(game);
+  });
+
+  socket.on("marketing_investment", ({ values }, callback) => {
+    const game = db.get(socket.data.room);
+    if (!game || game.actualAction.state !== "MARKETING") {
+      return;
+    }
+
+    const activeUser = game.users.find((e) => e.id === socket.data.id);
+
+    if (
+      !activeUser ||
+      game.actualAction.productValues.length !== game.users.length
+    ) {
+      return;
+    }
+
+    function randomMultiplier() {
+      const min = 1;
+      const max = 10_000;
+
+      const randomValue = Math.random() * (max - min + 1) + min;
+
+      return randomValue;
+    }
+
+    const gameValue =
+      sum(game.actualAction.productValues, (e) => e.value) /
+      game.actualAction.productValues.length;
+
+    const marketingResult = sum(
+      values.map((e) => gameValue * e.value * e.multiplier * randomMultiplier())
+    );
+
+    const startedValue = 30_000 * game.users.length;
+    const investedValue = startedValue - sum(game.users, (e) => e.points);
+    callback({
+      investedValue,
+      marketingResult,
+      win: marketingResult > investedValue,
+    });
+  });
 
   socket.onAny((eventName, ...args) => {
     console.log({ eventName, args });

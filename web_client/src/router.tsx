@@ -16,6 +16,8 @@ import { Root } from "./pages/root";
 import { ScenarioPage } from "./pages/scenario";
 import { SolutionsPage } from "./pages/solutions";
 import { StartGamePage } from "./pages/start-game";
+import { PilotPage } from "./pages/pilot";
+import { MarketingPage } from "./pages/marketing";
 
 export const router = createBrowserRouter([
   {
@@ -70,6 +72,14 @@ export const router = createBrowserRouter([
       {
         path: "/prototype",
         element: <PrototypePage />,
+      },
+      {
+        path: "/pilot",
+        element: <PilotPage />,
+      },
+      {
+        path: "/marketing",
+        element: <MarketingPage />,
       },
       {
         path: "/board",

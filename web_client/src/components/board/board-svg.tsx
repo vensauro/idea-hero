@@ -63,6 +63,7 @@ export function BoardSvg() {
         <g id="g17">
           <path
             className="fill-primary stroke-[0.264583]  hover:fill-border"
+            onClick={() => navigate("/board/insight")}
             d="m 105.63955,98.153182 v 46.354278 l 33.22588,-33.22588 c -9.10037,-8.28693 -20.91896,-12.956755 -33.22588,-13.128398 z"
             id="path2"
           />
@@ -88,6 +89,7 @@ export function BoardSvg() {
         <g id="g24">
           <path
             className="fill-primary stroke-[0.264583]  hover:fill-border"
+            onClick={() => navigate("/board/solution")}
             d="m 139.76976,112.18592 -33.22588,33.22588 h 48.62753 c -0.78539,-12.61488 -6.28261,-24.47401 -15.40165,-33.22588 z"
             id="path4"
           />
@@ -114,6 +116,7 @@ export function BoardSvg() {
           <path
             className="fill-primary stroke-[0.264583]  hover:fill-border"
             // style="fill:#cccccc;stroke-width:0.264583"
+            onClick={() => navigate("/board/prototype")}
             d="m 106.5444,146.69079 35.72392,35.72392 c 8.44354,-9.27731 13.12327,-21.37034 13.12426,-33.91473 -0.0324,-0.60379 -0.0756,-1.20695 -0.12971,-1.80919 z"
             id="path8"
           />
@@ -140,6 +143,7 @@ export function BoardSvg() {
           <path
             className="fill-primary stroke-[0.264583]  hover:fill-border"
             // style="fill:#cccccc;stroke-width:0.264583"
+            onClick={() => navigate("/board/pilot")}
             d="m 105.63955,147.59461 v 51.28214 c 13.5169,-0.1741 26.39709,-5.77164 35.74665,-15.53497 z"
             id="path9"
           />
@@ -166,6 +170,7 @@ export function BoardSvg() {
           <path
             className="fill-primary stroke-[0.264583]  hover:fill-border"
             // style="fill:#cccccc;stroke-width:0.264583"
+            onClick={() => navigate("/board/marketing")}
             d="m 104.36056,147.59513 -35.67483,35.67482 c 9.325145,9.76112 22.176825,15.3726 35.67483,15.57683 z"
             id="path10"
           />
@@ -192,6 +197,7 @@ export function BoardSvg() {
           <path
             className="fill-primary stroke-[0.264583]  hover:fill-border"
             // style="fill:#cccccc;stroke-width:0.264583"
+            onClick={() => navigate("/board/sales")}
             d="m 54.737227,146.69079 c -0.05409,0.60224 -0.09733,1.2054 -0.129707,1.80919 0.02677,12.53407 4.723695,24.6083 13.173872,33.86563 l 35.674828,-35.67482 z"
             id="path5"
           />
@@ -218,6 +224,7 @@ export function BoardSvg() {
           <path
             className="fill-primary stroke-[0.264583]  hover:fill-border"
             // style="fill:#cccccc;stroke-width:0.264583"
+            onClick={() => navigate("/board/scenario")}
             d="m 70.230339,112.18592 c -9.119035,8.75187 -14.616258,20.611 -15.401644,33.22588 h 48.628035 z"
             id="path3"
           />

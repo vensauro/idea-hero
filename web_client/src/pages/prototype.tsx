@@ -7,7 +7,6 @@ import {
   DialogDescription,
   DialogFooter,
   DialogHeader,
-  DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { UsersBar } from "@/components/users-bar/users-bar";
@@ -15,32 +14,31 @@ import { cardsUrls } from "@/lib/cards_urls";
 import { socket } from "@/lib/socket";
 import { useGameStore } from "@/lib/store";
 import { useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
 import { CountdownCircleTimer } from "react-countdown-circle-timer";
+import { Link, useNavigate } from "react-router-dom";
 
 export function PrototypePage() {
   const store = useGameStore();
   const navigate = useNavigate();
 
+  function startPrototype() {
+    socket.emit("start_prototype", 1);
+  }
+
   const action = store.game?.actualAction as ProblemsGA;
   const cardUrl = `/ia_cards/${cardsUrls[action.randomCard]}`;
-  console.log(store.game?.actualAction);
 
   function finishSelection() {
     socket.emit("run_problem");
   }
 
   useEffect(() => {
-    if (store.game?.actualAction.state === "SOLUTION") {
-      navigate("/solutions");
+    if (store.game?.actualAction.state === "PILOT") {
+      navigate("/pilot");
     }
   }, [navigate, store.game?.actualAction.state]);
 
-  if (
-    store.game?.actualAction.state !== "PROTOTYPE" &&
-    store.game?.actualAction.state !== "INSIGHT"
-  )
-    return;
+  if (store.game?.actualAction.state !== "PROTOTYPE") return;
 
   return (
     <main className="min-h-screen flex flex-col ">
@@ -49,7 +47,11 @@ export function PrototypePage() {
         users={store.game?.users}
       />
 
-      <Dialog defaultOpen={store.isActive()} key={store.game?.actionIndex}>
+      <Dialog
+        defaultOpen={store.isActive()}
+        key={store.game?.actionIndex}
+        onOpenChange={(opened) => opened === false && startPrototype()}
+      >
         <div className="flex justify-end">
           <DialogTrigger asChild>
             <Button variant="ghost" className="text-border">
@@ -70,44 +72,39 @@ export function PrototypePage() {
             </Button>
           </DialogTrigger>
         </div>
-        <DialogContent className="sm:max-w-[425px]">
+        <DialogContent className="sm:max-w-[425px]" title="Instruções">
           <DialogHeader>
-            <DialogTitle>Instruções</DialogTitle>
             <DialogDescription className="py-4">
-              {/* {store.game.actualAction.state === "PROTOTYPE" ? ( */}
               <p>
                 Até agora, você foi quem menos investiu nesse projeto. Faça a
-                sua parte investindo 30% do que dispõe em mãos. Você pode
-                definir como a solução definida será prototipada. Pode ser com
-                desenhos, maquetes, encenações ou o que a sua criatividade e a
-                realidade á sua volta permitir.
+                sua parte investindo 20% dos pontos da mesa. Você pode definir
+                como a solução definida será prototipada. Pode ser com desenhos,
+                maquetes, encenações ou o que a sua criatividade e a realidade á
+                sua volta permitir.
               </p>
-              {/* ) : (
-                <p>
-                  Busque um insight para resolver o problema na sua carta de
-                  inspiração. Lembre-se um insight ainda não é uma solução, mas
-                  um caminho possível para ser adotado.
-                </p>
-              )} */}
             </DialogDescription>
           </DialogHeader>
 
           <DialogFooter>
             <DialogClose asChild>
-              <Button type="submit">Continuar</Button>
+              <Button type="submit" onClick={startPrototype}>
+                Continuar
+              </Button>
             </DialogClose>
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      <div className="flex justify-center">
+        <span className="text-white text-base bg-secondary leading-[0rem] -mt-3 -mr-6 h-4 p-2 rounded-md">
+          pontos totais: {store.game.teamPoints}
+        </span>
+      </div>
       <div>
         <div className="flex justify-center my-4">
           <div className="max-w-72 w-full">
             {/* window top bar */}
             <div className="h-8 border-2 rounded-t-xl w-full bg-secondary border-b-0 flex justify-center relative items-center">
               <p className="text-white text-xl">PROTÓTIPO</p>
-              <button className="absolute right-0 text-white mx-4 h-5 w-5 bg-border flex justify-center items-center font-bold">
-                <span className="mb-1">x</span>
-              </button>
             </div>
 
             {/* window */}
@@ -136,8 +133,9 @@ export function PrototypePage() {
                 <CountdownCircleTimer
                   key={1}
                   size={60}
-                  isPlaying
+                  isPlaying={store.game.actualAction.started}
                   duration={120}
+                  onComplete={() => {}}
                   colors={["#F26389", "#F7B801", "#A30000", "#A30000"]}
                   colorsTime={[7, 5, 2, 0]}
                 >
@@ -169,8 +167,11 @@ export function PrototypePage() {
                     </span>
                   </Button>
                 )} */}
-              <Button onClick={finishSelection} className="w-36">
-                Invista no protótipo
+              <Button onClick={finishSelection} className="w-36 relative">
+                <span className="absolute top-0 right-0 bg-secondary leading-[0rem] -mt-3 -mr-6 h-4 p-2 rounded-md">
+                  -{store.game.teamPoints * 0.2}
+                </span>
+                Finalizar protótipo
               </Button>
             </>
           ) : (

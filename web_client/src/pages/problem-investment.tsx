@@ -52,7 +52,7 @@ export function ProblemInvestment() {
 
   return (
     <div>
-      <h1 className="scroll-m-20 text-4xl font-extrabold tracking-tight lg:text-5xl text-center bg-primary text-white">
+      <h1 className="scroll-m-20 text-4xl font-extrabold tracking-tight lg:text-5xl text-center bg-primary text-white mb-6">
         Problema
       </h1>
       <div className="flex-1 flex items-center justify-center min-h-[calc(100vh-120px)]">

@@ -14,12 +14,18 @@ import { UsersBar } from "@/components/users-bar/users-bar";
 import { cardsUrls } from "@/lib/cards_urls";
 import { socket } from "@/lib/socket";
 import { useGameStore } from "@/lib/store";
-import { useEffect } from "react";
+import { cn } from "@/lib/utils";
+import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
 export function InsightsPage() {
   const store = useGameStore();
   const navigate = useNavigate();
+  const [flipCard, setFlipCard] = useState(false);
+
+  useEffect(() => {
+    setTimeout(() => setFlipCard(true), 1500);
+  }, []);
 
   const action = store.game?.actualAction as ProblemsGA;
   const cardUrl = `/ia_cards/${cardsUrls[action.randomCard]}`;
@@ -52,9 +58,9 @@ export function InsightsPage() {
       />
 
       <Dialog defaultOpen={store.isActive()} key={store.game?.actionIndex}>
-        <div className="flex justify-end">
+        <div className="relative">
           <DialogTrigger asChild>
-            <Button variant="ghost" className="text-border">
+            <Button variant="ghost" className="text-border absolute right-0">
               <svg
                 width="15"
                 height="15"
@@ -106,14 +112,18 @@ export function InsightsPage() {
             {/* window top bar */}
             <div className="h-8 border-2 rounded-t-xl w-full bg-secondary border-b-0 flex justify-center relative items-center">
               <p className="text-white text-xl">INSIGHTS</p>
-              <button className="absolute right-0 text-white mx-4 h-5 w-5 bg-border flex justify-center items-center font-bold">
-                <span className="mb-1">x</span>
-              </button>
             </div>
 
             {/* window */}
             <div className="flex w-full bg-accent border-2 rounded-b-xl p-6">
-              <div className="relative border-dashed border-[3px] rounded-xl overflow-hidden w-[236px] h-[347px]">
+              <div
+                className={cn(
+                  "border-dashed border-[3px] rounded-xl overflow-hidden ",
+                  "w-[236px] h-[347px]",
+                  "group relative",
+                  flipCard && "is-flipped"
+                )}
+              >
                 {store.game.actualAction.state === "INSIGHT_END" ? (
                   <div className="bg-slate-400 w-full h-full flex justify-center items-center flex-col border-[10px] border-secondary">
                     <img
@@ -126,10 +136,32 @@ export function InsightsPage() {
                     </p>
                   </div>
                 ) : (
-                  <img
-                    src={cardUrl}
-                    className="aspect-[180/271] object-cover"
-                  />
+                  <>
+                    <div
+                      className={cn(
+                        "bg-slate-400 border-[10px] border-secondary",
+                        "flex flex-col justify-center items-center",
+                        "absolute top-0 left-0 w-full h-full",
+                        "[backface-visibility:hidden] transition-all",
+                        "group-[.is-flipped]:[transform:rotateY(180deg)]"
+                      )}
+                    >
+                      <img
+                        src="/idea-hero-logo.svg"
+                        alt="IDEA HERO"
+                        className="h-16"
+                      />
+                    </div>
+                    <img
+                      src={cardUrl}
+                      className={cn(
+                        "aspect-[180/271] object-cover object-center",
+                        "absolute top-0 left-0 w-full h-full",
+                        "[transform:rotateY(180deg)] transition-all [backface-visibility:hidden]",
+                        "group-[.is-flipped]:[transform:rotateY(0deg)]"
+                      )}
+                    />
+                  </>
                 )}
               </div>
             </div>
@@ -139,7 +171,7 @@ export function InsightsPage() {
 
         <div className="flex flex-col items-center gap-2">
           {store.isActive() ? (
-            <>
+            <div className="flex gap-6">
               {store.game.actualAction.state === "INSIGHT_END" &&
                 store.isOwner() && (
                   <Button className="relative" onClick={repeatRound}>
@@ -152,7 +184,7 @@ export function InsightsPage() {
               <Button onClick={finishSelection} className="w-36">
                 Terminar Jogada
               </Button>
-            </>
+            </div>
           ) : (
             <p className="text-center text-xl text-secondary">
               esperando {store.game?.actualAction.activeUser.name}

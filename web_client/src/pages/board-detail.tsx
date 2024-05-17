@@ -11,11 +11,17 @@ const content: Record<
     body: string;
   }
 > = {
+  SCENARIO: { title: "Cenário", body: "" },
+  PROBLEM: { title: "Problema", body: "PROBLEMA BODY" },
+  SOLUTION: { title: "Solução", body: "" },
+  INSIGHT: { title: "Insights", body: "" },
+  PROTOTYPE: { title: "Protótipo", body: "" },
+  PILOT: { title: "Piloto", body: "" },
+  MARKETING: { title: "Marketing", body: "" },
+  SALES: { title: "Vendas", body: "" },
   LOBBY: { title: "", body: "" },
-  SCENARIO: { title: "", body: "" },
-  PROBLEM: { title: "PROBLEMA", body: "PROBLEMA BODY" },
+  ENDED: { title: "", body: "" },
   PROBLEM_END: { title: "", body: "" },
-  INSIGHT: { title: "", body: "" },
   INSIGHT_END: {
     title: "INSIGHTS",
     body: `Arremate os insights escolhidos até aqui. Caso não esteja satisfeito
@@ -23,14 +29,8 @@ const content: Record<
   nova rodada, mas lembre-se que a contribuição de cada jogador tem um
   custo de 1000 pontos`,
   },
-  SOLUTION: { title: "", body: "" },
   SOLUTION_SELECTION: { title: "", body: "" },
   SOLUTION_ADVOCATE: { title: "", body: "" },
-  PROTOTYPE: { title: "", body: "" },
-  PILOT: { title: "", body: "" },
-  MARKETING: { title: "", body: "" },
-  SALES: { title: "", body: "" },
-  ENDED: { title: "", body: "" },
 };
 
 export function BoardDetailPage() {
@@ -50,7 +50,6 @@ export function BoardDetailPage() {
           <div className="border-2 flex items-center p-1 bg-primary justify-between">
             <p className="text-base text-white leading-3 mx-2">
               {content[gameState].title}
-              {"props.title"}
             </p>
             <div className="flex items-center gap-1">
               <div className="bg-white border-2">

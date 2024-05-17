@@ -19,6 +19,7 @@ export interface Game {
   users: GameUser[];
   owner: GameUser;
   state: GameState;
+  teamPoints: number;
   actions: GameActions[];
   actualAction: GameActions;
   problemWinner: {
@@ -110,7 +111,36 @@ export interface SolutionAdvocateGA extends GameAction {
 
 export interface PrototypeGA extends GameAction {
   state: "PROTOTYPE";
+  started: boolean;
+  step: number;
+  investment: number;
   // activeUser: GameUser;
+}
+
+export interface PilotGA extends GameAction {
+  state: "PILOT";
+  value: number;
+  passed: boolean;
+  started: "dice" | "passed" | "idle";
+}
+
+export interface MarketingProduct {
+  value: number;
+  from: GameUser;
+}
+
+export interface MarketingInvestment {
+  multiplier: number;
+  value: number;
+}
+export interface MarketingGA extends GameAction {
+  state: "MARKETING";
+  productValues: MarketingProduct[];
+  investment: MarketingInvestment[];
+}
+
+export interface SalesGA extends GameAction {
+  state: "SALES";
 }
 
 type GameActions =
@@ -123,4 +153,7 @@ type GameActions =
   | SolutionGA
   | SolutionSelectionGA
   | SolutionAdvocateGA
-  | PrototypeGA;
+  | PrototypeGA
+  | PilotGA
+  | MarketingGA
+  | SalesGA;

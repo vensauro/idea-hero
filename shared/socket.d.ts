@@ -35,6 +35,17 @@ export interface ClientToServerEvents {
   problem_investment: (body: { userId: string; value: number }) => void;
   new_insight_round: () => void;
   run_solution: () => void;
+  start_prototype: (step: number) => void;
+  run_project_test: () => void;
+  product_value: (body: { value: number }) => void;
+  marketing_investment: (
+    body: { values: MarketingInvestment[] },
+    callback: ({
+      investedValue: number,
+      marketingResult: number,
+      win: boolean,
+    }) => void
+  ) => void;
 }
 
 export interface InterServerEvents {

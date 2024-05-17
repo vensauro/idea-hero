@@ -1,4 +1,6 @@
-import { ProblemsGA } from "#/game";
+import { ProblemsGA, PrototypeGA } from "#/game";
+import { Coin } from "@/components/coin/coin";
+import { Dice } from "@/components/dice/dice";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -7,40 +9,61 @@ import {
   DialogDescription,
   DialogFooter,
   DialogHeader,
-  DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { UsersBar } from "@/components/users-bar/users-bar";
 import { cardsUrls } from "@/lib/cards_urls";
 import { socket } from "@/lib/socket";
 import { useGameStore } from "@/lib/store";
-import { cn } from "@/lib/utils";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
-export function ProblemsPage() {
+export function PilotPage() {
   const store = useGameStore();
   const navigate = useNavigate();
-  const [flipCard, setFlipCard] = useState(false);
-
-  useEffect(() => {
-    setTimeout(() => setFlipCard(true), 1500);
-  }, []);
 
   const action = store.game?.actualAction as ProblemsGA;
   const cardUrl = `/ia_cards/${cardsUrls[action.randomCard]}`;
+  console.log(cardUrl);
+
+  function startPrototype() {
+    socket.emit("start_prototype", 1);
+  }
 
   function finishSelection() {
     socket.emit("run_problem");
   }
 
   useEffect(() => {
-    if (store.game?.actualAction.state === "PROBLEM_INVESTMENT") {
-      navigate("/problems-investment");
+    if (store.game?.actualAction.state === "MARKETING") {
+      navigate("/marketing");
+    }
+    if (store.game?.actualAction.state === "PROTOTYPE") {
+      navigate("/prototype");
     }
   }, [navigate, store.game?.actualAction.state]);
 
-  if (store.game?.actualAction.state !== "PROBLEM") return;
+  if (store.game?.actualAction.state !== "PILOT") return;
+
+  async function rollDice() {
+    if (
+      store.game?.actualAction.state === "PILOT" &&
+      store.game?.actualAction.started === "idle"
+    ) {
+      socket.emit("run_project_test");
+      return store.game?.actualAction.value;
+    }
+
+    return 1;
+  }
+
+  function goToCoin() {
+    socket.emit("run_project_test");
+  }
+
+  const investmentValue =
+    (store.game.actions[store.game.actionIndex - 1] as PrototypeGA).investment *
+    store.game.actualAction.value;
 
   return (
     <main className="min-h-screen flex flex-col ">
@@ -70,66 +93,67 @@ export function ProblemsPage() {
             </Button>
           </DialogTrigger>
         </div>
-        <DialogContent className="sm:max-w-[425px]">
+        <DialogContent className="sm:max-w-[425px]" title="Instruções">
           <DialogHeader>
-            <DialogTitle>Instruções</DialogTitle>
-            <DialogDescription className="py-4">
+            <DialogDescription className="py-4 text-center">
               <p>
-                De acordo a carta de inspiração e o cenário, proponha um
-                problema especifico em que deseje trabalhar.
+                Chegou a hora de levar o protótipo de vocês para o público mais
+                amplo. Tudo pronto para iniciar o teste?
+              </p>
+              <p>
+                O valor do teste será sorteado X vezes o valor investido no
+                protótipo
+              </p>
+              <p>
+                Depois será definido se o teste funcionou, caso tenha falhado
+                vocês voltarão ao protótipo
               </p>
             </DialogDescription>
           </DialogHeader>
 
           <DialogFooter>
             <DialogClose asChild>
-              <Button type="submit">Continuar</Button>
+              <Button type="submit" onClick={startPrototype}>
+                Continuar
+              </Button>
             </DialogClose>
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      <div className="flex justify-center">
+        <span className="text-white text-base bg-secondary leading-[0rem] h-4 p-2 rounded-md">
+          pontos totais: {store.game.teamPoints}
+        </span>
+      </div>
       <div>
         <div className="flex justify-center my-4">
           <div className="max-w-72 w-full">
             {/* window top bar */}
             <div className="h-8 border-2 rounded-t-xl w-full bg-secondary border-b-0 flex justify-center relative items-center">
-              <p className="text-white text-xl">PROBLEMA</p>
+              <p className="text-white text-xl">TESTE</p>
             </div>
 
             {/* window */}
-            <div className="flex w-full bg-accent border-2 rounded-b-xl p-6">
-              <div
-                className={cn(
-                  "border-dashed border-[3px] rounded-xl overflow-hidden ",
-                  "w-[236px] h-[347px]",
-                  "group relative",
-                  flipCard && "is-flipped"
+            <div className="relative flex w-full bg-accent border-2 rounded-b-xl p-6">
+              <div className="border-dashed border-[3px] rounded-xl  w-[236px] h-[347px] flex justify-center items-center dice-container">
+                {store.game.actualAction.started !== "passed" ? (
+                  <div className="flex flex-col gap-4 items-center justify-center">
+                    <Dice
+                      onClick={rollDice}
+                      diceValue={store.game.actualAction.value}
+                      hasRolled={store.game.actualAction.started === "dice"}
+                    />
+                    {store.game.actualAction.started === "dice" && (
+                      <p className="text-white text-base animate-fade-up animate-once animate-delay-[2000ms ] animate-duration-1000">
+                        <span className="text-white text-base bg-secondary leading-[0rem] p-1 px-2 rounded-md">
+                          {investmentValue}
+                        </span>
+                      </p>
+                    )}
+                  </div>
+                ) : (
+                  <Coin approved={store.game.actualAction.passed} />
                 )}
-              >
-                <div
-                  className={cn(
-                    "bg-slate-400 border-[10px] border-secondary",
-                    "flex flex-col justify-center items-center",
-                    "absolute top-0 left-0 w-full h-full",
-                    "[backface-visibility:hidden] transition-all",
-                    "group-[.is-flipped]:[transform:rotateY(180deg)]"
-                  )}
-                >
-                  <img
-                    src="/idea-hero-logo.svg"
-                    alt="IDEA HERO"
-                    className="h-16"
-                  />
-                </div>
-                <img
-                  src={cardUrl}
-                  className={cn(
-                    "aspect-[180/271] object-cover object-center",
-                    "absolute top-0 left-0 w-full h-full",
-                    "[transform:rotateY(180deg)] transition-all [backface-visibility:hidden]",
-                    "group-[.is-flipped]:[transform:rotateY(0deg)]"
-                  )}
-                />
               </div>
             </div>
             {/* end centralize window */}
@@ -137,13 +161,23 @@ export function ProblemsPage() {
         </div>
 
         <div className="flex flex-col items-center gap-2">
-          {store.game?.actualAction.activeUser.name === store.nickname ? (
-            <Button onClick={finishSelection} className="w-36">
-              Terminar Jogada
-            </Button>
+          {store.isActive() ? (
+            <>
+              {store.game.actualAction.started === "dice" && (
+                <Button onClick={goToCoin}>Ir para Teste do protótipo</Button>
+              )}
+              {store.game.actualAction.started === "passed" && (
+                <Button onClick={finishSelection} className="w-36 relative">
+                  <span className="absolute top-0 right-0 bg-secondary leading-[0rem] -mt-3 -mr-6 h-4 p-2 rounded-md">
+                    -{investmentValue}
+                  </span>
+                  Finalizar Teste
+                </Button>
+              )}
+            </>
           ) : (
             <p className="text-center text-xl text-secondary">
-              esperando {store.game?.actualAction.activeUser.name}
+              {store.game?.actualAction.activeUser.name} está com o protótipo
             </p>
           )}
           <Button asChild variant={"secondary"} className="w-36">
