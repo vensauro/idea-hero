@@ -41,9 +41,10 @@ export const server = async (PORT: number) => {
     });
   });
 
-  app.use(express.static("/client"));
+  const assetsBuildPath = path.join(__dirname, "..", "..", "client");
+  app.use(express.static(assetsBuildPath));
   app.get("*", (req, res) => {
-    res.sendFile(path.join(__dirname, "client", "index.html"));
+    res.sendFile(path.join(assetsBuildPath, "index.html"));
   });
 
   server.listen(PORT, () => {

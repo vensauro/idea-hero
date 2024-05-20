@@ -710,8 +710,8 @@ export function handleSocket(
     updateAndEmit(game);
   });
 
-  socket.onAny((eventName, ...args) => {
-    console.log({ eventName, args });
-    writeFile("./db-cache.json", JSON.stringify([...db]));
-  });
+  // socket.onAny((eventName, ...args) => {
+  // console.log({ eventName, args });
+  // writeFile("./db-cache.json", JSON.stringify([...db]));
+  // });
 }
