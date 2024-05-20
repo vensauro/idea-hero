@@ -380,6 +380,16 @@ export function handleSocket(
     }
 
     if (game.actualAction.state === "PILOT") {
+      const pilotInvestment =
+        game.actualAction.value *
+        (game.actions[game.actionIndex - 1] as PrototypeGA).investment;
+
+      game.teamPoints -= pilotInvestment;
+      game.users.map((u) => ({
+        ...u,
+        points: game.teamPoints / game.users.length,
+      }));
+
       if (game.actualAction.passed) {
         game.actions.splice(game.actionIndex + 1, 0, {
           activeUser: game.owner,
@@ -653,19 +663,21 @@ export function handleSocket(
 
     function randomMultiplier() {
       const min = 1;
-      const max = 10_000;
+      const max = 3000;
 
       const randomValue = Math.random() * (max - min + 1) + min;
 
       return randomValue;
     }
 
-    const gameValue =
+    const productPrice =
       sum(game.actualAction.productValues, (e) => e.value) /
       game.actualAction.productValues.length;
 
     const marketingResult = sum(
-      values.map((e) => gameValue * e.value * e.multiplier * randomMultiplier())
+      values.map(
+        (e) => productPrice * e.value * e.multiplier * randomMultiplier()
+      )
     );
 
     const startedValue = 30_000 * game.users.length;
@@ -678,6 +690,7 @@ export function handleSocket(
       investedValue,
       marketingResult,
       winned,
+      productPrice,
     } as SalesGA);
 
     if (!winned) {

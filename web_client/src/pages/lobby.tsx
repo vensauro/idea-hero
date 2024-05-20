@@ -5,6 +5,7 @@ import { socket } from "@/lib/socket";
 import { useGameStore } from "@/lib/store";
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { RWebShare } from "react-web-share";
 
 export function LobbyPage() {
   const store = useGameStore();
@@ -34,6 +35,19 @@ export function LobbyPage() {
           <Button onClick={copyToClipboard} variant="ghost">
             <img src="/copy-icon.svg" className="h-4" />
           </Button>
+          <RWebShare
+            data={{
+              text: "Venha jogar o Idea Hero comigo!",
+              url: `${window.location.origin}/enter?code=${
+                store.game?.code ?? ""
+              }`,
+              title: "Idea Hero",
+            }}
+          >
+            <Button variant="ghost">
+              <img src="/share-icon.svg" className="h-4" />
+            </Button>
+          </RWebShare>
         </p>
         <div className="flex justify-center px-2">
           <BoardSvg />

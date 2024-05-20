@@ -58,6 +58,10 @@ export function SalesPage() {
                 <p className="text-center font-bold text-secondary font-mono text-base">
                   {intlFormat.format(store.game.actualAction.investedValue)}
                 </p>
+                <p>
+                  O valor do produto foi de{" "}
+                  {intlFormat.format(store.game.actualAction.productPrice)}
+                </p>
                 <p>Vendas de:</p>
                 <p className="text-center font-bold text-secondary font-mono text-base">
                   {intlFormat.format(store.game.actualAction.marketingResult)}
@@ -77,6 +81,12 @@ export function SalesPage() {
                 <p className="">Teve um investimento de:</p>
                 <p className="text-center font-bold text-secondary font-mono text-base">
                   {intlFormat.format(store.game.actualAction.investedValue)}
+                </p>
+                <p>
+                  O valor do produto foi de{" "}
+                  <span className="font-mono text-sm">
+                    {intlFormat.format(store.game.actualAction.productPrice)}
+                  </span>
                 </p>
                 <p>Vendas de:</p>
                 <p className="text-center font-bold text-secondary font-mono text-base">

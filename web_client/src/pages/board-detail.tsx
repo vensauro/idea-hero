@@ -22,6 +22,7 @@ const content: Record<
   LOBBY: { title: "", body: "" },
   ENDED: { title: "", body: "" },
   PROBLEM_END: { title: "", body: "" },
+  PROBLEM_INVESTMENT: { title: "", body: "" },
   INSIGHT_END: {
     title: "INSIGHTS",
     body: `Arremate os insights escolhidos até aqui. Caso não esteja satisfeito

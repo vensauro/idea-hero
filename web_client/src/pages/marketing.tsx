@@ -14,7 +14,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { UsersBar } from "@/components/users-bar/users-bar";
 import { socket } from "@/lib/socket";
 import { useGameStore } from "@/lib/store";
-import { toggle } from "radash";
+import { sum, toggle } from "radash";
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
@@ -44,8 +44,11 @@ export function MarketingPage() {
     }
   }, [navigate, store.game?.state]);
 
+  console.log(store.game?.actualAction);
   if (store.game?.actualAction.state !== "MARKETING") return;
 
+  const restingPoints =
+    store.game.teamPoints + sum(investments, (e) => e.value);
   return (
     <main className="min-h-screen flex flex-col">
       <UsersBar
@@ -122,13 +125,25 @@ export function MarketingPage() {
             <DialogContent className="sm:max-w-[425px]" title="Instruções">
               <DialogHeader>
                 <DialogDescription className="py-4">
-                  <p>
-                    Defina o valor do produto e em que Mídias de marketing irão
-                    investir. Você está com todo recurso do grupo em mãos.
-                  </p>
-                  <p>
-                    Que tal conversar com o grupo para decidir como utilizar?
-                  </p>
+                  {store.isActive() ? (
+                    <>
+                      <p>
+                        Defina o valor do produto em sigilo e em que Mídias de
+                        marketing irão investir. Você está com todo recurso do
+                        grupo em mãos.
+                      </p>
+                      <p>
+                        Que tal conversar com o grupo para decidir como
+                        utilizar?
+                      </p>
+                    </>
+                  ) : (
+                    <p>
+                      Defina o valor do produto em sigilo, converse com{" "}
+                      {store.game.actualAction.activeUser.name} para saber em
+                      quais métodos de marketing investir
+                    </p>
+                  )}
                 </DialogDescription>
               </DialogHeader>
 
@@ -202,6 +217,7 @@ export function MarketingPage() {
                           )
                         )
                       }
+                      disabled={restingPoints < 1000}
                     >
                       <span className="absolute top-0 right-0 bg-secondary leading-[0rem] border-2 -mt-3 -mr-6 h-4 p-2 rounded-md">
                         -1000
@@ -225,6 +241,7 @@ export function MarketingPage() {
                           )
                         )
                       }
+                      disabled={restingPoints < 3000}
                     >
                       <span className="absolute top-0 right-0 bg-secondary leading-[0rem] border-2 -mt-3 -mr-6 h-4 p-2 rounded-md">
                         -3000
@@ -248,6 +265,7 @@ export function MarketingPage() {
                           )
                         )
                       }
+                      disabled={restingPoints < 5000}
                     >
                       <span className="absolute top-0 right-0 bg-secondary leading-[0rem] border-2 -mt-3 -mr-6 h-4 p-2 rounded-md">
                         -5000
@@ -271,6 +289,7 @@ export function MarketingPage() {
                           )
                         )
                       }
+                      disabled={restingPoints < 10000}
                     >
                       <span className="absolute top-0 right-0 bg-secondary leading-[0rem] border-2 -mt-3 -mr-6 h-4 p-2 rounded-md">
                         -10.000
@@ -288,8 +307,7 @@ export function MarketingPage() {
         <div className="flex flex-col items-center gap-2">
           {store.isActive() &&
             store.game.actualAction.productValues.length ===
-              store.game.users.filter((e) => e.connected).length &&
-            investments.length > 0 && (
+              store.game.users.filter((e) => e.connected).length && (
               <Button onClick={makeInvestment} className="w-36">
                 Terminar Jogada
               </Button>

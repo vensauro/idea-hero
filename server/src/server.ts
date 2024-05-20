@@ -9,6 +9,7 @@ import {
   handleSocket,
 } from "./socket";
 import { instrument } from "@socket.io/admin-ui";
+import path from "node:path";
 
 export const server = async (PORT: number) => {
   const app = express();
@@ -38,6 +39,11 @@ export const server = async (PORT: number) => {
     socket.on("disconnect", () => {
       console.log("user disconnected");
     });
+  });
+
+  app.use(express.static("/client"));
+  app.get("*", (req, res) => {
+    res.sendFile(path.join(__dirname, "client", "index.html"));
   });
 
   server.listen(PORT, () => {

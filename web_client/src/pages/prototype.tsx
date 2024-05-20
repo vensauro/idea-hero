@@ -48,9 +48,10 @@ export function PrototypePage() {
       />
 
       <Dialog
-        defaultOpen={store.isActive()}
-        key={store.game?.actionIndex}
-        onOpenChange={(opened) => opened === false && startPrototype()}
+        defaultOpen
+        onOpenChange={(opened) =>
+          opened === false && store.isActive() && startPrototype()
+        }
       >
         <div className="flex justify-end">
           <DialogTrigger asChild>
@@ -75,13 +76,21 @@ export function PrototypePage() {
         <DialogContent className="sm:max-w-[425px]" title="Instruções">
           <DialogHeader>
             <DialogDescription className="py-4">
-              <p>
-                Até agora, você foi quem menos investiu nesse projeto. Faça a
-                sua parte investindo 20% dos pontos da mesa. Você pode definir
-                como a solução definida será prototipada. Pode ser com desenhos,
-                maquetes, encenações ou o que a sua criatividade e a realidade á
-                sua volta permitir.
-              </p>
+              {store.isActive() ? (
+                <p>
+                  Até agora, você foi quem menos investiu nesse projeto. Faça a
+                  sua parte investindo 20% dos pontos da mesa. Você pode definir
+                  como a solução definida será prototipada. Pode ser com
+                  desenhos, maquetes, encenações ou o que a sua criatividade e a
+                  realidade á sua volta permitir.
+                </p>
+              ) : (
+                <p>
+                  {store.game.actualAction.activeUser.name} está liderando a
+                  criação do protótipo da solução criada por vocês, ajude na
+                  criação!
+                </p>
+              )}
             </DialogDescription>
           </DialogHeader>
 

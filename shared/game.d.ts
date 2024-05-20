@@ -145,6 +145,7 @@ export interface SalesGA extends GameAction {
   investedValue: number;
   marketingResult: number;
   winned: boolean;
+  productPrice: number;
 }
 
 type GameActions =

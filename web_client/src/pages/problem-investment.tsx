@@ -99,10 +99,7 @@ export function ProblemInvestment() {
 
             <div className="w-full border-2 bg-white h-5" />
 
-            <Dialog
-              defaultOpen={store.isActive()}
-              key={store.game?.actionIndex}
-            >
+            <Dialog defaultOpen>
               <DialogTrigger asChild>
                 <Button variant="ghost" className="text-border">
                   <div className="mx-2">
