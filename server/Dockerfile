@@ -6,6 +6,8 @@ RUN npm ci --legacy-peer-deps
 COPY . .
 RUN npm run build
 
+# add client build, and copy to the "client" folder
+
 FROM node
 
 WORKDIR /usr/src/app
