@@ -14,6 +14,7 @@ WORKDIR /usr/src/app
 COPY package*.json ./
 RUN npm ci --legacy-peer-deps --omit=dev
 COPY --from=builder /usr/src/app/dist ./dist
+COPY --from=builder /usr/src/app/client ./client
 
 ENV NODE_ENV production
 ENV PORT 80
