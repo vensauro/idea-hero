@@ -44,7 +44,6 @@ export function MarketingPage() {
     }
   }, [navigate, store.game?.state]);
 
-  console.log(store.game?.actualAction);
   if (store.game?.actualAction.state !== "MARKETING") return;
 
   const restingPoints =

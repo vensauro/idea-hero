@@ -1,4 +1,4 @@
-import { ProblemsGA, PrototypeGA } from "#/game";
+import { PrototypeGA } from "#/game";
 import { Coin } from "@/components/coin/coin";
 import { Dice } from "@/components/dice/dice";
 import { Button } from "@/components/ui/button";
@@ -12,7 +12,6 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { UsersBar } from "@/components/users-bar/users-bar";
-import { cardsUrls } from "@/lib/cards_urls";
 import { socket } from "@/lib/socket";
 import { useGameStore } from "@/lib/store";
 import { useEffect } from "react";
@@ -21,10 +20,6 @@ import { Link, useNavigate } from "react-router-dom";
 export function PilotPage() {
   const store = useGameStore();
   const navigate = useNavigate();
-
-  const action = store.game?.actualAction as ProblemsGA;
-  const cardUrl = `/ia_cards/${cardsUrls[action.randomCard]}`;
-  console.log(cardUrl);
 
   function startPrototype() {
     socket.emit("start_prototype", 1);
@@ -144,7 +139,7 @@ export function PilotPage() {
                       hasRolled={store.game.actualAction.started === "dice"}
                     />
                     {store.game.actualAction.started === "dice" && (
-                      <p className="text-white text-base animate-in fade-in delay-[3000ms] duration-1000">
+                      <p className="text-white text-base animate-in fade-in delay-1000 duration-1000">
                         <span className="text-white text-base bg-secondary leading-[0rem] p-1 px-2 rounded-md">
                           {investmentValue}
                         </span>

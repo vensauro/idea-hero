@@ -15,8 +15,7 @@ export function Coin(props: CoinProps) {
         className={cn(
           "w-32 absolute -translate-x-1/2 -translate-y-1/2 top-1/2 left-1/2",
           "text-white text-xl",
-          "flex justify-center items-center",
-          "animate-fade-up animate-once animate-duration-1000 animate-delay-[2000ms]"
+          "flex justify-center items-center"
         )}
       >
         Aprovado!
@@ -26,8 +25,7 @@ export function Coin(props: CoinProps) {
           className={cn(
             "rotated-text w-32 absolute top-1/2 left-1/2",
             "text-white text-xl",
-            "flex justify-center items-center",
-            "animate-fade-up animate-once animate-duration-1000 animate-delay-[2000ms]"
+            "flex justify-center items-center"
           )}
         >
           Não Aprovado!
