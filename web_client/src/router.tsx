@@ -18,6 +18,7 @@ import { SolutionsPage } from "./pages/solutions";
 import { StartGamePage } from "./pages/start-game";
 import { PilotPage } from "./pages/pilot";
 import { MarketingPage } from "./pages/marketing";
+import { SalesPage } from "./pages/sales";
 
 export const router = createBrowserRouter([
   {
@@ -80,6 +81,10 @@ export const router = createBrowserRouter([
       {
         path: "/marketing",
         element: <MarketingPage />,
+      },
+      {
+        path: "/sales",
+        element: <SalesPage />,
       },
       {
         path: "/board",

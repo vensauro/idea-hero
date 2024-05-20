@@ -1,4 +1,4 @@
-import { Game, GameUser, GameUserAvatar } from "./game";
+import { Game, GameUser, GameUserAvatar, MarketingInvestment } from "./game";
 
 export interface SocketData {
   name: string;
@@ -38,14 +38,8 @@ export interface ClientToServerEvents {
   start_prototype: (step: number) => void;
   run_project_test: () => void;
   product_value: (body: { value: number }) => void;
-  marketing_investment: (
-    body: { values: MarketingInvestment[] },
-    callback: ({
-      investedValue: number,
-      marketingResult: number,
-      win: boolean,
-    }) => void
-  ) => void;
+  marketing_investment: (body: { values: MarketingInvestment[] }) => void;
+  reset_game: () => void;
 }
 
 export interface InterServerEvents {

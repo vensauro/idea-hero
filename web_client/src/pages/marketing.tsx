@@ -14,15 +14,28 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { UsersBar } from "@/components/users-bar/users-bar";
 import { socket } from "@/lib/socket";
 import { useGameStore } from "@/lib/store";
-import { useEffect } from "react";
+import { toggle } from "radash";
+import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+
+interface Investment {
+  name: "social_media" | "trafego_pago" | "assessor" | "tv";
+  value: number;
+}
 
 export function MarketingPage() {
   const store = useGameStore();
   const navigate = useNavigate();
+  const [productValue, setProductValue] = useState(0);
+  const [investments, setInvestments] = useState<Investment[]>([]);
 
-  function finishSelection() {
-    socket.emit("run_problem");
+  function makeInvestment() {
+    socket.emit("marketing_investment", {
+      values: investments.map((e) => ({
+        value: e.value,
+        multiplier: 1,
+      })),
+    });
   }
 
   useEffect(() => {
@@ -39,6 +52,12 @@ export function MarketingPage() {
         activeUser={store.game?.actualAction.activeUser}
         users={store.game?.users}
       />
+
+      <div className="flex justify-center mt-4">
+        <span className="text-white text-base bg-secondary leading-[0rem] h-4 p-2 rounded-md">
+          pontos totais: {store.game.teamPoints}
+        </span>
+      </div>
 
       <div className="max-w-72 w-full mx-auto my-8">
         <div className="relative h-8 border-2 w-full bg-secondary border-b-0 flex  items-center z-0">
@@ -137,48 +156,122 @@ export function MarketingPage() {
                       htmlFor="nickname"
                       className="text-border text-white"
                     >
-                      Quanto custo para o usuário?
+                      Quanto custa para o usuário?
                     </Label>
                   </div>
                   <Input
-                    id="nickname"
-                    type="text"
-                    placeholder="Me chamem de..."
+                    id="product_value"
+                    type="number"
+                    placeholder="Valor do produto"
                     required
-                    value={store.nickname}
-                    // onChange={(e) => store.setNick(e.target.value)}
-                    className="text-primary-foreground placeholder:text-primary-foreground border-2 border-border rounded-sm"
+                    value={productValue.toString()}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      if (/^\d+$/.test(value) || value === "")
+                        setProductValue(Number(value));
+                    }}
+                    className="text-primary placeholder:text-primary-foreground border-2 border-border rounded-sm"
+                    onBlur={() => {
+                      socket.emit("product_value", { value: productValue });
+                    }}
                   />
                 </form>
 
-                <Label htmlFor="nickname" className="text-border text-white">
-                  Em que mídias você vai investir?
-                </Label>
-
                 {store.isActive() && (
                   <>
-                    <Button className="w-36 relative" variant="secondary">
+                    <Label
+                      htmlFor="nickname"
+                      className="text-border text-white"
+                    >
+                      Em que mídias você vai investir?
+                    </Label>
+
+                    <Button
+                      className="w-36 relative"
+                      variant={
+                        investments.find((e) => e.name === "social_media")
+                          ? "outline"
+                          : "secondary"
+                      }
+                      onClick={() =>
+                        setInvestments(
+                          toggle(
+                            investments,
+                            { name: "social_media", value: 1000 },
+                            (e) => e.name
+                          )
+                        )
+                      }
+                    >
                       <span className="absolute top-0 right-0 bg-secondary leading-[0rem] border-2 -mt-3 -mr-6 h-4 p-2 rounded-md">
                         -1000
                       </span>
                       Social Média
                     </Button>
 
-                    <Button className="w-36 relative" variant="secondary">
+                    <Button
+                      className="w-36 relative"
+                      variant={
+                        investments.find((e) => e.name === "trafego_pago")
+                          ? "outline"
+                          : "secondary"
+                      }
+                      onClick={() =>
+                        setInvestments(
+                          toggle(
+                            investments,
+                            { name: "trafego_pago", value: 3000 },
+                            (e) => e.name
+                          )
+                        )
+                      }
+                    >
                       <span className="absolute top-0 right-0 bg-secondary leading-[0rem] border-2 -mt-3 -mr-6 h-4 p-2 rounded-md">
                         -3000
                       </span>
                       Tráfego Pago
                     </Button>
 
-                    <Button className="w-36 relative" variant="secondary">
+                    <Button
+                      className="w-36 relative"
+                      variant={
+                        investments.find((e) => e.name === "assessor")
+                          ? "outline"
+                          : "secondary"
+                      }
+                      onClick={() =>
+                        setInvestments(
+                          toggle(
+                            investments,
+                            { name: "assessor", value: 5000 },
+                            (e) => e.name
+                          )
+                        )
+                      }
+                    >
                       <span className="absolute top-0 right-0 bg-secondary leading-[0rem] border-2 -mt-3 -mr-6 h-4 p-2 rounded-md">
                         -5000
                       </span>
                       Assessor de imprensa
                     </Button>
 
-                    <Button className="w-36 relative" variant="secondary">
+                    <Button
+                      className="w-36 relative"
+                      variant={
+                        investments.find((e) => e.name === "tv")
+                          ? "outline"
+                          : "secondary"
+                      }
+                      onClick={() =>
+                        setInvestments(
+                          toggle(
+                            investments,
+                            { name: "tv", value: 10000 },
+                            (e) => e.name
+                          )
+                        )
+                      }
+                    >
                       <span className="absolute top-0 right-0 bg-secondary leading-[0rem] border-2 -mt-3 -mr-6 h-4 p-2 rounded-md">
                         -10.000
                       </span>
@@ -192,21 +285,24 @@ export function MarketingPage() {
         </div>
       </div>
       <div>
-        {store.game?.actualAction.activeUser.name === store.nickname ? (
-          <div className="flex flex-col items-center gap-2">
-            <Button onClick={finishSelection} className="w-36">
-              Terminar Jogada
-            </Button>
-
-            <Button asChild variant={"secondary"} className="w-36">
-              <Link to="/board">Tabuleiro</Link>
-            </Button>
-          </div>
-        ) : (
-          <p className="text-center text-xl text-secondary">
-            esperando {store.game?.actualAction.activeUser.name}
-          </p>
-        )}
+        <div className="flex flex-col items-center gap-2">
+          {store.isActive() &&
+            store.game.actualAction.productValues.length ===
+              store.game.users.filter((e) => e.connected).length &&
+            investments.length > 0 && (
+              <Button onClick={makeInvestment} className="w-36">
+                Terminar Jogada
+              </Button>
+            )}
+          {!store.isActive() && (
+            <p className="text-center text-xl text-secondary">
+              esperando {store.game?.actualAction.activeUser.name}
+            </p>
+          )}
+          <Button asChild variant={"secondary"} className="w-36">
+            <Link to="/board">Tabuleiro</Link>
+          </Button>
+        </div>
       </div>
     </main>
   );

@@ -3,6 +3,7 @@ type GameState =
   | "SCENARIO"
   | "PROBLEM"
   | "PROBLEM_END"
+  | "PROBLEM_INVESTMENT"
   | "INSIGHT"
   | "INSIGHT_END"
   | "SOLUTION"
@@ -141,6 +142,9 @@ export interface MarketingGA extends GameAction {
 
 export interface SalesGA extends GameAction {
   state: "SALES";
+  investedValue: number;
+  marketingResult: number;
+  winned: boolean;
 }
 
 type GameActions =

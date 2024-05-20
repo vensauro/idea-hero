@@ -144,7 +144,7 @@ export function PilotPage() {
                       hasRolled={store.game.actualAction.started === "dice"}
                     />
                     {store.game.actualAction.started === "dice" && (
-                      <p className="text-white text-base animate-fade-up animate-once animate-delay-[2000ms ] animate-duration-1000">
+                      <p className="text-white text-base animate-in fade-in delay-[3000ms] duration-1000">
                         <span className="text-white text-base bg-secondary leading-[0rem] p-1 px-2 rounded-md">
                           {investmentValue}
                         </span>
