@@ -11,7 +11,7 @@ import {
 import { instrument } from "@socket.io/admin-ui";
 import path from "node:path";
 
-export const server = async (PORT: number) => {
+export const server = async (PORT = 4000, HOST = "localhost") => {
   const app = express();
 
   const server = createServer(app);
@@ -22,7 +22,11 @@ export const server = async (PORT: number) => {
     SocketData
   >(server, {
     cors: {
-      origin: ["http://localhost:5173", "https://admin.socket.io"],
+      origin: [
+        `http://${HOST}:5173`,
+        "http://localhost:5173",
+        "https://admin.socket.io",
+      ],
       credentials: true,
     },
   });
@@ -34,11 +38,18 @@ export const server = async (PORT: number) => {
 
   io.on("connection", (socket) => {
     handleSocket(socket, io);
-    console.log("a user connected 📸");
 
-    socket.on("disconnect", () => {
-      console.log("user disconnected");
-    });
+    if (process.env.NODE_ENV !== "production") {
+      console.log("a user connected 📸");
+
+      socket.onAny((eventName, ...args) => {
+        console.log({ eventName, args, data: socket.data });
+      });
+
+      socket.on("disconnect", () => {
+        console.log("user disconnected");
+      });
+    }
   });
 
   const assetsBuildPath = path.join(__dirname, "..", "..", "client");
@@ -47,7 +58,7 @@ export const server = async (PORT: number) => {
     res.sendFile(path.join(assetsBuildPath, "index.html"));
   });
 
-  server.listen(PORT, () => {
-    console.log(`Server running in ${PORT}`);
+  server.listen(PORT, HOST, () => {
+    console.log(`Server running in ${HOST}:${PORT}`);
   });
 };

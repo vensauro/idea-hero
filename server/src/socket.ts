@@ -109,37 +109,34 @@ export function handleSocket(
 
   socket.on("enter_game", ({ name, avatar, code }, callback) => {
     const dbGame = db.get(code);
-    if (!dbGame || dbGame.state !== "LOBBY") {
+    if (!dbGame) {
       return;
     }
 
-    const hasUser = dbGame.users.find((e) => e.name === name);
-    const nameToSet = hasUser?.connected ? `${name} 2` : name;
-    const id = hasUser ? hasUser.id : uid(10);
+    const oldUser = dbGame.users.find((e) => e.name === name);
     const user: GameUser = {
       avatar,
-      name: nameToSet,
-      id,
+      name:
+        oldUser === undefined || oldUser.connected === false
+          ? name
+          : `${name} 2`,
+      id: oldUser === undefined || oldUser.connected ? uid(10) : oldUser.id,
       connected: true,
       socketId: socket.id,
       points: 30_000,
     };
 
-    if (hasUser === undefined || hasUser.connected) {
+    if (oldUser === undefined) {
       dbGame.users.push(user);
     } else {
-      dbGame.users = dbGame.users.map((e) => {
-        if (e.name === nameToSet) {
-          return user;
-        }
-        return e;
-      });
+      dbGame.users = replace(dbGame.users, user, (e) => e.id === user.id);
     }
 
-    socket.data.id = id;
-    socket.data.name = nameToSet;
+    socket.data.id = user.id;
+    socket.data.name = user.name;
     socket.data.avatar = avatar;
     socket.data.room = code;
+
     socket.join(code);
 
     db.set(code, dbGame);
@@ -253,40 +250,6 @@ export function handleSocket(
     game.problemWinner = { winner: game.owner, value: 0 };
 
     updateAndEmit(game);
-  });
-
-  socket.on("get_scenario", (scenario) => {
-    const dbGame = db.get(socket.data.room);
-    if (!dbGame) {
-      return;
-    }
-
-    if (dbGame.actualAction.state !== "SCENARIO") {
-      return;
-    }
-
-    dbGame.actualAction = {
-      activeUser: dbGame.actualAction.activeUser,
-      state: "SCENARIO",
-      scenario,
-    };
-
-    updateAndEmit(dbGame);
-  });
-
-  socket.on("select_scenario", () => {
-    const dbGame = db.get(socket.data.room);
-    if (!dbGame) {
-      return;
-    }
-
-    dbGame.state = "PROBLEM";
-
-    dbGame.actions[dbGame.actionIndex] = dbGame.actualAction;
-    dbGame.actionIndex = dbGame.actionIndex + 1;
-    dbGame.actualAction = dbGame.actions[dbGame.actionIndex];
-
-    updateAndEmit(dbGame);
   });
 
   socket.on("run_problem", () => {
@@ -415,6 +378,40 @@ export function handleSocket(
     updateAndEmit(game);
   });
 
+  socket.on("get_scenario", (scenario) => {
+    const dbGame = db.get(socket.data.room);
+    if (!dbGame) {
+      return;
+    }
+
+    if (dbGame.actualAction.state !== "SCENARIO") {
+      return;
+    }
+
+    dbGame.actualAction = {
+      activeUser: dbGame.actualAction.activeUser,
+      state: "SCENARIO",
+      scenario,
+    };
+
+    updateAndEmit(dbGame);
+  });
+
+  socket.on("select_scenario", () => {
+    const dbGame = db.get(socket.data.room);
+    if (!dbGame) {
+      return;
+    }
+
+    dbGame.state = "PROBLEM";
+
+    dbGame.actions[dbGame.actionIndex] = dbGame.actualAction;
+    dbGame.actionIndex = dbGame.actionIndex + 1;
+    dbGame.actualAction = dbGame.actions[dbGame.actionIndex];
+
+    updateAndEmit(dbGame);
+  });
+
   socket.on("problem_investment", ({ userId, value }) => {
     const game = db.get(socket.data.room);
     if (!game || game.actualAction.state !== "PROBLEM_INVESTMENT") {
@@ -499,6 +496,7 @@ export function handleSocket(
       game.actions[game.actionIndex] = game.actualAction;
       game.actionIndex = game.actionIndex + 1;
       game.actualAction = game.actions[game.actionIndex];
+      game.state = game.actualAction.state;
     }
 
     updateAndEmit(game);
@@ -550,6 +548,7 @@ export function handleSocket(
       game.actions[game.actionIndex] = game.actualAction;
       game.actionIndex = game.actionIndex + 1;
       game.actualAction = game.actions[game.actionIndex];
+      game.state = game.actualAction.state;
     }
 
     updateAndEmit(game);
@@ -585,6 +584,7 @@ export function handleSocket(
     game.actions[game.actionIndex] = game.actualAction;
     game.actionIndex = game.actionIndex + 1;
     game.actualAction = game.actions[game.actionIndex];
+    game.state = game.actualAction.state;
 
     updateAndEmit(game);
   });
@@ -709,9 +709,4 @@ export function handleSocket(
 
     updateAndEmit(game);
   });
-
-  // socket.onAny((eventName, ...args) => {
-  // console.log({ eventName, args });
-  // writeFile("./db-cache.json", JSON.stringify([...db]));
-  // });
 }
