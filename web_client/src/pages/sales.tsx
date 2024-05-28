@@ -21,9 +21,15 @@ export function SalesPage() {
   useEffect(() => {
     if (store.game?.state === "MARKETING") {
       navigate("/marketing");
+      return;
     }
     if (store.game?.state === "LOBBY") {
       navigate("/lobby");
+      return;
+    }
+    if (store.game?.state !== undefined && store.game.state !== "SALES") {
+      navigate("/lobby");
+      return;
     }
   }, [navigate, store.game?.state]);
 

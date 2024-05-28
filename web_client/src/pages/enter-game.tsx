@@ -4,30 +4,32 @@ import { Label } from "@/components/ui/label";
 import { socket } from "@/lib/socket";
 import { useGameStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 
 export function EnterGamePage() {
   const store = useGameStore();
   const navigate = useNavigate();
+  const [gameCode, setGameCode] = useState("");
 
   const [searchParams] = useSearchParams();
 
   useEffect(() => {
-    const code = searchParams.get("code");
-    if (code) {
-      store.setCode(code);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchParams]);
-
-  useEffect(() => {
+    store.updateGameState(null);
     socket.disconnect();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
   function startGame() {
     if (store.avatar === null) {
       return toast.error("Selecione o avatar");
+    }
+
+    const code = gameCode || store.gameCode || searchParams.get("code");
+
+    if (!code) {
+      return toast.error("Digite o código da sala!");
     }
 
     socket.connect();
@@ -36,11 +38,12 @@ export function EnterGamePage() {
       {
         avatar: store.avatar,
         name: store.nickname,
-        code: store.gameCode,
+        code: code,
       },
       ({ game, user }) => {
         store.updateGameState(game);
         store.setUser(user);
+        store.setCode(code);
       }
     );
     navigate("/lobby");
@@ -97,10 +100,9 @@ export function EnterGamePage() {
               <Input
                 id="game-code"
                 type="text"
-                placeholder="Código secreto!"
-                required
-                value={store.gameCode}
-                onChange={(e) => store.setCode(e.target.value)}
+                placeholder={store.gameCode || "Código secreto!"}
+                value={gameCode}
+                onChange={(e) => setGameCode(e.target.value)}
                 className="bg-primary text-primary-foreground placeholder:text-primary-foreground border-2 border-border rounded-sm"
               />
             </div>

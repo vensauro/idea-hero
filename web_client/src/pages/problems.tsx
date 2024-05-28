@@ -35,10 +35,10 @@ export function ProblemsPage() {
   }
 
   useEffect(() => {
-    if (store.game?.actualAction.state === "PROBLEM_INVESTMENT") {
+    if (store.game?.state !== undefined && store.game.state !== "PROBLEM") {
       navigate("/problems-investment");
     }
-  }, [navigate, store.game?.actualAction.state]);
+  }, [navigate, store.game?.state]);
 
   if (store.game?.actualAction.state !== "PROBLEM") return;
 

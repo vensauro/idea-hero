@@ -19,18 +19,19 @@ export function ProblemFinishPage() {
   const store = useGameStore();
   const navigate = useNavigate();
 
-  const problemWinner = store.game?.problemWinner;
   function finishSelection() {
     socket.emit("run_problem");
   }
 
   useEffect(() => {
-    if (store.game?.actualAction.state === "INSIGHT") {
+    if (store.game?.state !== undefined && store.game.state !== "PROBLEM_END") {
       navigate("/insights");
     }
-  }, [navigate, store.game?.actualAction.state]);
+  }, [navigate, store.game?.state]);
 
   if (store.game?.actualAction.state !== "PROBLEM_END") return;
+
+  const problemWinner = store.game?.problemWinner;
 
   return (
     <main className="min-h-screen flex flex-col ">

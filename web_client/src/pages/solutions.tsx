@@ -29,10 +29,15 @@ export function SolutionsPage() {
   }
 
   useEffect(() => {
-    if (store.game?.actualAction.state === "PROTOTYPE") {
+    if (
+      store.game?.state !== undefined &&
+      store.game?.state !== "SOLUTION" &&
+      store.game?.state !== "SOLUTION_SELECTION" &&
+      store.game?.state !== "SOLUTION_ADVOCATE"
+    ) {
       navigate("/prototype");
     }
-  }, [navigate, store.game?.actualAction.state]);
+  }, [navigate, store.game?.state]);
 
   if (
     store.game?.actualAction.state !== "SOLUTION" &&

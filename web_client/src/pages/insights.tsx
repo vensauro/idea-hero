@@ -39,10 +39,14 @@ export function InsightsPage() {
   }
 
   useEffect(() => {
-    if (store.game?.actualAction.state === "SOLUTION") {
+    if (
+      store.game?.state !== undefined &&
+      store.game?.state !== "INSIGHT" &&
+      store.game?.state !== "INSIGHT_END"
+    ) {
       navigate("/solutions");
     }
-  }, [navigate, store.game?.actualAction.state]);
+  }, [navigate, store.game?.state]);
 
   if (
     store.game?.actualAction.state !== "INSIGHT_END" &&

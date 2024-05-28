@@ -42,7 +42,7 @@ export function ScenarioPage() {
   }, [store.game?.actualAction]);
 
   useEffect(() => {
-    if (store.game?.state === "PROBLEM") {
+    if (store.game?.state !== undefined && store.game.state !== "SCENARIO") {
       navigate("/problems");
     }
   }, [navigate, store.game?.state]);

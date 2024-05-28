@@ -39,7 +39,7 @@ export function MarketingPage() {
   }
 
   useEffect(() => {
-    if (store.game?.state === "SALES") {
+    if (store.game?.state !== undefined && store.game.state !== "MARKETING") {
       navigate("/sales");
     }
   }, [navigate, store.game?.state]);

@@ -33,10 +33,10 @@ export function PrototypePage() {
   }
 
   useEffect(() => {
-    if (store.game?.actualAction.state === "PILOT") {
+    if (store.game?.state !== undefined && store.game.state !== "PROTOTYPE") {
       navigate("/pilot");
     }
-  }, [navigate, store.game?.actualAction.state]);
+  }, [navigate, store.game?.state]);
 
   if (store.game?.actualAction.state !== "PROTOTYPE") return;
 

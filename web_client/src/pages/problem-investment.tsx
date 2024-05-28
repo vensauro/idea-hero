@@ -32,14 +32,24 @@ export function ProblemInvestment() {
   }
 
   useEffect(() => {
-    if (store.game?.actualAction.state === "PROBLEM") {
+    if (store.game?.state === "PROBLEM") {
       navigate("/problems");
+      return;
     }
 
-    if (store.game?.actualAction.state === "PROBLEM_END") {
+    if (store.game?.state === "PROBLEM_END") {
       navigate("/problems-end");
+      return;
     }
-  }, [navigate, store.game?.actualAction.state]);
+
+    if (
+      store.game?.state !== undefined &&
+      store.game.state !== "PROBLEM_INVESTMENT"
+    ) {
+      navigate("/problems-end");
+      return;
+    }
+  }, [navigate, store.game?.state]);
 
   if (store.game?.actualAction.state !== "PROBLEM_INVESTMENT") return;
 
@@ -47,8 +57,6 @@ export function ProblemInvestment() {
     store.game?.actualAction.usersInvestment.find(
       (e) => e.from.id === store.user?.id
     ) !== undefined;
-
-  // const isMe = store.game?.actualAction.activeUser.name === store.nickname;
 
   return (
     <div>

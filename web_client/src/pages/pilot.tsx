@@ -30,13 +30,19 @@ export function PilotPage() {
   }
 
   useEffect(() => {
-    if (store.game?.actualAction.state === "MARKETING") {
+    if (store.game?.state === "MARKETING") {
       navigate("/marketing");
+      return;
     }
-    if (store.game?.actualAction.state === "PROTOTYPE") {
+    if (store.game?.state === "PROTOTYPE") {
       navigate("/prototype");
+      return;
     }
-  }, [navigate, store.game?.actualAction.state]);
+    if (store.game?.state !== undefined && store.game.state !== "PILOT") {
+      navigate("/prototype");
+      return;
+    }
+  }, [navigate, store.game?.state]);
 
   if (store.game?.actualAction.state !== "PILOT") return;
 

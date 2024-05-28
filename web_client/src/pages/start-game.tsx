@@ -14,7 +14,9 @@ export function StartGamePage() {
   const navigate = useNavigate();
 
   useEffect(() => {
+    store.updateGameState(null);
     socket.disconnect();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   function startGame() {

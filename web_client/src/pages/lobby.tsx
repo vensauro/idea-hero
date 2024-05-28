@@ -16,7 +16,7 @@ export function LobbyPage() {
   }
 
   useEffect(() => {
-    if (store.game?.state === "SCENARIO") {
+    if (store.game?.state !== undefined && store.game.state !== "LOBBY") {
       navigate("/scenario");
     }
   }, [navigate, store.game?.state]);
