@@ -12,11 +12,12 @@ import { socket } from "@/lib/socket";
 import { useGameStore } from "@/lib/store";
 import { useEffect } from "react";
 import { Toaster } from "react-hot-toast";
-import { Outlet, useLocation } from "react-router-dom";
+import { Outlet, useLocation, useNavigate } from "react-router-dom";
 
 export function Root() {
   const store = useGameStore();
   const location = useLocation();
+  const navigate = useNavigate();
 
   useEffect(() => {
     socket.on("connect", store.connect);
@@ -33,6 +34,9 @@ export function Root() {
   function reconnect() {
     if (socket.disconnected) {
       if (store.user) {
+        const timeout = setTimeout(() => {
+          navigate("/");
+        }, 5000);
         socket.connect();
         socket.emit(
           "enter_game",
@@ -42,13 +46,14 @@ export function Root() {
             code: store.gameCode,
           },
           ({ game, user }) => {
+            console.log({ game, user });
             store.updateGameState(game);
             store.setUser(user);
+            clearTimeout(timeout);
           }
         );
       }
     }
-    console.log({ disconnected: socket.disconnected, store });
   }
 
   return (
