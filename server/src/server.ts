@@ -11,7 +11,7 @@ import {
 import { instrument } from "@socket.io/admin-ui";
 import path from "node:path";
 
-export const server = async (PORT = 4000, HOST = "localhost") => {
+export const server = async (PORT = 4000, HOST = "0.0.0.0") => {
   const app = express();
 
   const server = createServer(app);
