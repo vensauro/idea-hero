@@ -131,8 +131,8 @@ export function SolutionsPage() {
                     />
                     <p className="text-base text-white text-center leading-3 mt-3">
                       {store.game.actualAction.state === "SOLUTION_SELECTION"
-                        ? `${store.game.owner.name} está definindo a solução`
-                        : `${store.game.owner.name} é o "advogado do diabo"`}
+                        ? `${store.game.actualAction.activeUser.name} está definindo a solução`
+                        : `${store.game.actualAction.activeUser.name} é o "advogado do diabo"`}
                     </p>
                   </div>
                 )}
