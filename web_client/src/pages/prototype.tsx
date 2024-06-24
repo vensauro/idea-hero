@@ -1,4 +1,4 @@
-import { ProblemsGA } from "#/game";
+import { PrototypeGA } from "#/game";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -9,44 +9,27 @@ import {
   DialogHeader,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { UsersBar } from "@/components/users-bar/users-bar";
-import { cardsUrls } from "@/lib/cards_urls";
 import { socket } from "@/lib/socket";
 import { useGameStore } from "@/lib/store";
-import { useEffect } from "react";
 import { CountdownCircleTimer } from "react-countdown-circle-timer";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 
-export function PrototypePage() {
+interface PrototypePageProps {
+  action: PrototypeGA;
+}
+export function PrototypePage({ action }: PrototypePageProps) {
   const store = useGameStore();
-  const navigate = useNavigate();
 
   function startPrototype() {
     socket.emit("start_prototype", 1);
   }
 
-  const action = store.game?.actualAction as ProblemsGA;
-  const cardUrl = `/ia_cards/${cardsUrls[action.randomCard]}`;
-
   function finishSelection() {
     socket.emit("run_problem");
   }
 
-  useEffect(() => {
-    if (store.game?.state !== undefined && store.game.state !== "PROTOTYPE") {
-      navigate("/pilot");
-    }
-  }, [navigate, store.game?.state]);
-
-  if (store.game?.actualAction.state !== "PROTOTYPE") return;
-
   return (
-    <main className="min-h-screen flex flex-col ">
-      <UsersBar
-        activeUser={store.game?.actualAction.activeUser}
-        users={store.game?.users}
-      />
-
+    <>
       <Dialog
         defaultOpen
         onOpenChange={(opened) =>
@@ -86,9 +69,8 @@ export function PrototypePage() {
                 </p>
               ) : (
                 <p>
-                  {store.game.actualAction.activeUser.name} está liderando a
-                  criação do protótipo da solução criada por vocês, ajude na
-                  criação!
+                  {action.activeUser.name} está liderando a criação do protótipo
+                  da solução criada por vocês, ajude na criação!
                 </p>
               )}
             </DialogDescription>
@@ -105,7 +87,7 @@ export function PrototypePage() {
       </Dialog>
       <div className="flex justify-center">
         <span className="text-white text-base bg-secondary leading-[0rem] -mt-3 -mr-6 h-4 p-2 rounded-md">
-          pontos totais: {store.game.teamPoints}
+          pontos totais: {store.game!.teamPoints}
         </span>
       </div>
       <div>
@@ -119,30 +101,23 @@ export function PrototypePage() {
             {/* window */}
             <div className="relative flex w-full bg-accent border-2 rounded-b-xl p-6">
               <div className="relative border-dashed border-[3px] rounded-xl overflow-hidden w-[236px] h-[347px]">
-                {store.game.actualAction.state === "PROTOTYPE" ? (
-                  <div className="bg-slate-400 w-full h-full flex justify-center items-center flex-col border-[10px] border-secondary">
-                    <img
-                      src="/idea-hero-logo.svg"
-                      alt="IDEA HERO"
-                      className="h-16"
-                    />
-                    ajude {store.game.actualAction.activeUser.name} na
-                    <p className="text-base text-white text-center leading-3 mt-3">
-                      produção do protótipo, o tempo está contando
-                    </p>
-                  </div>
-                ) : (
+                <div className="bg-slate-400 w-full h-full flex justify-center items-center flex-col border-[10px] border-secondary">
                   <img
-                    src={cardUrl}
-                    className="aspect-[180/271] object-cover"
+                    src="/idea-hero-logo.svg"
+                    alt="IDEA HERO"
+                    className="h-16"
                   />
-                )}
+                  ajude {action.activeUser.name} na
+                  <p className="text-base text-white text-center leading-3 mt-3">
+                    produção do protótipo, o tempo está contando
+                  </p>
+                </div>
               </div>
               <div className="absolute -bottom-8 -right-8 bg-secondary rounded-full">
                 <CountdownCircleTimer
                   key={1}
                   size={60}
-                  isPlaying={store.game.actualAction.started}
+                  isPlaying={action.started}
                   duration={120}
                   onComplete={() => {}}
                   colors={["#F26389", "#F7B801", "#A30000", "#A30000"]}
@@ -167,7 +142,7 @@ export function PrototypePage() {
         <div className="flex flex-col items-center gap-2">
           {store.isActive() ? (
             <>
-              {/* {store.game.actualAction.state === "INSIGHT_END" &&
+              {/* {action.state === "INSIGHT_END" &&
                 store.isOwner() && (
                   <Button className="relative" onClick={repeatRound}>
                     Mais uma rodada
@@ -178,14 +153,14 @@ export function PrototypePage() {
                 )} */}
               <Button onClick={finishSelection} className="w-36 relative">
                 <span className="absolute top-0 right-0 bg-secondary leading-[0rem] -mt-3 -mr-6 h-4 p-2 rounded-md">
-                  -{store.game.teamPoints * 0.2}
+                  -{store.game!.teamPoints * 0.2}
                 </span>
                 Finalizar protótipo
               </Button>
             </>
           ) : (
             <p className="text-center text-xl text-secondary">
-              {store.game?.actualAction.activeUser.name} está com o protótipo
+              {action.activeUser.name} está com o protótipo
             </p>
           )}
           <Button asChild variant={"secondary"} className="w-36">
@@ -193,6 +168,6 @@ export function PrototypePage() {
           </Button>
         </div>
       </div>
-    </main>
+    </>
   );
 }

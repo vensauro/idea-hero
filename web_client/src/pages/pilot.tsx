@@ -1,4 +1,4 @@
-import { PrototypeGA } from "#/game";
+import { PilotGA, PrototypeGA } from "#/game";
 import { Coin } from "@/components/coin/coin";
 import { Dice } from "@/components/dice/dice";
 import { Button } from "@/components/ui/button";
@@ -11,15 +11,15 @@ import {
   DialogHeader,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { UsersBar } from "@/components/users-bar/users-bar";
 import { socket } from "@/lib/socket";
 import { useGameStore } from "@/lib/store";
-import { useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 
-export function PilotPage() {
+interface PilotPageProps {
+  action: PilotGA;
+}
+export function PilotPage({ action }: PilotPageProps) {
   const store = useGameStore();
-  const navigate = useNavigate();
 
   function startPrototype() {
     socket.emit("start_prototype", 1);
@@ -29,22 +29,20 @@ export function PilotPage() {
     socket.emit("run_problem");
   }
 
-  useEffect(() => {
-    if (store.game?.state === "MARKETING") {
-      navigate("/marketing");
-      return;
-    }
-    if (store.game?.state === "PROTOTYPE") {
-      navigate("/prototype");
-      return;
-    }
-    if (store.game?.state !== undefined && store.game.state !== "PILOT") {
-      navigate("/prototype");
-      return;
-    }
-  }, [navigate, store.game?.state]);
-
-  if (store.game?.actualAction.state !== "PILOT") return;
+  // useEffect(() => {
+  //   if (store.game?.state === "MARKETING") {
+  //     navigate("/marketing");
+  //     return;
+  //   }
+  //   if (store.game?.state === "PROTOTYPE") {
+  //     navigate("/prototype");
+  //     return;
+  //   }
+  //   if (store.game?.state !== undefined && store.game.state !== "PILOT") {
+  //     navigate("/prototype");
+  //     return;
+  //   }
+  // }, [navigate, store.game?.state]);
 
   async function rollDice() {
     if (
@@ -62,17 +60,14 @@ export function PilotPage() {
     socket.emit("run_project_test");
   }
 
+  const game = store.game!;
+
   const investmentValue =
-    (store.game.actions[store.game.actionIndex - 1] as PrototypeGA).investment *
-    store.game.actualAction.value;
+    (game.actions[game.actionIndex - 1] as PrototypeGA).investment *
+    action.value;
 
   return (
-    <main className="min-h-screen flex flex-col ">
-      <UsersBar
-        activeUser={store.game?.actualAction.activeUser}
-        users={store.game?.users}
-      />
-
+    <>
       <Dialog defaultOpen={store.isActive()} key={store.game?.actionIndex}>
         <div className="relative">
           <DialogTrigger asChild>
@@ -123,7 +118,7 @@ export function PilotPage() {
       </Dialog>
       <div className="flex justify-center">
         <span className="text-white text-base bg-secondary leading-[0rem] h-4 p-2 rounded-md">
-          pontos totais: {store.game.teamPoints}
+          pontos totais: {game.teamPoints}
         </span>
       </div>
       <div>
@@ -137,14 +132,14 @@ export function PilotPage() {
             {/* window */}
             <div className="relative flex w-full bg-accent border-2 rounded-b-xl p-6">
               <div className="border-dashed border-[3px] rounded-xl  w-[236px] h-[347px] flex justify-center items-center dice-container">
-                {store.game.actualAction.started !== "passed" ? (
+                {action.started !== "passed" ? (
                   <div className="flex flex-col gap-4 items-center justify-center">
                     <Dice
                       onClick={rollDice}
-                      diceValue={store.game.actualAction.value}
-                      hasRolled={store.game.actualAction.started === "dice"}
+                      diceValue={action.value}
+                      hasRolled={action.started === "dice"}
                     />
-                    {store.game.actualAction.started === "dice" && (
+                    {action.started === "dice" && (
                       <p className="text-white text-base animate-in fade-in delay-1000 duration-1000">
                         <span className="text-white text-base bg-secondary leading-[0rem] p-1 px-2 rounded-md">
                           {investmentValue}
@@ -153,7 +148,7 @@ export function PilotPage() {
                     )}
                   </div>
                 ) : (
-                  <Coin approved={store.game.actualAction.passed} />
+                  <Coin approved={action.passed} />
                 )}
               </div>
             </div>
@@ -164,10 +159,10 @@ export function PilotPage() {
         <div className="flex flex-col items-center gap-2">
           {store.isActive() ? (
             <>
-              {store.game.actualAction.started === "dice" && (
+              {action.started === "dice" && (
                 <Button onClick={goToCoin}>Ir para Teste do protótipo</Button>
               )}
-              {store.game.actualAction.started === "passed" && (
+              {action.started === "passed" && (
                 <Button onClick={finishSelection} className="w-36 relative">
                   <span className="absolute top-0 right-0 bg-secondary leading-[0rem] -mt-3 -mr-6 h-4 p-2 rounded-md">
                     -{investmentValue}
@@ -178,7 +173,7 @@ export function PilotPage() {
             </>
           ) : (
             <p className="text-center text-xl text-secondary">
-              {store.game?.actualAction.activeUser.name} está com o protótipo
+              {action.activeUser.name} está com o protótipo
             </p>
           )}
           <Button asChild variant={"secondary"} className="w-36">
@@ -186,6 +181,6 @@ export function PilotPage() {
           </Button>
         </div>
       </div>
-    </main>
+    </>
   );
 }

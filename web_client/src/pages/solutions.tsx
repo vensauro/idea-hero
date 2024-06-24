@@ -1,4 +1,4 @@
-import { SolutionGA } from "#/game";
+import { SolutionAdvocateGA, SolutionGA, SolutionSelectionGA } from "#/game";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -10,49 +10,23 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { UsersBar } from "@/components/users-bar/users-bar";
 import { cardsUrls } from "@/lib/cards_urls";
 import { socket } from "@/lib/socket";
 import { useGameStore } from "@/lib/store";
-import { useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 
-export function SolutionsPage() {
+interface SolutionsPageProps {
+  action: SolutionGA | SolutionAdvocateGA | SolutionSelectionGA;
+}
+export function SolutionsPage({ action }: SolutionsPageProps) {
   const store = useGameStore();
-  const navigate = useNavigate();
-
-  const action = store.game?.actualAction as SolutionGA;
-  const cardUrl = `/ia_cards/${cardsUrls[action.randomCard]}`;
 
   function finishSelection() {
     socket.emit("run_problem");
   }
 
-  useEffect(() => {
-    if (
-      store.game?.state !== undefined &&
-      store.game?.state !== "SOLUTION" &&
-      store.game?.state !== "SOLUTION_SELECTION" &&
-      store.game?.state !== "SOLUTION_ADVOCATE"
-    ) {
-      navigate("/prototype");
-    }
-  }, [navigate, store.game?.state]);
-
-  if (
-    store.game?.actualAction.state !== "SOLUTION" &&
-    store.game?.actualAction.state !== "SOLUTION_SELECTION" &&
-    store.game?.actualAction.state !== "SOLUTION_ADVOCATE"
-  )
-    return;
-
   return (
-    <main className="min-h-screen flex flex-col ">
-      <UsersBar
-        activeUser={store.game?.actualAction.activeUser}
-        users={store.game?.users}
-      />
-
+    <>
       <Dialog defaultOpen={store.isActive()} key={store.game?.actionIndex}>
         <div className="relative">
           <DialogTrigger asChild>
@@ -78,12 +52,12 @@ export function SolutionsPage() {
           <DialogHeader>
             <DialogTitle>Instruções</DialogTitle>
             <DialogDescription className="py-4">
-              {store.game.actualAction.state === "SOLUTION" ? (
+              {action.state === "SOLUTION" ? (
                 <p>
                   Transforme o insight escolhido em solução, utilize as ideias
                   já existente dos outros jogadores
                 </p>
-              ) : store.game.actualAction.state === "SOLUTION_SELECTION" ? (
+              ) : action.state === "SOLUTION_SELECTION" ? (
                 <p>
                   Você foi o que mais investiu ao decorrer do caminho, assim
                   investindo metade dos seus pontos você irá propor a solução
@@ -117,10 +91,10 @@ export function SolutionsPage() {
             {/* window */}
             <div className="flex w-full bg-accent border-2 rounded-b-xl p-6">
               <div className="relative border-dashed border-[3px] rounded-xl overflow-hidden w-[236px] h-[347px]">
-                {store.game.actualAction.state === "SOLUTION" ? (
+                {action.state === "SOLUTION" ? (
                   <img
-                    src={cardUrl}
-                    className="aspect-[180/271] object-cover"
+                    src={`/ia_cards/${cardsUrls[action.randomCard]}`}
+                    className="aspect-[180/271] object-cover h-full w-full"
                   />
                 ) : (
                   <div className="bg-slate-400 w-full h-full flex justify-center items-center flex-col border-[10px] border-secondary">
@@ -130,9 +104,9 @@ export function SolutionsPage() {
                       className="h-16"
                     />
                     <p className="text-base text-white text-center leading-3 mt-3">
-                      {store.game.actualAction.state === "SOLUTION_SELECTION"
-                        ? `${store.game.actualAction.activeUser.name} está definindo a solução`
-                        : `${store.game.actualAction.activeUser.name} é o "advogado do diabo"`}
+                      {action.state === "SOLUTION_SELECTION"
+                        ? `${action.activeUser.name} está definindo a solução`
+                        : `${action.activeUser.name} é o "advogado do diabo"`}
                     </p>
                   </div>
                 )}
@@ -151,8 +125,8 @@ export function SolutionsPage() {
             </>
           ) : (
             <p className="text-center text-xl text-secondary">
-              É a vez de {store.game?.actualAction.activeUser.name} ajudar na
-              construção da solução
+              É a vez de {action.activeUser.name} ajudar na construção da
+              solução
             </p>
           )}
           <Button asChild variant={"secondary"} className="w-36">
@@ -160,6 +134,6 @@ export function SolutionsPage() {
           </Button>
         </div>
       </div>
-    </main>
+    </>
   );
 }

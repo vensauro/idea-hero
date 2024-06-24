@@ -1,3 +1,4 @@
+import { ProblemsEndGA } from "#/game";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -9,13 +10,15 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { UsersBar } from "@/components/users-bar/users-bar";
 import { socket } from "@/lib/socket";
 import { useGameStore } from "@/lib/store";
 import { useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
-export function ProblemFinishPage() {
+interface ProblemFinishPageProps {
+  action: ProblemsEndGA;
+}
+export function ProblemFinishPage({ action }: ProblemFinishPageProps) {
   const store = useGameStore();
   const navigate = useNavigate();
 
@@ -29,17 +32,10 @@ export function ProblemFinishPage() {
     }
   }, [navigate, store.game?.state]);
 
-  if (store.game?.actualAction.state !== "PROBLEM_END") return;
-
   const problemWinner = store.game?.problemWinner;
 
   return (
-    <main className="min-h-screen flex flex-col ">
-      <UsersBar
-        activeUser={store.game?.actualAction.activeUser}
-        users={store.game?.users}
-      />
-
+    <>
       <Dialog defaultOpen={store.isActive()} key={store.game?.actionIndex}>
         <div className="relative">
           <DialogTrigger asChild>
@@ -124,13 +120,13 @@ export function ProblemFinishPage() {
         </div>
 
         <div className="flex flex-col items-center gap-2">
-          {store.game?.actualAction.activeUser.name === store.nickname ? (
+          {action.activeUser.name === store.nickname ? (
             <Button onClick={finishSelection} className="w-36">
               Terminar Jogada
             </Button>
           ) : (
             <p className="text-center text-xl text-secondary">
-              esperando {store.game?.actualAction.activeUser.name}
+              esperando {action.activeUser.name}
             </p>
           )}
           <Button asChild variant={"secondary"} className="w-36">
@@ -138,6 +134,6 @@ export function ProblemFinishPage() {
           </Button>
         </div>
       </div>
-    </main>
+    </>
   );
 }

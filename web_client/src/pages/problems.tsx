@@ -10,45 +10,32 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { UsersBar } from "@/components/users-bar/users-bar";
 import { cardsUrls } from "@/lib/cards_urls";
 import { socket } from "@/lib/socket";
 import { useGameStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
 import { useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 
-export function ProblemsPage() {
+interface ProblemsPageProps {
+  action: ProblemsGA;
+}
+export function ProblemsPage({ action }: ProblemsPageProps) {
   const store = useGameStore();
-  const navigate = useNavigate();
   const [flipCard, setFlipCard] = useState(false);
 
   useEffect(() => {
     setTimeout(() => setFlipCard(true), 1500);
   }, []);
 
-  const action = store.game?.actualAction as ProblemsGA;
   const cardUrl = `/ia_cards/${cardsUrls[action.randomCard]}`;
 
   function finishSelection() {
     socket.emit("run_problem");
   }
 
-  useEffect(() => {
-    if (store.game?.state !== undefined && store.game.state !== "PROBLEM") {
-      navigate("/problems-investment");
-    }
-  }, [navigate, store.game?.state]);
-
-  if (store.game?.actualAction.state !== "PROBLEM") return;
-
   return (
-    <main className="min-h-screen flex flex-col ">
-      <UsersBar
-        activeUser={store.game?.actualAction.activeUser}
-        users={store.game?.users}
-      />
-
+    <>
       <Dialog defaultOpen={store.isActive()} key={store.game?.actionIndex}>
         <div className="relative">
           <DialogTrigger asChild>
@@ -137,13 +124,13 @@ export function ProblemsPage() {
         </div>
 
         <div className="flex flex-col items-center gap-2">
-          {store.game?.actualAction.activeUser.name === store.nickname ? (
+          {action.activeUser.name === store.nickname ? (
             <Button onClick={finishSelection} className="w-36">
               Terminar Jogada
             </Button>
           ) : (
             <p className="text-center text-xl text-secondary">
-              esperando {store.game?.actualAction.activeUser.name}
+              esperando {action.activeUser.name}
             </p>
           )}
           <Button asChild variant={"secondary"} className="w-36">
@@ -151,6 +138,6 @@ export function ProblemsPage() {
           </Button>
         </div>
       </div>
-    </main>
+    </>
   );
 }

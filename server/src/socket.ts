@@ -22,6 +22,7 @@ import {
   GameUser,
   InsightEndGA,
   InsightGA,
+  LobbyGA,
   MarketingGA,
   PilotGA,
   ProblemInvestmentInvested,
@@ -30,6 +31,7 @@ import {
   ProblemsGA,
   ProblemsInvestmentGA,
   PrototypeGA,
+  RandomPremiumGA,
   SalesGA,
   ScenarioGA,
   SolutionAdvocateGA,
@@ -61,10 +63,12 @@ export function handleSocket(
     io.to(socket.id).emit("game_state_update", gameUpdate);
   }
 
-  function changeUserPoints(gameUpdate: Game, value: number, user: GameUser) {
-    // const user = gameUpdate.users.find((e) => e.name === socket.data.name)!;
+  function changeUserPoints(gameUpdate: Game, value: number, userId: string) {
+    const user = gameUpdate.users.find((e) => e.id === userId);
+    if (!user) return;
 
-    return replace(
+    gameUpdate.teamPoints += value;
+    gameUpdate.users = replace(
       gameUpdate.users,
       {
         ...user,
@@ -90,8 +94,8 @@ export function handleSocket(
       actions: [],
       owner: user,
       users: [user],
-      teamPoints: 0,
-      actualAction: { activeUser: user, state: "SCENARIO", scenario: null },
+      teamPoints: user.points,
+      actualAction: { activeUser: user, state: "LOBBY" },
       actionIndex: 0,
       state: "LOBBY",
       cardQuantity,
@@ -108,12 +112,12 @@ export function handleSocket(
   });
 
   socket.on("enter_game", ({ name, avatar, code }, callback) => {
-    const dbGame = db.get(code);
-    if (!dbGame) {
+    const game = db.get(code);
+    if (!game) {
       return;
     }
 
-    const oldUser = dbGame.users.find((e) => e.name === name);
+    const oldUser = game.users.find((e) => e.name === name);
     const user: GameUser = {
       avatar,
       name:
@@ -127,9 +131,9 @@ export function handleSocket(
     };
 
     if (oldUser === undefined) {
-      dbGame.users.push(user);
+      game.users.push(user);
     } else {
-      dbGame.users = replace(dbGame.users, user, (e) => e.id === user.id);
+      game.users = replace(game.users, user, (e) => e.id === user.id);
     }
 
     socket.data.id = user.id;
@@ -139,10 +143,10 @@ export function handleSocket(
 
     socket.join(code);
 
-    db.set(code, dbGame);
-    socket.to(code).emit("game_state_update", dbGame);
+    db.set(code, game);
+    socket.to(code).emit("game_state_update", game);
 
-    return callback({ game: dbGame, user });
+    return callback({ game: game, user });
   });
 
   socket.on("disconnect", (reason) => {
@@ -166,22 +170,29 @@ export function handleSocket(
   });
 
   socket.on("start_game", () => {
-    const dbGame = db.get(socket.data.room);
-    if (!dbGame) {
+    const game = db.get(socket.data.room);
+    if (!game) {
       return;
     }
 
-    dbGame.state = "SCENARIO";
+    game.teamPoints = sum(game.users.map((e) => e.points));
 
-    const rngCard = () => random(0, dbGame.cardQuantity - 1);
+    game.state = "SCENARIO";
+    game.actualAction = {
+      activeUser: game.owner,
+      scenario: null,
+      state: "SCENARIO",
+    } as ScenarioGA;
+
+    const rngCard = () => random(0, game.cardQuantity - 1);
 
     const scenarioAction = {
-      activeUser: dbGame.owner,
+      activeUser: game.owner,
       state: "SCENARIO",
       scenario: null,
     } as ScenarioGA;
 
-    const users = shift(dbGame.users, -1);
+    const users = shift(game.users, -1);
     const problems = users.map(
       (u) =>
         ({
@@ -194,6 +205,7 @@ export function handleSocket(
     const problemsInvestments = {
       state: "PROBLEM_INVESTMENT",
       usersInvestment: [],
+      activeUser: game.owner,
     } as ProblemsInvestmentGA;
 
     const insights = users.map(
@@ -206,7 +218,7 @@ export function handleSocket(
     );
 
     const endInsight = {
-      activeUser: dbGame.owner,
+      activeUser: game.owner,
       state: "INSIGHT_END",
     } as InsightEndGA;
 
@@ -219,7 +231,7 @@ export function handleSocket(
         } as SolutionGA)
     );
 
-    dbGame.actions = [
+    game.actions = [
       scenarioAction,
       problems,
       problemsInvestments,
@@ -229,7 +241,29 @@ export function handleSocket(
       solutions,
     ].flat();
 
-    updateAndEmit(dbGame);
+    const rngActionNumber = Math.random();
+
+    if (rngActionNumber <= 0.8) {
+      const indexToInsert = random(0, game.actions.length - 1);
+
+      game.actions.splice(indexToInsert, 0, {
+        state: "RANDOM_PREMIUM",
+        activeUser: game.owner,
+        earnedValue: random(1, 10) * 1000 * draw([-1, 1])!,
+        textIndex: random(0, 10),
+      });
+    } else if (rngActionNumber <= 0.3) {
+      const indexToInsert = random(0, game.actions.length - 1);
+
+      game.actions.splice(indexToInsert, 0, {
+        state: "RANDOM_PREMIUM",
+        activeUser: game.owner,
+        earnedValue: random(1, 10) * 1000 * draw([-1, 1])!,
+        textIndex: random(0, 10),
+      });
+    }
+
+    updateAndEmit(game);
   });
 
   socket.on("reset_game", () => {
@@ -243,8 +277,7 @@ export function handleSocket(
     game.teamPoints = 0;
     game.actualAction = {
       activeUser: game.owner,
-      state: "SCENARIO",
-      scenario: null,
+      state: "LOBBY",
     };
     game.actionIndex = 0;
     game.problemWinner = { winner: game.owner, value: 0 };
@@ -267,6 +300,7 @@ export function handleSocket(
           "SOLUTION_ADVOCATE",
           "PROTOTYPE",
           "PILOT",
+          "RANDOM_PREMIUM",
         ] as GameState[]
       ).every((e) => game.actualAction.state !== e)
     ) {
@@ -317,10 +351,10 @@ export function handleSocket(
 
     if (
       game.actualAction.state === "PROBLEM" ||
-      game.actualAction.state === "INSIGHT"
+      game.actualAction.state === "INSIGHT" ||
+      game.actualAction.state === "SOLUTION"
     ) {
-      const user = game.users.find((e) => e.name === socket.data.name);
-      game.users = changeUserPoints(game, -1000, user!);
+      changeUserPoints(game, -1000, socket.data.id);
     }
 
     if (game.actualAction.state === "PROTOTYPE") {
@@ -344,7 +378,7 @@ export function handleSocket(
 
     if (game.actualAction.state === "PILOT") {
       const pilotInvestment =
-        game.actualAction.value *
+        game.actualAction.value /
         (game.actions[game.actionIndex - 1] as PrototypeGA).investment;
 
       game.teamPoints -= pilotInvestment;
@@ -368,6 +402,14 @@ export function handleSocket(
           step: 1,
         } as PrototypeGA);
       }
+    }
+
+    if (game.actualAction.state === "RANDOM_PREMIUM") {
+      game.teamPoints += game.actualAction.earnedValue;
+      game.users.map((u) => ({
+        ...u,
+        points: game.teamPoints / game.users.length,
+      }));
     }
 
     game.actions[game.actionIndex] = game.actualAction;
@@ -433,7 +475,7 @@ export function handleSocket(
       return;
     }
 
-    game.users = changeUserPoints(game, -value, user!);
+    changeUserPoints(game, -value, socket.data.id);
     // game.users = changeUserPoints(game, +value, toUser!);
 
     const investment: ProblemInvestmentItem = {
@@ -531,6 +573,7 @@ export function handleSocket(
     const nextInvestment = {
       state: "PROBLEM_INVESTMENT",
       usersInvestment: [],
+      activeUser: game.owner,
     } as ProblemsInvestmentGA;
 
     const indexToChange = game.actionIndex + 1;
@@ -560,8 +603,7 @@ export function handleSocket(
       return;
     }
 
-    const user = game.users.find((e) => e.id === socket.data.id);
-    game.users = changeUserPoints(game, -1000, user!);
+    changeUserPoints(game, -1000, socket.data.id);
 
     const users = shift(game.users, -1);
 
@@ -646,7 +688,24 @@ export function handleSocket(
     updateAndEmit(game);
   });
 
-  socket.on("marketing_investment", ({ values }) => {
+  socket.on("update_marketing_investment", ({ values }) => {
+    const game = db.get(socket.data.room);
+    if (!game || game.actualAction.state !== "MARKETING") {
+      return;
+    }
+
+    const activeUser = game.users.find((e) => e.id === socket.data.id);
+
+    if (!activeUser) {
+      return;
+    }
+
+    game.actualAction.investment = values;
+
+    updateAndEmit(game);
+  });
+
+  socket.on("finish_marketing_investment", () => {
     const game = db.get(socket.data.room);
     if (!game || game.actualAction.state !== "MARKETING") {
       return;
@@ -675,7 +734,7 @@ export function handleSocket(
       game.actualAction.productValues.length;
 
     const marketingResult = sum(
-      values.map(
+      game.actualAction.investment.map(
         (e) => productPrice * e.value * e.multiplier * randomMultiplier()
       )
     );

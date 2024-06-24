@@ -36,7 +36,7 @@ export function StartGamePage() {
         store.setUser(user);
       }
     );
-    navigate("/lobby");
+    navigate("/game");
   }
 
   return (

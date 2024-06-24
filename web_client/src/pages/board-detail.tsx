@@ -1,44 +1,26 @@
-import { GameState } from "#/game";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { Minus, Square, X } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
+import json from "../lib/text.json";
+import { BoardState } from "@/components/board/board-svg";
 
-const content: Record<
-  GameState,
-  {
-    title: string;
-    body: string;
-  }
-> = {
-  SCENARIO: { title: "Cenário", body: "" },
-  PROBLEM: { title: "Problema", body: "PROBLEMA BODY" },
-  SOLUTION: { title: "Solução", body: "" },
-  INSIGHT: { title: "Insights", body: "" },
-  PROTOTYPE: { title: "Protótipo", body: "" },
-  PILOT: { title: "Piloto", body: "" },
-  MARKETING: { title: "Marketing", body: "" },
-  SALES: { title: "Vendas", body: "" },
-  LOBBY: { title: "", body: "" },
-  ENDED: { title: "", body: "" },
-  PROBLEM_END: { title: "", body: "" },
-  PROBLEM_INVESTMENT: { title: "", body: "" },
-  INSIGHT_END: {
-    title: "INSIGHTS",
-    body: `Arremate os insights escolhidos até aqui. Caso não esteja satisfeito
-  com o resultado, você pode fazer suas considerações e propor uma
-  nova rodada, mas lembre-se que a contribuição de cada jogador tem um
-  custo de 1000 pontos`,
-  },
-  SOLUTION_SELECTION: { title: "", body: "" },
-  SOLUTION_ADVOCATE: { title: "", body: "" },
+const boardTitle = {
+  SCENARIO: "Cenário",
+  PROBLEM: "Problema",
+  INSIGHT: "Insights",
+  SOLUTION: "Solução",
+  PROTOTYPE: "Protótipo",
+  PILOT: "Piloto",
+  MARKETING: "Marketing",
+  SALES: "Vendas",
 };
 
 export function BoardDetailPage() {
   const navigate = useNavigate();
   const { state } = useParams();
 
-  const gameState = (state?.toUpperCase() ?? "PROBLEM") as GameState;
+  const gameState = (state?.toUpperCase() ?? "PROBLEM") as BoardState;
 
   return (
     <div>
@@ -50,7 +32,7 @@ export function BoardDetailPage() {
         <div>
           <div className="border-2 flex items-center p-1 bg-primary justify-between">
             <p className="text-base text-white leading-3 mx-2">
-              {content[gameState].title}
+              {boardTitle[gameState]}
             </p>
             <div className="flex items-center gap-1">
               <div className="bg-white border-2">
@@ -67,7 +49,7 @@ export function BoardDetailPage() {
           </div>
         </div>
         <div className="px-4 text-base leading-3">
-          <p>{content[gameState].body}</p>
+          <p>{json.board[gameState]}</p>
         </div>
         <div className="flex justify-end my-2 px-9">
           <Button onClick={() => navigate(-1)}>Voltar</Button>

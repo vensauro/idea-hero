@@ -1,12 +1,15 @@
+import { SalesGA } from "#/game";
 import { Button } from "@/components/ui/button";
-import { UsersBar } from "@/components/users-bar/users-bar";
+import { socket } from "@/lib/socket";
 import { useGameStore } from "@/lib/store";
+import confetti from "canvas-confetti";
 import { useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import confetti from "canvas-confetti";
-import { socket } from "@/lib/socket";
 
-export function SalesPage() {
+interface SalesPageProps {
+  action: SalesGA;
+}
+export function SalesPage({ action }: SalesPageProps) {
   const store = useGameStore();
   const navigate = useNavigate();
 
@@ -19,10 +22,6 @@ export function SalesPage() {
   }, []);
 
   useEffect(() => {
-    if (store.game?.state === "MARKETING") {
-      navigate("/marketing");
-      return;
-    }
     if (store.game?.state === "LOBBY") {
       navigate("/lobby");
       return;
@@ -38,15 +37,8 @@ export function SalesPage() {
     currency: "BRL",
   });
 
-  if (store.game?.actualAction.state !== "SALES") return;
-
   return (
-    <main className="min-h-screen flex flex-col">
-      <UsersBar
-        activeUser={store.game?.actualAction.activeUser}
-        users={store.game?.users}
-      />
-
+    <>
       <div className="flex justify-center my-4">
         <div className="max-w-72 w-full">
           {/* window top bar */}
@@ -56,27 +48,20 @@ export function SalesPage() {
 
           {/* window */}
           <div className="w-full bg-accent border-2 rounded-b-xl p-6  text-primary text-xl leading-5">
-            {!store.game.actualAction.winned ? (
+            {!action.winned ? (
               <>
                 <p className="text-center">Parabéns!!</p>
                 <p className="">Vocês tiveram um projeto de sucesso!</p>
-                <p className="">Teve um investimento de:</p>
-                <p className="text-center font-bold text-secondary font-mono text-base">
-                  {intlFormat.format(store.game.actualAction.investedValue)}
-                </p>
+
                 <p>
                   O valor do produto foi de{" "}
-                  {intlFormat.format(store.game.actualAction.productPrice)}
+                  {intlFormat.format(action.productPrice)}
                 </p>
-                <p>Vendas de:</p>
-                <p className="text-center font-bold text-secondary font-mono text-base">
-                  {intlFormat.format(store.game.actualAction.marketingResult)}
-                </p>
+
                 <p>Totalizando um lucro de:</p>
                 <p className="font-bold text-secondary font-mono text-base text-center">
                   {intlFormat.format(
-                    store.game.actualAction.marketingResult -
-                      store.game.actualAction.investedValue
+                    action.marketingResult - action.investedValue
                   )}
                 </p>
               </>
@@ -84,25 +69,16 @@ export function SalesPage() {
               <>
                 <p className="text-center">Não foi dessa vez!</p>
                 <p>Vocês tiveram um prejuízo com essa rodada do projeto. </p>
-                <p className="">Teve um investimento de:</p>
-                <p className="text-center font-bold text-secondary font-mono text-base">
-                  {intlFormat.format(store.game.actualAction.investedValue)}
-                </p>
                 <p>
                   O valor do produto foi de{" "}
                   <span className="font-mono text-sm">
-                    {intlFormat.format(store.game.actualAction.productPrice)}
+                    {intlFormat.format(action.productPrice)}
                   </span>
-                </p>
-                <p>Vendas de:</p>
-                <p className="text-center font-bold text-secondary font-mono text-base">
-                  {intlFormat.format(store.game.actualAction.marketingResult)}
                 </p>
                 <p>Totalizando um prejuízo de:</p>
                 <p className="font-bold text-secondary font-mono text-base text-center">
                   {intlFormat.format(
-                    store.game.actualAction.investedValue -
-                      store.game.actualAction.marketingResult
+                    action.investedValue - action.marketingResult
                   )}
                 </p>
                 <p>Querem tentar fazer o marketing e vender novamente?</p>
@@ -115,7 +91,7 @@ export function SalesPage() {
 
       <div>
         <div className="flex flex-col items-center gap-2">
-          {store.game.actualAction.winned ? (
+          {action.winned ? (
             <Button onClick={() => socket.emit("reset_game")}>
               Começar novamente
             </Button>
@@ -130,6 +106,6 @@ export function SalesPage() {
           </Button>
         </div>
       </div>
-    </main>
+    </>
   );
 }

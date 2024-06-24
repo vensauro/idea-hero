@@ -1,5 +1,6 @@
 import { cn } from "@/lib/utils";
 import { Avatar, AvatarImage } from "../ui/avatar";
+import { useAutoAnimate } from "@formkit/auto-animate/react";
 
 interface UserAvatarProps {
   connected?: boolean;
@@ -19,11 +20,15 @@ export function UserAvatar({
   showPoints = false,
   big = false,
 }: UserAvatarProps) {
+  const [animationParent] = useAutoAnimate();
   return (
     <div className="flex flex-col justify-center items-center">
       {showPoints && (
         <div className="-mb-2 z-10 w-full flex justify-center relative">
-          <span className="rounded-full min-w-16 text-sm h-4 leading-4 text-center text-white bg-secondary">
+          <span
+            className="rounded-full min-w-16 text-sm h-4 leading-4 text-center text-white bg-secondary"
+            ref={animationParent}
+          >
             {points}
           </span>
         </div>

@@ -1,3 +1,4 @@
+import { ScenarioGA } from "#/game";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -9,17 +10,18 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { UsersBar } from "@/components/users-bar/users-bar";
 import { getRandomCardUrl } from "@/lib/cards_urls";
 import { socket } from "@/lib/socket";
 import { useGameStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
 import { useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 
-export function ScenarioPage() {
+interface ScenarioPageProps {
+  action: ScenarioGA;
+}
+export function ScenarioPage({ action }: ScenarioPageProps) {
   const store = useGameStore();
-  const navigate = useNavigate();
   const [cardUrl, setCardUrl] = useState<string | null>(null);
 
   const canGetCard = store.isOwner() && cardUrl === null;
@@ -36,27 +38,12 @@ export function ScenarioPage() {
   }
 
   useEffect(() => {
-    if (store.game?.actualAction.state === "SCENARIO") {
-      setCardUrl(store.game.actualAction.scenario);
-    }
-  }, [store.game?.actualAction]);
-
-  useEffect(() => {
-    if (store.game?.state !== undefined && store.game.state !== "SCENARIO") {
-      navigate("/problems");
-    }
-  }, [navigate, store.game?.state]);
-
-  if (store.game?.actualAction.state !== "SCENARIO") return;
+    setCardUrl(action.scenario);
+  }, [action]);
 
   return (
-    <main className="min-h-screen flex flex-col ">
-      <UsersBar
-        activeUser={store.game?.actualAction.activeUser}
-        users={store.game?.users}
-      />
-
-      <Dialog defaultOpen={store.isOwner() && store.game?.state === "SCENARIO"}>
+    <>
+      <Dialog defaultOpen={store.isOwner()}>
         <div className="relative">
           <DialogTrigger asChild>
             <Button variant="ghost" className="text-border absolute right-0">
@@ -159,13 +146,11 @@ export function ScenarioPage() {
                         className="h-16"
                       />
                       <p className="text-base text-white w-4/5 leading-3 my-2">
-                        Espere {store.game?.actualAction.activeUser.name}{" "}
-                        selecionar o cenário!
+                        Espere {action.activeUser.name} selecionar o cenário!
                       </p>
                       <p className="text-base text-white w-4/5 leading-3 my-2">
                         O cenário pode ser um pre definido pelo grupo, ou
-                        baseado na carta tirada por{" "}
-                        {store.game?.actualAction.activeUser.name}
+                        baseado na carta tirada por {action.activeUser.name}
                       </p>
                     </div>
                     <img
@@ -185,7 +170,7 @@ export function ScenarioPage() {
           </div>
         </div>
 
-        {store.game?.actualAction.activeUser.name === store.nickname ? (
+        {action.activeUser.name === store.nickname ? (
           <div className="flex flex-col items-center gap-2">
             <Button onClick={finishSelection} className="w-36">
               Terminar Jogada
@@ -197,10 +182,10 @@ export function ScenarioPage() {
           </div>
         ) : (
           <p className="text-center text-xl text-secondary">
-            esperando {store.game?.actualAction.activeUser.name}
+            esperando {action.activeUser.name}
           </p>
         )}
       </div>
-    </main>
+    </>
   );
 }

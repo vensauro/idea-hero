@@ -46,7 +46,7 @@ export function EnterGamePage() {
         store.setCode(code);
       }
     );
-    navigate("/lobby");
+    navigate("/game");
   }
 
   return (

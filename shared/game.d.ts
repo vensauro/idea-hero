@@ -13,7 +13,8 @@ type GameState =
   | "PILOT"
   | "MARKETING"
   | "SALES"
-  | "ENDED";
+  | "ENDED"
+  | "RANDOM_PREMIUM";
 
 export interface Game {
   code: string;
@@ -50,6 +51,10 @@ export interface GameAction {
 }
 
 // ACTIONS
+export interface LobbyGA extends GameAction {
+  state: "LOBBY";
+}
+
 export interface ScenarioGA extends GameAction {
   state: "SCENARIO";
   scenario: string | null;
@@ -78,10 +83,10 @@ export type ProblemInvestmentItem =
   | ProblemInvestmentInvested
   | ProblemInvestmentNewRound;
 
-export type ProblemsInvestmentGA = {
+export interface ProblemsInvestmentGA extends GameAction {
   state: "PROBLEM_INVESTMENT";
   usersInvestment: ProblemInvestmentItem[];
-};
+}
 
 export interface InsightGA extends GameAction {
   state: "INSIGHT";
@@ -132,6 +137,7 @@ export interface MarketingProduct {
 
 export interface MarketingInvestment {
   multiplier: number;
+  name: string;
   value: number;
 }
 export interface MarketingGA extends GameAction {
@@ -148,7 +154,14 @@ export interface SalesGA extends GameAction {
   productPrice: number;
 }
 
+export interface RandomPremiumGA extends GameAction {
+  state: "RANDOM_PREMIUM";
+  earnedValue: number;
+  textIndex: number;
+}
+
 type GameActions =
+  | LobbyGA
   | ScenarioGA
   | ProblemsGA
   | ProblemsInvestmentGA
@@ -161,4 +174,5 @@ type GameActions =
   | PrototypeGA
   | PilotGA
   | MarketingGA
-  | SalesGA;
+  | SalesGA
+  | RandomPremiumGA;

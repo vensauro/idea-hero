@@ -1,3 +1,4 @@
+import { ProblemsInvestmentGA } from "#/game";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -14,12 +15,13 @@ import { Slider } from "@/components/ui/slider";
 import { UserAvatar } from "@/components/users-bar/user-avatar";
 import { socket } from "@/lib/socket";
 import { useGameStore } from "@/lib/store";
-import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState } from "react";
 
-export function ProblemInvestment() {
+interface ProblemInvestmentProps {
+  action: ProblemsInvestmentGA;
+}
+export function ProblemInvestment({ action }: ProblemInvestmentProps) {
   const store = useGameStore();
-  const navigate = useNavigate();
 
   const [investmentValue, setInvestmentValue] = useState(1000);
 
@@ -31,32 +33,29 @@ export function ProblemInvestment() {
     socket.emit("new_problem_round");
   }
 
-  useEffect(() => {
-    if (store.game?.state === "PROBLEM") {
-      navigate("/problems");
-      return;
-    }
+  // useEffect(() => {
+  //   if (store.game?.state === "PROBLEM") {
+  //     navigate("/problems");
+  //     return;
+  //   }
 
-    if (store.game?.state === "PROBLEM_END") {
-      navigate("/problems-end");
-      return;
-    }
+  //   if (store.game?.state === "PROBLEM_END") {
+  //     navigate("/problems-end");
+  //     return;
+  //   }
 
-    if (
-      store.game?.state !== undefined &&
-      store.game.state !== "PROBLEM_INVESTMENT"
-    ) {
-      navigate("/problems-end");
-      return;
-    }
-  }, [navigate, store.game?.state]);
-
-  if (store.game?.actualAction.state !== "PROBLEM_INVESTMENT") return;
+  //   if (
+  //     store.game?.state !== undefined &&
+  //     store.game.state !== "PROBLEM_INVESTMENT"
+  //   ) {
+  //     navigate("/problems-end");
+  //     return;
+  //   }
+  // }, [navigate, store.game?.state]);
 
   const haveInvested =
-    store.game?.actualAction.usersInvestment.find(
-      (e) => e.from.id === store.user?.id
-    ) !== undefined;
+    action.usersInvestment.find((e) => e.from.id === store.user?.id) !==
+    undefined;
 
   return (
     <div>

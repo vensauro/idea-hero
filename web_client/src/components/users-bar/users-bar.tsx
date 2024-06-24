@@ -22,6 +22,7 @@ export function UsersBar({ activeUser, users = [] }: UsersBarProps) {
             avatarImage={user.avatar.image}
             name={user.name}
             points={user.points}
+            showPoints
           />
         ))}
       {activeUser && (
@@ -48,6 +49,7 @@ export function UsersBar({ activeUser, users = [] }: UsersBarProps) {
             avatarImage={user.avatar.image}
             name={user.name}
             points={user.points}
+            showPoints
           />
         ))}
     </div>
