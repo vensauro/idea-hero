@@ -628,10 +628,37 @@ export function handleSocket(
 
         if (game.users.length !== usersHaveInvestment.length) {
           const usersWithoutInvestment = diff(game.users, usersHaveInvestment);
+          const newActions = usersWithoutInvestment.map(
+            (u) =>
+              ({
+                state: "PROBLEM",
+                activeUser: u,
+                randomCard: random(0, game.cardQuantity - 1),
+              } as ProblemsGA)
+          );
+
+          const nextInvestment = {
+            state: "PROBLEM_INVESTMENT",
+            usersInvestment: [],
+            activeUser: game.owner,
+          } as ProblemsInvestmentGA;
+
+          const indexToChange = game.actionIndex + 1;
+          const hasInvestment = game.actions
+            .slice(indexToChange)
+            .find((e) => e.state === "PROBLEM_INVESTMENT");
+
+          if (!hasInvestment) {
+            game.actions.splice(
+              indexToChange,
+              0
+              // ...newActions,
+              // nextInvestment
+            );
+          } else {
+            game.actions.splice(indexToChange, 0, ...newActions);
+          }
           // const newAction = {
-          //   state: "PROBLEM",
-          //   activeUser,
-          //   randomCard: random(0, game.cardQuantity - 1),
           // } as ProblemsGA;
         }
       }
