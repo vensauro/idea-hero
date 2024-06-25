@@ -16,10 +16,12 @@ type GameState =
   | "ENDED"
   | "RANDOM_PREMIUM";
 
+export type GameMode = "collaborative" | "competitive";
 export interface Game {
   code: string;
   users: GameUser[];
   owner: GameUser;
+  mode: GameMode;
   state: GameState;
   teamPoints: number;
   actions: GameActions[];
@@ -144,6 +146,7 @@ export interface MarketingGA extends GameAction {
   state: "MARKETING";
   productValues: MarketingProduct[];
   investment: MarketingInvestment[];
+  loan: { type: "angel" | "bank"; value: number } | null;
 }
 
 export interface SalesGA extends GameAction {

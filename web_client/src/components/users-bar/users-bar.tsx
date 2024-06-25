@@ -1,16 +1,22 @@
 import { GameUser } from "#/game";
 import { UserAvatar } from "./user-avatar";
+import { useAutoAnimate } from "@formkit/auto-animate/react";
 
 interface UsersBarProps {
-  activeUser?: GameUser;
+  activeUserId?: string;
   users?: GameUser[];
 }
-export function UsersBar({ activeUser, users = [] }: UsersBarProps) {
-  const notActiveUsers = users.filter((e) => e.id !== activeUser?.id);
+export function UsersBar({ activeUserId, users = [] }: UsersBarProps) {
+  const notActiveUsers = users.filter((e) => e.id !== activeUserId);
+  const activeUser = users.find((u) => u.id === activeUserId);
   const midLength = Math.round((notActiveUsers.length - 1) / 2);
+  const [animationParent] = useAutoAnimate();
 
   return (
-    <div className="flex justify-center items-center overflow-y-auto gap-3 bg-accent p-2 h-[146px]">
+    <div
+      className="flex justify-center items-center overflow-y-auto gap-3 bg-accent p-2 h-[146px]"
+      ref={animationParent}
+    >
       {notActiveUsers
         .filter((e) => e.id !== activeUser?.id)
         .slice(0, midLength)

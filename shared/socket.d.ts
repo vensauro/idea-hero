@@ -1,4 +1,10 @@
-import { Game, GameUser, GameUserAvatar, MarketingInvestment } from "./game";
+import {
+  Game,
+  GameMode,
+  GameUser,
+  GameUserAvatar,
+  MarketingInvestment,
+} from "./game";
 
 export interface SocketData {
   name: string;
@@ -27,7 +33,7 @@ export interface ClientToServerEvents {
     },
     callback: ({ game: Game, user: GameUser }) => void
   ) => void;
-  start_game: () => void;
+  start_game: (mode: GameMode) => void;
   get_scenario: (scenario: string | null) => void;
   select_scenario: () => void;
   run_problem: () => void;
@@ -41,6 +47,9 @@ export interface ClientToServerEvents {
   update_marketing_investment: (body: {
     values: MarketingInvestment[];
   }) => void;
+  make_marketing_loan: (
+    body: { type: "angel" | "bank"; value: number } | null
+  ) => void;
   finish_marketing_investment: () => void;
   reset_game: () => void;
 }

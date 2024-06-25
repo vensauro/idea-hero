@@ -1,6 +1,15 @@
 import { MarketingGA } from "#/game";
 import { InstructionDialog } from "@/components/dialogs/instruction-dialog";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -79,6 +88,10 @@ export function MarketingPage({ action }: MarketingPageProps) {
                   marketing irão investir. Você está com todo recurso do grupo
                   em mãos.
                 </p>
+                <p>
+                  O produto terá sucesso nas vendas dependendo das escolhas
+                  nessa tela!
+                </p>
                 <p>Que tal conversar com o grupo para decidir como utilizar?</p>
               </>
             ) : (
@@ -90,9 +103,9 @@ export function MarketingPage({ action }: MarketingPageProps) {
             )}
           </InstructionDialog>
         </div>
-        <div className="flex flex-col w-full bg-[#fff6e5] p-3 border-2 h-96">
+        <div className="flex flex-col w-full bg-[#fff6e5] p-3 border-2">
           <div className="h-full w-full bg-primary">
-            <ScrollArea className="h-[356px] w-[260px] border-2">
+            <ScrollArea className="h-[380px] w-[260px] border-2">
               <div className="flex flex-col gap-4 items-center justify-center">
                 <form
                   className="w-4/5"
@@ -226,6 +239,121 @@ export function MarketingPage({ action }: MarketingPageProps) {
                   </span>
                   Inserção na TV
                 </Button>
+
+                <Label htmlFor="nickname" className="text-border text-white">
+                  Precisa de dinheiro?
+                </Label>
+                <Dialog>
+                  <DialogTrigger asChild>
+                    <Button
+                      variant={
+                        action.loan?.type === "bank" ? "outline" : "secondary"
+                      }
+                      className="w-40"
+                    >
+                      Empréstimo do Banco
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent
+                    className="sm:max-w-[425px]"
+                    title="Empréstimo"
+                  >
+                    <DialogHeader>
+                      <DialogDescription className="py-4">
+                        <p>
+                          O banco está te oferecendo um empréstimo de 15.000
+                          pontos
+                        </p>
+                        <p>
+                          Após a venda, terá de devolver ao banco com 40% de
+                          juros (21.000 pontos)
+                        </p>
+                      </DialogDescription>
+                    </DialogHeader>
+
+                    <DialogFooter className="flex flex-row justify-end gap-2">
+                      <DialogClose asChild>
+                        <Button
+                          variant="secondary"
+                          onClick={() =>
+                            socket.emit("make_marketing_loan", null)
+                          }
+                          disabled={!store.isActive()}
+                        >
+                          Negar
+                        </Button>
+                      </DialogClose>
+                      <DialogClose asChild>
+                        <Button
+                          type="submit"
+                          onClick={() =>
+                            socket.emit("make_marketing_loan", {
+                              type: "bank",
+                              value: 15000,
+                            })
+                          }
+                        >
+                          Aceitar
+                        </Button>
+                      </DialogClose>
+                    </DialogFooter>
+                  </DialogContent>
+                </Dialog>
+                <Dialog>
+                  <DialogTrigger asChild>
+                    <Button
+                      variant={
+                        action.loan?.type === "angel" ? "outline" : "secondary"
+                      }
+                      className="w-40"
+                      disabled={!store.isActive()}
+                    >
+                      Investidor Anjo
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent
+                    className="sm:max-w-[425px]"
+                    title="Investidor"
+                  >
+                    <DialogHeader>
+                      <DialogDescription className="py-4">
+                        <p>
+                          Um investidor está de olho no projeto, e oferecendo
+                          5.000 pontos.
+                        </p>
+                        <p>
+                          Após a venda, o investidor terá 10% do valor vendido
+                        </p>
+                      </DialogDescription>
+                    </DialogHeader>
+
+                    <DialogFooter className="flex flex-row justify-end gap-2">
+                      <DialogClose asChild>
+                        <Button
+                          variant="secondary"
+                          onClick={() =>
+                            socket.emit("make_marketing_loan", null)
+                          }
+                        >
+                          Negar
+                        </Button>
+                      </DialogClose>
+                      <DialogClose asChild>
+                        <Button
+                          type="submit"
+                          onClick={() =>
+                            socket.emit("make_marketing_loan", {
+                              type: "angel",
+                              value: 5000,
+                            })
+                          }
+                        >
+                          Aceitar
+                        </Button>
+                      </DialogClose>
+                    </DialogFooter>
+                  </DialogContent>
+                </Dialog>
               </div>
             </ScrollArea>
           </div>

@@ -8,7 +8,7 @@ type PageWithUsersBarProps = {
 export function PageWithUsersBar(props: PageWithUsersBarProps) {
   return (
     <main className="min-h-screen flex flex-col ">
-      <UsersBar activeUser={props.activeUser} users={props.users} />
+      <UsersBar activeUserId={props.activeUserId} users={props.users} />
       {props.children}
     </main>
   );

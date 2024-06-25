@@ -1,3 +1,4 @@
+import { cn } from "@/lib/utils";
 import { Button } from "../ui/button";
 import {
   Dialog,
@@ -13,17 +14,23 @@ interface InstructionDialogProps {
   children?: React.ReactNode;
   title?: string;
   defaultOpen?: boolean;
+  className?: string;
+  onClickContinue?: () => void;
+  onOpenChange?: (open: boolean) => void;
 }
 
 export function InstructionDialog({
   children,
   title,
   defaultOpen,
+  className,
+  onClickContinue,
+  onOpenChange,
 }: InstructionDialogProps) {
   return (
-    <Dialog defaultOpen={defaultOpen}>
+    <Dialog defaultOpen={defaultOpen} onOpenChange={onOpenChange}>
       <DialogTrigger asChild>
-        <Button variant="ghost" className="text-border">
+        <Button variant="ghost" className={cn("text-border", className)}>
           <div className="mx-2">
             <svg
               width="15"
@@ -49,7 +56,9 @@ export function InstructionDialog({
 
         <DialogFooter>
           <DialogClose asChild>
-            <Button type="submit">Continuar</Button>
+            <Button type="submit" onClick={onClickContinue}>
+              Continuar
+            </Button>
           </DialogClose>
         </DialogFooter>
       </DialogContent>

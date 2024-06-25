@@ -43,7 +43,9 @@ const DialogContent = React.forwardRef<
     >
       <DialogHeader>
         <DialogTitle className="border-2 flex items-center p-1 bg-primary justify-between">
-          <p className="text-base text-white leading-3 mx-2">{props.title}</p>
+          <span className="text-lg font-normal text-white leading-3 mx-2">
+            {props.title}
+          </span>
           <div className="flex items-center gap-1">
             <div className="bg-white border-2">
               <Minus className="h-4 w-4" />

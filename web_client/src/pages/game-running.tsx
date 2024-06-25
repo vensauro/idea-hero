@@ -22,7 +22,7 @@ export function RunningGamePage() {
   function wrapper(child: ReactNode) {
     return (
       <PageWithUsersBar
-        activeUser={store.game?.actualAction?.activeUser}
+        activeUserId={store.game?.actualAction?.activeUser.id}
         users={store.game?.users}
       >
         {child}

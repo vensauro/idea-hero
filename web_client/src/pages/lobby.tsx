@@ -11,10 +11,6 @@ export function LobbyPage() {
     navigator.clipboard.writeText(store.game?.code ?? "");
   }
 
-  function startCollaborativeGame() {
-    socket.emit("start_game");
-  }
-
   return (
     <>
       <div>
@@ -45,13 +41,16 @@ export function LobbyPage() {
         {store.isOwner() ? (
           <div className="flex flex-col justify-center items-center my-6 gap-4">
             <Button
-              onClick={startCollaborativeGame}
+              onClick={() => socket.emit("start_game", "collaborative")}
               variant="secondary"
               className="border-t-[3px] border-l-[5px] border-b-[6px] border-r-[8px]"
             >
               Jogo Colaborativo
             </Button>
-            <Button className="bg-accent text-accent-foreground">
+            <Button
+              onClick={() => socket.emit("start_game", "competitive")}
+              className="bg-accent text-accent-foreground"
+            >
               Jogo Competitivo
             </Button>
           </div>
