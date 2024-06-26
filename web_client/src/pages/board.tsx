@@ -7,7 +7,7 @@ export function BoardPage() {
 
   return (
     <main className="min-h-screen flex flex-col ">
-      <UsersBar activeUser={store.game?.owner} users={store.game?.users} />
+      <UsersBar activeUserId={store.game?.owner.id} users={store.game?.users} />
       <div className="my-5">
         <div className="flex flex-col items-center justify-center px-2">
           <Outlet />
