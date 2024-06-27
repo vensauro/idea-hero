@@ -106,15 +106,6 @@ export function PrototypePage({ action }: PrototypePageProps) {
         <div className="flex flex-col items-center gap-2">
           {store.isActive() ? (
             <>
-              {/* {action.state === "INSIGHT_END" &&
-                store.isOwner() && (
-                  <Button className="relative" onClick={repeatRound}>
-                    Mais uma rodada
-                    <span className="absolute top-0 right-0 bg-secondary leading-[0rem] -mt-3 -mr-6 h-4 p-2 rounded-md">
-                      -1000
-                    </span>
-                  </Button>
-                )} */}
               <Button onClick={finishSelection} className="w-36 relative">
                 <span className="absolute top-0 right-0 bg-secondary leading-[0rem] -mt-3 -mr-6 h-4 p-2 rounded-md">
                   -{Math.floor(store.game!.teamPoints * 0.2)}

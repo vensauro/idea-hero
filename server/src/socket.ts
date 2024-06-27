@@ -44,7 +44,6 @@ import {
 } from "./db";
 import { getRandomWord } from "./words";
 export type * from "../../shared/socket";
-import { writeFile } from "fs/promises";
 
 export function handleSocket(
   socket: Socket<
@@ -351,23 +350,20 @@ export function handleSocket(
 
   socket.on("run_problem", () => {
     const game = db.get(socket.data.room);
-    if (
-      !game ||
-      (
-        [
-          "PROBLEM",
-          "PROBLEM_END",
-          "INSIGHT",
-          "INSIGHT_END",
-          "SOLUTION",
-          "SOLUTION_SELECTION",
-          "SOLUTION_ADVOCATE",
-          "PROTOTYPE",
-          "PILOT",
-          "RANDOM_PREMIUM",
-        ] as GameState[]
-      ).every((e) => game.actualAction.state !== e)
-    ) {
+    const permittedStates = [
+      "SCENARIO",
+      "PROBLEM",
+      "PROBLEM_END",
+      "INSIGHT",
+      "INSIGHT_END",
+      "SOLUTION",
+      "SOLUTION_SELECTION",
+      "SOLUTION_ADVOCATE",
+      "PROTOTYPE",
+      "PILOT",
+      "RANDOM_PREMIUM",
+    ] as GameState[];
+    if (!game || permittedStates.every((e) => game.actualAction.state !== e)) {
       return;
     }
 
@@ -487,37 +483,19 @@ export function handleSocket(
   });
 
   socket.on("get_scenario", (scenario) => {
-    const dbGame = db.get(socket.data.room);
-    if (!dbGame) {
+    const game = db.get(socket.data.room);
+    if (
+      !game ||
+      game.actualAction.state !== "SCENARIO" ||
+      socket.data.id !== game.actualAction.activeUser.id
+    ) {
       return;
     }
 
-    if (dbGame.actualAction.state !== "SCENARIO") {
-      return;
-    }
+    game.actualAction = { ...game.actualAction, scenario };
+    game.actions[game.actionIndex] = game.actualAction;
 
-    dbGame.actualAction = {
-      activeUser: dbGame.actualAction.activeUser,
-      state: "SCENARIO",
-      scenario,
-    };
-
-    updateAndEmit(dbGame);
-  });
-
-  socket.on("select_scenario", () => {
-    const dbGame = db.get(socket.data.room);
-    if (!dbGame) {
-      return;
-    }
-
-    dbGame.state = "PROBLEM";
-
-    dbGame.actions[dbGame.actionIndex] = dbGame.actualAction;
-    dbGame.actionIndex = dbGame.actionIndex + 1;
-    dbGame.actualAction = dbGame.actions[dbGame.actionIndex];
-
-    updateAndEmit(dbGame);
+    updateAndEmit(game);
   });
 
   socket.on("problem_investment", ({ userId, value }) => {
@@ -651,15 +629,13 @@ export function handleSocket(
           if (!hasInvestment) {
             game.actions.splice(
               indexToChange,
-              0
-              // ...newActions,
-              // nextInvestment
+              0,
+              ...newActions,
+              nextInvestment
             );
           } else {
             game.actions.splice(indexToChange, 0, ...newActions);
           }
-          // const newAction = {
-          // } as ProblemsGA;
         }
       }
 
@@ -727,7 +703,11 @@ export function handleSocket(
 
   socket.on("new_insight_round", () => {
     const game = db.get(socket.data.room);
-    if (!game || game.actualAction.state !== "INSIGHT_END") {
+    if (
+      !game ||
+      game.actualAction.state !== "INSIGHT_END" ||
+      socket.data.id !== game.actualAction.activeUser.id
+    ) {
       return;
     }
 
