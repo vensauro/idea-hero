@@ -9,9 +9,11 @@ type GameState =
   | "SOLUTION"
   | "SOLUTION_SELECTION"
   | "SOLUTION_ADVOCATE"
+  | "SOLUTION_INVESTMENT"
   | "PROTOTYPE"
   | "PILOT"
   | "MARKETING"
+  | "COMPETITIVE_MARKETING"
   | "SALES"
   | "ENDED"
   | "RANDOM_PREMIUM";
@@ -73,21 +75,19 @@ export interface ProblemsEndGA extends GameAction {
   state: "PROBLEM_END";
 }
 
-export type ProblemInvestmentInvested = {
+export type GameInvestment = {
   action: "invested";
   from: GameUser;
   to: GameUser;
   investment: number;
 };
-export type ProblemInvestmentNewRound = { action: "new-round"; from: GameUser };
+export type GameNewRound = { action: "new-round"; from: GameUser };
 
-export type ProblemInvestmentItem =
-  | ProblemInvestmentInvested
-  | ProblemInvestmentNewRound;
+export type GameInvestmentItem = GameInvestment | GameNewRound;
 
 export interface ProblemsInvestmentGA extends GameAction {
   state: "PROBLEM_INVESTMENT";
-  usersInvestment: ProblemInvestmentItem[];
+  usersInvestment: GameInvestmentItem[];
 }
 
 export interface InsightGA extends GameAction {
@@ -115,6 +115,12 @@ export interface SolutionSelectionGA extends GameAction {
 export interface SolutionAdvocateGA extends GameAction {
   state: "SOLUTION_ADVOCATE";
   activeUser: GameUser;
+  to: GameUser;
+}
+
+export interface SolutionInvestmentGa extends GameAction {
+  state: "SOLUTION_INVESTMENT";
+  usersInvestment: GameInvestmentItem[];
 }
 
 export interface PrototypeGA extends GameAction {
@@ -122,7 +128,7 @@ export interface PrototypeGA extends GameAction {
   started: boolean;
   step: number;
   investment: number;
-  // activeUser: GameUser;
+  to?: GameUser;
 }
 
 export interface PilotGA extends GameAction {
@@ -147,6 +153,15 @@ export interface MarketingGA extends GameAction {
   productValues: MarketingProduct[];
   investment: MarketingInvestment[];
   loan: { type: "angel" | "bank"; value: number } | null;
+}
+
+export interface CompetitiveMarketingGA extends GameAction {
+  state: "COMPETITIVE_MARKETING";
+  values: {
+    productValues: MarketingProduct[];
+    investment: number;
+    from: GameUser;
+  }[];
 }
 
 export interface SalesGA extends GameAction {
@@ -174,8 +189,10 @@ type GameActions =
   | SolutionGA
   | SolutionSelectionGA
   | SolutionAdvocateGA
+  | SolutionInvestmentGa
   | PrototypeGA
   | PilotGA
   | MarketingGA
+  | CompetitiveMarketingGA
   | SalesGA
   | RandomPremiumGA;

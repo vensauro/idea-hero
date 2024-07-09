@@ -17,21 +17,6 @@ export function PilotPage({ action }: PilotPageProps) {
     socket.emit("run_problem");
   }
 
-  // useEffect(() => {
-  //   if (store.game?.state === "MARKETING") {
-  //     navigate("/marketing");
-  //     return;
-  //   }
-  //   if (store.game?.state === "PROTOTYPE") {
-  //     navigate("/prototype");
-  //     return;
-  //   }
-  //   if (store.game?.state !== undefined && store.game.state !== "PILOT") {
-  //     navigate("/prototype");
-  //     return;
-  //   }
-  // }, [navigate, store.game?.state]);
-
   async function rollDice() {
     if (
       store.game?.actualAction.state === "PILOT" &&

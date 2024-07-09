@@ -1,4 +1,4 @@
-import { ProblemsInvestmentGA } from "#/game";
+import { ProblemsInvestmentGA, SolutionInvestmentGa } from "#/game";
 import { InstructionDialog } from "@/components/dialogs/instruction-dialog";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
@@ -10,7 +10,7 @@ import { useGameStore } from "@/lib/store";
 import { useState } from "react";
 
 interface ProblemInvestmentProps {
-  action: ProblemsInvestmentGA;
+  action: ProblemsInvestmentGA | SolutionInvestmentGa;
 }
 export function ProblemInvestment({ action }: ProblemInvestmentProps) {
   const store = useGameStore();
@@ -25,29 +25,31 @@ export function ProblemInvestment({ action }: ProblemInvestmentProps) {
     socket.emit("new_problem_round");
   }
 
-  // useEffect(() => {
-  //   if (store.game?.state === "PROBLEM") {
-  //     navigate("/problems");
-  //     return;
-  //   }
-
-  //   if (store.game?.state === "PROBLEM_END") {
-  //     navigate("/problems-end");
-  //     return;
-  //   }
-
-  //   if (
-  //     store.game?.state !== undefined &&
-  //     store.game.state !== "PROBLEM_INVESTMENT"
-  //   ) {
-  //     navigate("/problems-end");
-  //     return;
-  //   }
-  // }, [navigate, store.game?.state]);
-
-  const haveInvested =
+  const haveInvestedThisTurn =
     action.usersInvestment.find((e) => e.from.id === store.user?.id) !==
     undefined;
+
+  const showNewRoundButton =
+    !haveInvestedThisTurn && action.state === "PROBLEM_INVESTMENT";
+
+  function skipInvestment() {
+    if (store.user?.id)
+      socket.emit("problem_investment", { value: 0, userId: store.user.id });
+  }
+
+  const haveInvestedBefore =
+    store.game?.actions
+      .slice(0, store.game.actions.length - 1)
+      .filter((e) => e.state === "PROBLEM_INVESTMENT")
+      .find((e) =>
+        e.usersInvestment.find(
+          (u) => u.from.id === store.user?.id && u.action === "invested"
+        )
+      ) !== undefined;
+  const showSkipInvestment =
+    haveInvestedBefore &&
+    store.game?.mode === "competitive" &&
+    !haveInvestedThisTurn;
 
   return (
     <div>
@@ -114,7 +116,7 @@ export function ProblemInvestment({ action }: ProblemInvestmentProps) {
               <ScrollArea className="h-[356px] w-[260px] border-2">
                 <div className="grid grid-cols-3 gap-2 p-2">
                   {store.game?.users.map((user) =>
-                    haveInvested ? (
+                    haveInvestedThisTurn ? (
                       <UserAvatar
                         key={user.id}
                         color={user.avatar.color}
@@ -170,7 +172,14 @@ export function ProblemInvestment({ action }: ProblemInvestmentProps) {
             </div>
           </div>
           {/* end centralize window */}
-          {!haveInvested ? (
+          {showSkipInvestment && (
+            <div className="flex justify-center my-4">
+              <Button className="relative" onClick={skipInvestment}>
+                Não desejo investir novamente
+              </Button>
+            </div>
+          )}
+          {showNewRoundButton ? (
             <div className="flex justify-center my-4">
               <Button className="relative" onClick={repeatRound}>
                 Mais uma rodada

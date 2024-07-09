@@ -20,27 +20,27 @@ import type {
   SocketData,
 } from "../../shared/socket";
 import {
+  db,
   Game,
+  GameActions,
+  GameInvestment,
+  GameInvestmentItem,
   GameState,
   GameUser,
   InsightEndGA,
   InsightGA,
-  LobbyGA,
   MarketingGA,
   PilotGA,
-  ProblemInvestmentInvested,
-  ProblemInvestmentItem,
   ProblemsEndGA,
   ProblemsGA,
   ProblemsInvestmentGA,
   PrototypeGA,
-  RandomPremiumGA,
   SalesGA,
   ScenarioGA,
   SolutionAdvocateGA,
   SolutionGA,
+  SolutionInvestmentGa,
   SolutionSelectionGA,
-  db,
 } from "./db";
 import { getRandomWord } from "./words";
 export type * from "../../shared/socket";
@@ -299,11 +299,6 @@ export function handleSocket(
           } as InsightGA)
       );
 
-      const endInsight = {
-        activeUser: game.owner,
-        state: "INSIGHT_END",
-      } as InsightEndGA;
-
       const solutions = users.map(
         (u) =>
           ({
@@ -313,6 +308,30 @@ export function handleSocket(
           } as SolutionGA)
       );
 
+      const endSolutionStage: GameActions[] = [];
+      for (const sUser of users) {
+        const solutionSelection = {
+          activeUser: sUser,
+          state: "SOLUTION_SELECTION",
+          randomCard: 0,
+        } as SolutionSelectionGA;
+
+        const advocate = draw(game.users.filter((e) => e.id !== sUser.id));
+        const solutionAdvocate = {
+          activeUser: advocate,
+          state: "SOLUTION_ADVOCATE",
+          to: sUser,
+        } as SolutionAdvocateGA;
+
+        endSolutionStage.push(solutionSelection, solutionAdvocate);
+      }
+
+      const solutionInvestments: SolutionInvestmentGa = {
+        activeUser: game.owner,
+        state: "SOLUTION_INVESTMENT",
+        usersInvestment: [],
+      };
+
       game.actions = [
         scenarios,
         problems,
@@ -320,8 +339,9 @@ export function handleSocket(
         // endProblems,
         insights,
         insights,
-        endInsight,
         solutions,
+        endSolutionStage,
+        solutionInvestments,
       ].flat();
       game.actualAction = game.actions[game.actionIndex];
     }
@@ -384,14 +404,15 @@ export function handleSocket(
       const solutionAdvocate = {
         activeUser: advocate,
         state: "SOLUTION_ADVOCATE",
-      } as SolutionAdvocateGA;
+        to: userWithLessPoints,
+      } as GameActions;
 
       const prototype = {
         state: "PROTOTYPE",
         activeUser: userWithMorePoints,
         started: false,
         step: 1,
-      } as PrototypeGA;
+      } as GameActions;
 
       const lastSolutionIndex = game.actions.findLastIndex(
         (e) => e.state === "SOLUTION"
@@ -420,20 +441,22 @@ export function handleSocket(
     if (game.actualAction.state === "PROTOTYPE") {
       game.actualAction.investment = game.teamPoints * 0.2;
       game.teamPoints -= game.actualAction.investment;
-      game.users = game.users.map((u) => ({
-        ...u,
-        points: game.teamPoints / game.users.length,
-      }));
 
-      const newState = {
-        activeUser: game.owner,
-        passed: Math.random() > 0.3,
-        state: "PILOT",
-        value: random(1, 6),
-        started: "idle",
-      } as PilotGA;
+      if (game.mode === "collaborative") {
+        game.users = game.users.map((u) => ({
+          ...u,
+          points: game.teamPoints / game.users.length,
+        }));
+        const newState = {
+          activeUser: game.owner,
+          passed: Math.random() > 0.3,
+          state: "PILOT",
+          value: random(1, 6),
+          started: "idle",
+        } as PilotGA;
 
-      game.actions.splice(game.actionIndex + 1, 0, newState);
+        game.actions.splice(game.actionIndex + 1, 0, newState);
+      }
     }
 
     if (game.actualAction.state === "PILOT") {
@@ -442,36 +465,65 @@ export function handleSocket(
         (game.actions[game.actionIndex - 1] as PrototypeGA).investment;
 
       game.teamPoints -= pilotInvestment;
-      game.users = game.users.map((u) => ({
-        ...u,
-        points: game.teamPoints / game.users.length,
-      }));
-
-      if (game.actualAction.passed) {
-        game.actions.splice(game.actionIndex + 1, 0, {
-          activeUser: game.owner,
-          state: "MARKETING",
-          investment: [],
-          productValues: [],
-          loan: null,
-        } as MarketingGA);
+      if (game.mode === "collaborative") {
+        game.users = game.users.map((u) => ({
+          ...u,
+          points: game.teamPoints / game.users.length,
+        }));
+      }
+      if (game.mode === "collaborative") {
+        if (game.actualAction.passed) {
+          game.actions.splice(game.actionIndex + 1, 0, {
+            activeUser: game.owner,
+            state: "MARKETING",
+            investment: [],
+            productValues: [],
+            loan: null,
+          } as MarketingGA);
+        } else {
+          game.actions.splice(game.actionIndex + 1, 0, {
+            activeUser: game.owner,
+            state: "PROTOTYPE",
+            started: false,
+            step: 1,
+          } as PrototypeGA);
+        }
       } else {
-        game.actions.splice(game.actionIndex + 1, 0, {
-          activeUser: game.owner,
-          state: "PROTOTYPE",
-          started: false,
-          step: 1,
-        } as PrototypeGA);
+        const lastPilotIndex = game.actions.findLastIndex(
+          (a) => a.state === "PILOT"
+        );
+        if (game.actualAction.passed) {
+          game.actions.splice(lastPilotIndex + 1, 0, {
+            state: "MARKETING",
+            investment: [],
+            productValues: [],
+            loan: null,
+            activeUser: game.users.find((e) => e.id === socket.data.id),
+          } as GameActions);
+        } else {
+          const oldPrototype = game.actions.find(
+            (e) => e.state === "PROTOTYPE" && e.activeUser.id === socket.data.id
+          ) as PrototypeGA;
+          game.actions.splice(lastPilotIndex + 1, 0, {
+            ...oldPrototype,
+            started: false,
+            step: 1,
+          });
+        }
       }
     }
 
     if (game.actualAction.state === "RANDOM_PREMIUM") {
       game.teamPoints += game.actualAction.earnedValue;
-      const valuePerUser = game.actualAction.earnedValue / game.users.length;
-      game.users = game.users.map((u) => ({
-        ...u,
-        points: u.points + valuePerUser,
-      }));
+      if (game.mode === "collaborative") {
+        const valuePerUser = game.actualAction.earnedValue / game.users.length;
+        game.users = game.users.map((u) => ({
+          ...u,
+          points: u.points + valuePerUser,
+        }));
+      } else {
+        changeUserPoints(game, game.actualAction.earnedValue, socket.data.id);
+      }
     }
 
     game.actions[game.actionIndex] = game.actualAction;
@@ -500,7 +552,11 @@ export function handleSocket(
 
   socket.on("problem_investment", ({ userId, value }) => {
     const game = db.get(socket.data.room);
-    if (!game || game.actualAction.state !== "PROBLEM_INVESTMENT") {
+    if (
+      !game ||
+      (game.actualAction.state !== "PROBLEM_INVESTMENT" &&
+        game.actualAction.state !== "SOLUTION_INVESTMENT")
+    ) {
       return;
     }
 
@@ -526,9 +582,7 @@ export function handleSocket(
       changeUserPoints(game, +value, toUser.id);
     }
 
-    // game.users = changeUserPoints(game, +value, toUser!);
-
-    const investment: ProblemInvestmentItem = {
+    const investment: GameInvestmentItem = {
       action: "invested",
       from: user,
       to: toUser,
@@ -541,9 +595,12 @@ export function handleSocket(
       game.users.length;
 
     if (isLastInvestment) {
-      if (game.mode === "collaborative") {
+      if (
+        game.mode === "collaborative" &&
+        game.actualAction.state === "PROBLEM_INVESTMENT"
+      ) {
         const everyoneInvested = game.actualAction.usersInvestment.every(
-          (e): e is ProblemInvestmentInvested => e.action === "invested"
+          (e): e is GameInvestment => e.action === "invested"
         );
 
         if (everyoneInvested) {
@@ -552,9 +609,7 @@ export function handleSocket(
               (e): e is ProblemsInvestmentGA => e.state === "PROBLEM_INVESTMENT"
             )
             .flatMap((e) => e.usersInvestment)
-            .filter(
-              (e): e is ProblemInvestmentInvested => e.action === "invested"
-            );
+            .filter((e): e is GameInvestment => e.action === "invested");
 
           const problemWinner = max(
             Object.entries(group(allInvestments, (e) => e.to.id)).map(
@@ -588,24 +643,29 @@ export function handleSocket(
         }
       }
 
-      if (game.mode === "competitive") {
-        const usersHaveInvestment = unique(
+      if (
+        game.mode === "competitive" &&
+        game.actualAction.state === "PROBLEM_INVESTMENT"
+      ) {
+        const usersMadeInvestment = unique(
           game.actions
             .filter(
               (e): e is ProblemsInvestmentGA => e.state === "PROBLEM_INVESTMENT"
             )
             .flatMap((e) =>
               e.usersInvestment
-                .filter(
-                  (i): i is ProblemInvestmentInvested => i.action === "invested"
-                )
-                .map((i) => i.to)
+                .filter((i): i is GameInvestment => i.action === "invested")
+                .map((i) => i.from)
             ),
           (e) => e.id
         );
 
-        if (game.users.length !== usersHaveInvestment.length) {
-          const usersWithoutInvestment = diff(game.users, usersHaveInvestment);
+        if (game.users.length !== usersMadeInvestment.length) {
+          const usersWithoutInvestment = diff(
+            game.users,
+            usersMadeInvestment,
+            (u) => u.id
+          );
           const newActions = usersWithoutInvestment.map(
             (u) =>
               ({
@@ -639,6 +699,111 @@ export function handleSocket(
         }
       }
 
+      if (game.actualAction.state === "SOLUTION_INVESTMENT") {
+        const usersHaveInvestment = unique(
+          game.actions
+            .filter((e) => e.state === "SOLUTION_INVESTMENT")
+            .flatMap((e) =>
+              e.usersInvestment
+                .filter((i): i is GameInvestment => i.action === "invested")
+                .map((i) => i.to)
+            ),
+          (e) => e.id
+        );
+
+        if (game.users.length !== usersHaveInvestment.length) {
+          const usersWithoutInvestment = diff(
+            game.users,
+            usersHaveInvestment,
+            (u) => u.id
+          );
+          const solutionsActions: GameActions[] = [];
+          for (const pUser of usersWithoutInvestment) {
+            const advocate = draw(game.users.filter((e) => e.id !== pUser.id));
+            solutionsActions.push(
+              {
+                state: "SOLUTION",
+                activeUser: pUser,
+                randomCard: random(0, game.cardQuantity - 1),
+              },
+              {
+                activeUser: pUser,
+                state: "SOLUTION_SELECTION",
+                randomCard: 0,
+              },
+              {
+                activeUser: advocate ?? pUser,
+                state: "SOLUTION_ADVOCATE",
+                to: pUser,
+              }
+            );
+          }
+
+          const nextInvestment = {
+            state: "SOLUTION_INVESTMENT",
+            usersInvestment: [],
+            activeUser: game.owner,
+          } as GameActions;
+
+          const indexToChange = game.actionIndex + 1;
+          const hasInvestment = game.actions
+            .slice(indexToChange)
+            .find((e) => e.state === "SOLUTION_INVESTMENT");
+
+          if (!hasInvestment) {
+            game.actions.splice(
+              indexToChange,
+              0,
+              ...solutionsActions,
+              nextInvestment
+            );
+          } else {
+            game.actions.splice(indexToChange, 0, ...solutionsActions);
+          }
+        } else {
+          const prototypeActions = game.users.map((iUser) => {
+            const allInvestments = game.actions
+              .filter((e) => e.state === "SOLUTION_INVESTMENT")
+              .flatMap((e) => e.usersInvestment)
+              .filter((e) => e.action === "invested")
+              .filter((e) => e.to.id === iUser.id);
+
+            const groupedById = group(allInvestments, (e) => e.from.id);
+            const groupedInvestments = Object.entries(groupedById).map(
+              ([key, value]) => {
+                return {
+                  user: value![0].from,
+                  investment: sum(value!.map((e) => e.investment)),
+                };
+              }
+            );
+            const userThatMostInvested = max(
+              groupedInvestments,
+              (e) => e.investment
+            );
+            return {
+              state: "PROTOTYPE",
+              activeUser: userThatMostInvested?.user ?? iUser,
+              started: false,
+              step: 1,
+              to: iUser,
+            } as GameActions;
+          });
+
+          const pilots = game.users.map(
+            (iUser) =>
+              ({
+                activeUser: iUser,
+                passed: Math.random() > 0.3,
+                state: "PILOT",
+                value: random(1, 6),
+                started: "idle",
+              } as GameActions)
+          );
+          game.actions.push(...prototypeActions, ...pilots);
+        }
+      }
+
       game.actions[game.actionIndex] = game.actualAction;
       game.actionIndex = game.actionIndex + 1;
       game.actualAction = game.actions[game.actionIndex];
@@ -662,7 +827,7 @@ export function handleSocket(
       return;
     }
 
-    const investment: ProblemInvestmentItem = {
+    const investment: GameInvestmentItem = {
       action: "new-round",
       from: activeUser,
     };
@@ -753,7 +918,12 @@ export function handleSocket(
 
   socket.on("run_project_test", () => {
     const game = db.get(socket.data.room);
-    if (!game || game.actualAction.state !== "PILOT") {
+    const activeUser = game?.users.find((e) => e.id === socket.data.id);
+    if (
+      !game ||
+      game.actualAction.state !== "PILOT" ||
+      game.actualAction.activeUser.id !== activeUser?.id
+    ) {
       return;
     }
 
@@ -769,7 +939,13 @@ export function handleSocket(
     const game = db.get(socket.data.room);
     const activeUser = game?.users.find((e) => e.id === socket.data.id);
 
-    if (!game || !activeUser || game.actualAction.state !== "MARKETING") {
+    if (
+      !game ||
+      !activeUser ||
+      game.actualAction.state !== "MARKETING" ||
+      (game.mode === "competitive" &&
+        game.actualAction.activeUser.id === activeUser.id)
+    ) {
       return;
     }
 
@@ -826,11 +1002,13 @@ export function handleSocket(
 
     game.teamPoints = game.teamPoints + lastLoanValue - loanValue;
 
-    const userPoints = game.teamPoints / game.users.length;
-    game.users = game.users.map((u) => ({
-      ...u,
-      points: userPoints,
-    }));
+    if (game.mode === "collaborative") {
+      const userPoints = game.teamPoints / game.users.length;
+      game.users = game.users.map((u) => ({
+        ...u,
+        points: userPoints,
+      }));
+    }
 
     game.actualAction.loan = loan;
 
@@ -847,7 +1025,8 @@ export function handleSocket(
 
     if (
       !activeUser ||
-      game.actualAction.productValues.length !== game.users.length
+      (game.actualAction.productValues.length !== game.users.length &&
+        game.mode === "collaborative")
     ) {
       return;
     }
@@ -878,7 +1057,7 @@ export function handleSocket(
     const loanResult =
       game.actualAction.loan?.type === "angel" ? profit * 0.1 : 21_000;
 
-    game.actions.splice(game.actionIndex + 1, 0, {
+    const result = {
       activeUser: game.owner,
       state: "SALES",
       investedValue,
@@ -887,9 +1066,12 @@ export function handleSocket(
       loanResult,
       winned,
       productPrice,
-    } as SalesGA);
+    } as SalesGA;
+    if (game.mode === "collaborative")
+      game.actions.splice(game.actionIndex + 1, 0);
+    else game.actions.push(result);
 
-    if (!winned) {
+    if (!winned && game.mode === "collaborative") {
       game.actions.splice(game.actionIndex + 1, 0, {
         activeUser: game.owner,
         state: "MARKETING",

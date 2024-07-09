@@ -39,6 +39,7 @@ export function RunningGamePage() {
     case "PROBLEM":
       return wrapper(<ProblemsPage action={store.game?.actualAction} />);
     case "PROBLEM_INVESTMENT":
+    case "SOLUTION_INVESTMENT":
       return <ProblemInvestment action={store.game?.actualAction} />;
     case "PROBLEM_END":
       return wrapper(<ProblemFinishPage action={store.game?.actualAction} />);

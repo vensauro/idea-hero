@@ -33,6 +33,12 @@ export function MarketingPage({ action }: MarketingPageProps) {
   const restingPoints =
     game.teamPoints - sum(action.investment, (e) => e.value);
 
+  const showFinishButton =
+    store.isActive() &&
+    (action.productValues.length ===
+      game.users.filter((e) => e.connected).length ||
+      store.game?.mode === "competitive");
+
   return (
     <>
       <div className="flex justify-center mt-4">
@@ -107,38 +113,40 @@ export function MarketingPage({ action }: MarketingPageProps) {
           <div className="h-full w-full bg-primary">
             <ScrollArea className="h-[380px] w-[260px] border-2">
               <div className="flex flex-col gap-4 items-center justify-center">
-                <form
-                  className="w-4/5"
-                  onSubmit={(e) => {
-                    e.preventDefault();
-                    // startGame();
-                  }}
-                >
-                  <div className="w-full flex justify-center mt-2">
-                    <Label
-                      htmlFor="nickname"
-                      className="text-border text-white"
-                    >
-                      Quanto custa para o usuário?
-                    </Label>
-                  </div>
-                  <Input
-                    id="product_value"
-                    type="number"
-                    placeholder="Valor do produto"
-                    required
-                    value={productValue.toString()}
-                    onChange={(e) => {
-                      const value = e.target.value;
-                      if (/^\d+$/.test(value) || value === "")
-                        setProductValue(Number(value));
+                {(store.game?.mode !== "competitive" || store.isActive()) && (
+                  <form
+                    className="w-4/5"
+                    onSubmit={(e) => {
+                      e.preventDefault();
+                      // startGame();
                     }}
-                    className="text-primary placeholder:text-primary-foreground border-2 border-border rounded-sm"
-                    onBlur={() => {
-                      socket.emit("product_value", { value: productValue });
-                    }}
-                  />
-                </form>
+                  >
+                    <div className="w-full flex justify-center mt-2">
+                      <Label
+                        htmlFor="nickname"
+                        className="text-border text-white"
+                      >
+                        Quanto custa para o usuário?
+                      </Label>
+                    </div>
+                    <Input
+                      id="product_value"
+                      type="number"
+                      placeholder="Valor do produto"
+                      required
+                      value={productValue.toString()}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        if (/^\d+$/.test(value) || value === "")
+                          setProductValue(Number(value));
+                      }}
+                      className="text-primary placeholder:text-primary-foreground border-2 border-border rounded-sm"
+                      onBlur={() => {
+                        socket.emit("product_value", { value: productValue });
+                      }}
+                    />
+                  </form>
+                )}
 
                 <Label htmlFor="nickname" className="text-border text-white">
                   Em que mídias você vai investir?
@@ -250,6 +258,7 @@ export function MarketingPage({ action }: MarketingPageProps) {
                         action.loan?.type === "bank" ? "outline" : "secondary"
                       }
                       className="w-40"
+                      disabled={!store.isActive()}
                     >
                       Empréstimo do Banco
                     </Button>
@@ -361,16 +370,14 @@ export function MarketingPage({ action }: MarketingPageProps) {
       </div>
       <div>
         <div className="flex flex-col items-center gap-2">
-          {store.isActive() &&
-            action.productValues.length ===
-              game.users.filter((e) => e.connected).length && (
-              <Button
-                onClick={() => socket.emit("finish_marketing_investment")}
-                className="w-36"
-              >
-                Terminar Jogada
-              </Button>
-            )}
+          {showFinishButton && (
+            <Button
+              onClick={() => socket.emit("finish_marketing_investment")}
+              className="w-36"
+            >
+              Terminar Jogada
+            </Button>
+          )}
           {!store.isActive() && (
             <p className="text-center text-xl text-secondary">
               esperando {action.activeUser.name}

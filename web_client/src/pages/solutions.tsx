@@ -59,7 +59,7 @@ export function SolutionsPage({ action }: SolutionsPageProps) {
                 </p>
               ) : action.state === "SOLUTION_SELECTION" ? (
                 <p>
-                  Você foi o que mais investiu ao decorrer do caminho, assim
+                  Você foi o que menos investiu ao decorrer do caminho, assim
                   investindo metade dos seus pontos você irá propor a solução
                   definitiva!
                 </p>

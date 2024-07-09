@@ -135,7 +135,11 @@ export function ScenarioPage({ action }: ScenarioPageProps) {
 
         {action.activeUser.name === store.nickname ? (
           <div className="flex flex-col items-center gap-2">
-            <Button onClick={finishSelection} className="w-36">
+            <Button
+              onClick={finishSelection}
+              className="w-36"
+              disabled={store.game?.mode === "competitive" && cardUrl === null}
+            >
               Terminar Jogada
             </Button>
 
