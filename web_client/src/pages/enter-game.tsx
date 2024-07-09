@@ -26,7 +26,7 @@ export function EnterGamePage() {
       return toast.error("Selecione o avatar");
     }
 
-    const code = gameCode || store.gameCode || searchParams.get("code");
+    const code = gameCode || searchParams.get("code") || store.gameCode;
 
     if (!code) {
       return toast.error("Digite o código da sala!");
