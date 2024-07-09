@@ -1,4 +1,4 @@
-import { PilotGA, PrototypeGA } from "#/game";
+import { GameActions, PilotGA, PrototypeGA } from "#/game";
 import { Coin } from "@/components/coin/coin";
 import { InstructionDialog } from "@/components/dialogs/instruction-dialog";
 import { Dice } from "@/components/dice/dice";
@@ -35,9 +35,13 @@ export function PilotPage({ action }: PilotPageProps) {
 
   const game = store.game!;
 
-  const investmentValue =
-    (game.actions[game.actionIndex - 1] as PrototypeGA).investment *
-    action.value;
+  const lastPrototypeInvestment =
+    game.actions.findLast(
+      (e: GameActions): e is PrototypeGA =>
+        e.state === "PROTOTYPE" && e.to?.id === store.user?.id
+    )?.investment ?? 1;
+
+  const investmentValue = lastPrototypeInvestment / action.value;
 
   return (
     <>

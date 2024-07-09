@@ -6,6 +6,7 @@ import {
   min,
   random,
   replace,
+  replaceOrAppend,
   shift,
   shuffle,
   sum,
@@ -20,6 +21,7 @@ import type {
   SocketData,
 } from "../../shared/socket";
 import {
+  CompetitiveSalesGA,
   db,
   Game,
   GameActions,
@@ -456,16 +458,22 @@ export function handleSocket(
         } as PilotGA;
 
         game.actions.splice(game.actionIndex + 1, 0, newState);
+      } else {
+        changeUserPoints(
+          game,
+          -game.actualAction.investment ?? 2000,
+          socket.data.id
+        );
       }
     }
 
     if (game.actualAction.state === "PILOT") {
       const lastPrototype = game.actions
-        .filter((e) => e.state === "PROTOTYPE")
+        .filter((e): e is PrototypeGA => e.state === "PROTOTYPE")
         .findLast((e) => e.to?.id === socket.data.id);
 
       const pilotInvestment =
-        game.actualAction.value / (lastPrototype?.investment ?? 1);
+        lastPrototype?.investment ?? 1 / game.actualAction.value;
 
       if (game.mode === "collaborative") {
         game.teamPoints -= pilotInvestment;
@@ -494,11 +502,11 @@ export function handleSocket(
           } as PrototypeGA);
         }
       } else {
-        const lastPilotIndex = game.actions.findLastIndex(
-          (a) => a.state === "PILOT"
-        );
+        // const lastPilotIndex = game.actions.findLastIndex(
+        //   (a) => a.state === "PILOT"
+        // );
         if (game.actualAction.passed) {
-          game.actions.splice(lastPilotIndex + 1, 0, {
+          game.actions.push({
             state: "MARKETING",
             investment: [],
             productValues: [],
@@ -508,12 +516,23 @@ export function handleSocket(
         } else {
           const oldPrototype = game.actions.find(
             (e) => e.state === "PROTOTYPE" && e.activeUser.id === socket.data.id
-          ) as PrototypeGA;
-          game.actions.splice(lastPilotIndex + 1, 0, {
-            ...oldPrototype,
-            started: false,
-            step: 1,
-          });
+          )! as PrototypeGA;
+          game.actions.splice(
+            game.actionIndex + 1,
+            0,
+            {
+              ...oldPrototype,
+              started: false,
+              step: 1,
+            },
+            {
+              state: "PILOT",
+              activeUser: oldPrototype.activeUser,
+              passed: Math.random() > 0.3,
+              started: "idle",
+              value: random(1, 6),
+            }
+          );
         }
       }
     }
@@ -707,7 +726,10 @@ export function handleSocket(
       if (game.actualAction.state === "SOLUTION_INVESTMENT") {
         const usersHaveInvestment = unique(
           game.actions
-            .filter((e) => e.state === "SOLUTION_INVESTMENT")
+            .filter(
+              (e): e is SolutionInvestmentGa =>
+                e.state === "SOLUTION_INVESTMENT"
+            )
             .flatMap((e) =>
               e.usersInvestment
                 .filter((i): i is GameInvestment => i.action === "invested")
@@ -768,9 +790,12 @@ export function handleSocket(
         } else {
           const prototypeActions = game.users.map((iUser) => {
             const allInvestments = game.actions
-              .filter((e) => e.state === "SOLUTION_INVESTMENT")
+              .filter(
+                (e): e is SolutionInvestmentGa =>
+                  e.state === "SOLUTION_INVESTMENT"
+              )
               .flatMap((e) => e.usersInvestment)
-              .filter((e) => e.action === "invested")
+              .filter((e): e is GameInvestment => e.action === "invested")
               .filter((e) => e.to.id === iUser.id);
 
             const groupedById = group(allInvestments, (e) => e.from.id);
@@ -1062,19 +1087,59 @@ export function handleSocket(
     const loanResult =
       game.actualAction.loan?.type === "angel" ? profit * 0.1 : 21_000;
 
-    const result = {
-      activeUser: game.owner,
-      state: "SALES",
-      investedValue,
-      marketingResult,
-      profit,
-      loanResult,
-      winned,
-      productPrice,
-    } as SalesGA;
-    if (game.mode === "collaborative")
-      game.actions.splice(game.actionIndex + 1, 0);
-    else game.actions.push(result);
+    if (game.mode === "collaborative") {
+      const result = {
+        activeUser: game.owner,
+        state: "SALES",
+        investedValue,
+        marketingResult,
+        profit,
+        loanResult,
+        winned,
+        productPrice,
+      } as SalesGA;
+      game.actions.splice(game.actionIndex + 1, 0, result);
+    } else {
+      const cSales = game.actions.find(
+        (e): e is CompetitiveSalesGA => e.state === "COMPETITIVE_SALES"
+      );
+      if (!cSales) {
+        game.actions.push({
+          state: "COMPETITIVE_SALES",
+          activeUser: game.owner,
+          winner: {
+            from: game.owner,
+            investedValue: 0,
+            marketingResult: 0,
+            productPrice: 0,
+          },
+          sales: [],
+        });
+      } else {
+        const newSales = [
+          ...cSales.sales,
+          {
+            investedValue,
+            marketingResult,
+            productPrice,
+            from: activeUser,
+          },
+        ];
+        const winner =
+          max(newSales, (s) => s.marketingResult - s.investedValue) ??
+          cSales.winner;
+        replace(
+          game.actions,
+          {
+            state: "COMPETITIVE_SALES",
+            activeUser: game.owner,
+            winner,
+            sales: newSales,
+          },
+          (e) => e.state === "COMPETITIVE_SALES"
+        );
+      }
+    }
 
     if (!winned && game.mode === "collaborative") {
       game.actions.splice(game.actionIndex + 1, 0, {

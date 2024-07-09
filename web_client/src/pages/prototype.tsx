@@ -80,7 +80,7 @@ export function PrototypePage({ action }: PrototypePageProps) {
               </div>
               <div className="absolute -bottom-8 -right-8 bg-secondary rounded-full">
                 <CountdownCircleTimer
-                  key={1}
+                  key={store.game?.actionIndex}
                   size={60}
                   isPlaying={action.started}
                   duration={120}

@@ -40,12 +40,15 @@ export function ProblemInvestment({ action }: ProblemInvestmentProps) {
   const haveInvestedBefore =
     store.game?.actions
       .slice(0, store.game.actions.length - 1)
-      .filter((e) => e.state === "PROBLEM_INVESTMENT")
+      .filter(
+        (e): e is SolutionInvestmentGa => e.state === "SOLUTION_INVESTMENT"
+      )
       .find((e) =>
         e.usersInvestment.find(
           (u) => u.from.id === store.user?.id && u.action === "invested"
         )
       ) !== undefined;
+
   const showSkipInvestment =
     haveInvestedBefore &&
     store.game?.mode === "competitive" &&

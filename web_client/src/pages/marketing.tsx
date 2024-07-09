@@ -31,7 +31,9 @@ export function MarketingPage({ action }: MarketingPageProps) {
   const game = store.game!;
 
   const restingPoints =
-    game.teamPoints - sum(action.investment, (e) => e.value);
+    game.mode === "collaborative"
+      ? game.teamPoints - sum(action.investment, (e) => e.value)
+      : game.users.find((e) => e.id === store.user?.id)?.points ?? 0;
 
   const showFinishButton =
     store.isActive() &&

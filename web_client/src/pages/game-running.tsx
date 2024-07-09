@@ -13,6 +13,7 @@ import { MarketingPage } from "./marketing";
 import { SalesPage } from "./sales";
 import { LobbyPage } from "./lobby";
 import { PremiumCardPage } from "./premium-card";
+import { BetterSalesPage } from "./better-sales";
 
 export function RunningGamePage() {
   const store = useGameStore();
@@ -61,6 +62,8 @@ export function RunningGamePage() {
       return wrapper(<MarketingPage action={store.game?.actualAction} />);
     case "SALES":
       return wrapper(<SalesPage action={store.game?.actualAction} />);
+    case "COMPETITIVE_SALES":
+      return <BetterSalesPage action={store.game?.actualAction} />;
 
     case "RANDOM_PREMIUM":
       return wrapper(<PremiumCardPage action={store.game?.actualAction} />);

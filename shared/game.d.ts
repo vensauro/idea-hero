@@ -13,8 +13,8 @@ type GameState =
   | "PROTOTYPE"
   | "PILOT"
   | "MARKETING"
-  | "COMPETITIVE_MARKETING"
   | "SALES"
+  | "COMPETITIVE_SALES"
   | "ENDED"
   | "RANDOM_PREMIUM";
 
@@ -155,21 +155,24 @@ export interface MarketingGA extends GameAction {
   loan: { type: "angel" | "bank"; value: number } | null;
 }
 
-export interface CompetitiveMarketingGA extends GameAction {
-  state: "COMPETITIVE_MARKETING";
-  values: {
-    productValues: MarketingProduct[];
-    investment: number;
-    from: GameUser;
-  }[];
-}
-
 export interface SalesGA extends GameAction {
   state: "SALES";
   investedValue: number;
   marketingResult: number;
   winned: boolean;
   productPrice: number;
+}
+
+interface Sale {
+  productPrice: number;
+  investedValue: number;
+  marketingResult: number;
+  from: GameUser;
+}
+export interface CompetitiveSalesGA extends GameAction {
+  state: "COMPETITIVE_SALES";
+  sales: Sale[];
+  winner: Sale;
 }
 
 export interface RandomPremiumGA extends GameAction {
@@ -193,6 +196,6 @@ type GameActions =
   | PrototypeGA
   | PilotGA
   | MarketingGA
-  | CompetitiveMarketingGA
   | SalesGA
+  | CompetitiveSalesGA
   | RandomPremiumGA;
