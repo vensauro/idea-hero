@@ -460,16 +460,21 @@ export function handleSocket(
     }
 
     if (game.actualAction.state === "PILOT") {
-      const pilotInvestment =
-        game.actualAction.value /
-        (game.actions[game.actionIndex - 1] as PrototypeGA).investment;
+      const lastPrototype = game.actions
+        .filter((e) => e.state === "PROTOTYPE")
+        .findLast((e) => e.to?.id === socket.data.id);
 
-      game.teamPoints -= pilotInvestment;
+      const pilotInvestment =
+        game.actualAction.value / (lastPrototype?.investment ?? 1);
+
       if (game.mode === "collaborative") {
+        game.teamPoints -= pilotInvestment;
         game.users = game.users.map((u) => ({
           ...u,
           points: game.teamPoints / game.users.length,
         }));
+      } else {
+        changeUserPoints(game, -pilotInvestment, socket.data.id);
       }
       if (game.mode === "collaborative") {
         if (game.actualAction.passed) {

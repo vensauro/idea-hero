@@ -42,9 +42,11 @@ export function PilotPage({ action }: PilotPageProps) {
   return (
     <>
       <div className="relative flex justify-center">
-        <span className="text-white text-base bg-secondary leading-[0rem] h-4 p-2 rounded-md my-3">
-          pontos totais: {Math.floor(game.teamPoints)}
-        </span>
+        {game.mode === "collaborative" && (
+          <span className="text-white text-base bg-secondary leading-[0rem] h-4 p-2 rounded-md my-3">
+            pontos totais: {Math.floor(game.teamPoints)}
+          </span>
+        )}
 
         <InstructionDialog
           defaultOpen={store.isActive()}

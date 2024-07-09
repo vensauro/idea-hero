@@ -37,15 +37,17 @@ export function MarketingPage({ action }: MarketingPageProps) {
     store.isActive() &&
     (action.productValues.length ===
       game.users.filter((e) => e.connected).length ||
-      store.game?.mode === "competitive");
+      game.mode === "competitive");
 
   return (
     <>
-      <div className="flex justify-center mt-4">
-        <span className="text-white text-base bg-secondary leading-[0rem] h-4 p-2 rounded-md">
-          pontos totais: {Math.floor(game.teamPoints)}
-        </span>
-      </div>
+      {game.mode === "collaborative" && (
+        <div className="flex justify-center mt-4">
+          <span className="text-white text-base bg-secondary leading-[0rem] h-4 p-2 rounded-md">
+            pontos totais: {Math.floor(game.teamPoints)}
+          </span>
+        </div>
+      )}
 
       <div className="max-w-72 w-full mx-auto my-8">
         <div className="relative h-8 border-2 w-full bg-secondary border-b-0 flex  items-center z-0">

@@ -23,10 +23,11 @@ export function PrototypePage({ action }: PrototypePageProps) {
   return (
     <>
       <div className="relative flex justify-center">
-        <span className="text-white text-base bg-secondary leading-[0rem] h-4 p-2 rounded-md my-3">
-          pontos totais: {Math.floor(store.game?.teamPoints ?? 0)}
-        </span>
-
+        {store.game?.mode === "collaborative" && (
+          <span className="text-white text-base bg-secondary leading-[0rem] h-4 p-2 rounded-md my-3">
+            pontos totais: {Math.floor(store.game?.teamPoints ?? 0)}
+          </span>
+        )}
         <InstructionDialog
           defaultOpen={store.isActive()}
           title="Instruções"
