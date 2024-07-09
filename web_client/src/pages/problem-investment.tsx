@@ -105,11 +105,22 @@ export function ProblemInvestment({ action }: ProblemInvestmentProps) {
 
             <InstructionDialog defaultOpen title="Instruções">
               <p>
-                Em sigilo, escolha o jogador que apresentou o problema em que
-                você deseja investir e defina um valor ou invista $1000 para
-                mais uma rodada
+                Em sigilo, escolha o jogador que apresentou{" "}
+                {action.state === "PROBLEM_INVESTMENT"
+                  ? "o problema"
+                  : "a solução"}{" "}
+                em que você deseja investir e defina um valor ou invista $1000
+                para mais uma rodada
               </p>
-              <p>O resultado é definido pelo investimento coletivo</p>
+              {store.game?.mode === "collaborative" && (
+                <p>O resultado é definido pelo investimento coletivo</p>
+              )}
+              {action.state === "SOLUTION_INVESTMENT" && (
+                <p>
+                  Apenas os jogadores com investimento irão para a proxima fase
+                  do jogo, é possível investir em si mesmo!
+                </p>
+              )}
             </InstructionDialog>
           </div>
 

@@ -54,20 +54,21 @@ export function SolutionsPage({ action }: SolutionsPageProps) {
             <DialogDescription className="py-4">
               {action.state === "SOLUTION" ? (
                 <p>
-                  Transforme o insight escolhido em solução, utilize as ideias
-                  já existente dos outros jogadores
+                  Transforme o insight escolhido em solução
+                  {store.game?.mode === "collaborative" &&
+                    ", utilize as ideias já existente dos outros jogadores"}
                 </p>
               ) : action.state === "SOLUTION_SELECTION" ? (
                 <p>
-                  Você foi o que menos investiu ao decorrer do caminho, assim
-                  investindo metade dos seus pontos você irá propor a solução
-                  definitiva!
+                  {store.game?.mode === "collaborative"
+                    ? "Você foi o que menos investiu ao decorrer do caminho, assim investindo metade dos seus pontos você irá propor a solução definitiva!"
+                    : "Faça um pitch da sua ideia para o proximo jogador"}
                 </p>
               ) : (
                 <p>
-                  Você irá assumir o papel de advogado do diabo! Questione a
-                  solução proposta para que vocês entendam os problemas
-                  possíveis
+                  {store.game?.mode === "collaborative"
+                    ? "Você irá assumir o papel de advogado do diabo! Questione a solução proposta para que vocês entendam os problemas possíveis"
+                    : `Você irá assumir o papel de advogado do diabo! Questione a solução proposta por ${action.to.name}`}
                 </p>
               )}
             </DialogDescription>

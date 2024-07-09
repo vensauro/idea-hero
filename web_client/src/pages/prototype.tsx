@@ -40,16 +40,15 @@ export function PrototypePage({ action }: PrototypePageProps) {
         >
           {store.isActive() ? (
             <p>
-              Até agora, você foi quem menos investiu nesse projeto. Faça a sua
-              parte investindo 20% dos pontos da mesa. Você pode definir como a
-              solução definida será prototipada. Pode ser com desenhos,
-              maquetes, encenações ou o que a sua criatividade e a realidade á
-              sua volta permitir.
+              {store.game?.mode === "collaborative"
+                ? "Até agora, você foi quem menos investiu nesse projeto. Faça a sua parte investindo 20% dos pontos da mesa. Você pode definir como a solução definida será prototipada. Pode ser com desenhos, maquetes, encenações ou o que a sua criatividade e a realidade á sua volta permitir."
+                : "Chegou o momento de realizar um protótipo, invista 20% dos seus pontos. Você deve definir como a sua solução será prototipada. Pode ser com desenhos, maquetes, encenações ou o que a sua criatividade e a realidade á sua volta permitir."}
             </p>
           ) : (
             <p>
-              {action.activeUser.name} está liderando a criação do protótipo da
-              solução criada por vocês, ajude na criação!
+              {store.game?.mode === "collaborative"
+                ? `${action.activeUser.name} está liderando a criação do protótipo da solução criada por vocês, ajude na criação!`
+                : `${action.activeUser.name} está criando o protótipo da solução a qual propôs!`}
             </p>
           )}
         </InstructionDialog>

@@ -58,18 +58,37 @@ export function PilotPage({ action }: PilotPageProps) {
           key={store.game?.actionIndex}
           className="absolute right-0 top-0"
         >
-          <p>
-            Chegou a hora de levar o protótipo de vocês para o público mais
-            amplo. Tudo pronto para iniciar o teste?
-          </p>
-          <p>
-            O valor do teste será sorteado X vezes o valor investido no
-            protótipo
-          </p>
-          <p>
-            Depois será definido se o teste funcionou, caso tenha falhado vocês
-            voltarão ao protótipo
-          </p>
+          {store.game?.mode === "collaborative" ? (
+            <>
+              <p>
+                Chegou a hora de levar o protótipo de vocês para o público mais
+                amplo. Tudo pronto para iniciar o teste?
+              </p>
+              <p>
+                O valor do teste será sorteado X vezes o valor investido no
+                protótipo
+              </p>
+              <p>
+                Depois será definido se o teste funcionou, caso tenha falhado
+                vocês voltarão ao protótipo
+              </p>
+            </>
+          ) : (
+            <>
+              <p>
+                Chegou a hora de levar o seu protótipo para o público mais
+                amplo. Tudo pronto para iniciar o teste?
+              </p>
+              <p>
+                O valor do teste será sorteado X vezes o valor investido no
+                protótipo
+              </p>
+              <p>
+                Depois será definido se o teste funcionou, caso tenha falhado
+                você voltara ao protótipo
+              </p>
+            </>
+          )}
         </InstructionDialog>
       </div>
 

@@ -44,8 +44,9 @@ export function ScenarioPage({ action }: ScenarioPageProps) {
           que deseje trabalhar.
         </p>
         <p>
-          Atenção! O cenário que você descrever será aquele com o qual o grupo
-          irá trabalhar
+          {store.game?.mode === "collaborative"
+            ? " Atenção! O cenário que você descrever será aquele com o qual o grupo irá trabalhar"
+            : "Esse será o cenário que você irá trabalhar"}
         </p>
       </InstructionDialog>
 

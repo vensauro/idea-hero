@@ -92,23 +92,44 @@ export function MarketingPage({ action }: MarketingPageProps) {
 
           <InstructionDialog defaultOpen title="Instruções">
             {store.isActive() ? (
-              <>
-                <p>
-                  Defina o valor do produto em sigilo e em que Mídias de
-                  marketing irão investir. Você está com todo recurso do grupo
-                  em mãos.
-                </p>
-                <p>
-                  O produto terá sucesso nas vendas dependendo das escolhas
-                  nessa tela!
-                </p>
-                <p>Que tal conversar com o grupo para decidir como utilizar?</p>
-              </>
-            ) : (
+              game.mode === "collaborative" ? (
+                <>
+                  <p>
+                    Defina o valor do produto em sigilo e em que Mídias de
+                    marketing irão investir. Você está com todo recurso do grupo
+                    em mãos.
+                  </p>
+                  <p>
+                    O produto terá sucesso nas vendas dependendo das escolhas
+                    nessa tela!
+                  </p>
+                  <p>
+                    Que tal conversar com o grupo para decidir como utilizar?
+                  </p>
+                </>
+              ) : (
+                <>
+                  <p>
+                    Defina o valor do produto em sigilo e em que Mídias de
+                    marketing investirá.
+                  </p>
+                  <p>
+                    O produto terá sucesso nas vendas dependendo das escolhas
+                    nessa tela!
+                  </p>
+                </>
+              )
+            ) : game.mode === "collaborative" ? (
               <p>
                 Defina o valor do produto em sigilo, converse com{" "}
                 {action.activeUser.name} para saber em quais métodos de
                 marketing investir
+              </p>
+            ) : (
+              <p>
+                própria
+                {action.activeUser.name} está fazendo as decisões de marketing
+                da própria solução
               </p>
             )}
           </InstructionDialog>
