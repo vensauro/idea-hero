@@ -9,6 +9,8 @@ import { socket } from "@/lib/socket";
 import { useGameStore } from "@/lib/store";
 import { useState } from "react";
 
+import json from "@/lib/text-revised.json";
+
 interface ProblemInvestmentProps {
   action: ProblemsInvestmentGA | SolutionInvestmentGa;
 }
@@ -53,6 +55,13 @@ export function ProblemInvestment({ action }: ProblemInvestmentProps) {
     haveInvestedBefore &&
     store.game?.mode === "competitive" &&
     !haveInvestedThisTurn;
+
+  const gameText =
+    store.game?.mode === "collaborative"
+      ? json.collaborative.problem_investment_state
+      : action.state === "PROBLEM_INVESTMENT"
+      ? json.competitive.problem_investment_state
+      : json.competitive.solution_investment_state;
 
   return (
     <div>
@@ -103,24 +112,10 @@ export function ProblemInvestment({ action }: ProblemInvestmentProps) {
 
             <div className="w-full border-2 bg-white h-5" />
 
-            <InstructionDialog defaultOpen title="Instruções">
-              <p>
-                Em sigilo, escolha o jogador que apresentou{" "}
-                {action.state === "PROBLEM_INVESTMENT"
-                  ? "o problema"
-                  : "a solução"}{" "}
-                em que você deseja investir e defina um valor ou invista $1000
-                para mais uma rodada
-              </p>
-              {store.game?.mode === "collaborative" && (
-                <p>O resultado é definido pelo investimento coletivo</p>
-              )}
-              {action.state === "SOLUTION_INVESTMENT" && (
-                <p>
-                  Apenas os jogadores com investimento irão para a proxima fase
-                  do jogo, é possível investir em si mesmo!
-                </p>
-              )}
+            <InstructionDialog defaultOpen title={gameText.instructions.title}>
+              {gameText.instructions.content.map((content) => (
+                <p>{content}</p>
+              ))}
             </InstructionDialog>
           </div>
 

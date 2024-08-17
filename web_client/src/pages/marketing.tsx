@@ -19,6 +19,9 @@ import { sum, toggle } from "radash";
 import { useState } from "react";
 import { Link } from "react-router-dom";
 
+import json from "@/lib/text-revised.json";
+import { replaceTemplate } from "@/lib/text";
+
 interface MarketingPageProps {
   action: MarketingGA;
 }
@@ -40,6 +43,8 @@ export function MarketingPage({ action }: MarketingPageProps) {
     (action.productValues.length ===
       game.users.filter((e) => e.connected).length ||
       game.mode === "competitive");
+
+  const gameText = json[store.game?.mode ?? "collaborative"].marketing_state;
 
   return (
     <>
@@ -90,47 +95,21 @@ export function MarketingPage({ action }: MarketingPageProps) {
 
           <div className="w-full border-2 bg-white h-5" />
 
-          <InstructionDialog defaultOpen title="Instruções">
+          <InstructionDialog defaultOpen title={gameText.instructions.title}>
             {store.isActive() ? (
-              game.mode === "collaborative" ? (
-                <>
-                  <p>
-                    Defina o valor do produto em sigilo e em que Mídias de
-                    marketing irão investir. Você está com todo recurso do grupo
-                    em mãos.
-                  </p>
-                  <p>
-                    O produto terá sucesso nas vendas dependendo das escolhas
-                    nessa tela!
-                  </p>
-                  <p>
-                    Que tal conversar com o grupo para decidir como utilizar?
-                  </p>
-                </>
-              ) : (
-                <>
-                  <p>
-                    Defina o valor do produto em sigilo e em que Mídias de
-                    marketing investirá.
-                  </p>
-                  <p>
-                    O produto terá sucesso nas vendas dependendo das escolhas
-                    nessa tela!
-                  </p>
-                </>
-              )
-            ) : game.mode === "collaborative" ? (
-              <p>
-                Defina o valor do produto em sigilo, converse com{" "}
-                {action.activeUser.name} para saber em quais métodos de
-                marketing investir
-              </p>
+              <>
+                {gameText.instructions.active_user_content.map((content) => (
+                  <p>{replaceTemplate(content, action)}</p>
+                ))}
+              </>
             ) : (
-              <p>
-                própria
-                {action.activeUser.name} está fazendo as decisões de marketing
-                da própria solução
-              </p>
+              <>
+                {gameText.instructions.not_active_users_content.map(
+                  (content) => (
+                    <p>{replaceTemplate(content, action)}</p>
+                  )
+                )}
+              </>
             )}
           </InstructionDialog>
         </div>
@@ -151,13 +130,13 @@ export function MarketingPage({ action }: MarketingPageProps) {
                         htmlFor="nickname"
                         className="text-border text-white"
                       >
-                        Quanto custa para o usuário?
+                        {gameText.form.cost.label}
                       </Label>
                     </div>
                     <Input
                       id="product_value"
                       type="number"
-                      placeholder="Valor do produto"
+                      placeholder={gameText.form.cost.placeholder}
                       required
                       value={productValue.toString()}
                       onChange={(e) => {
@@ -174,7 +153,7 @@ export function MarketingPage({ action }: MarketingPageProps) {
                 )}
 
                 <Label htmlFor="nickname" className="text-border text-white">
-                  Em que mídias você vai investir?
+                  {gameText.form.midias}
                 </Label>
 
                 <Button

@@ -8,6 +8,9 @@ import { cn } from "@/lib/utils";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 
+import json from "@/lib/text-revised.json";
+import { replaceTemplate } from "@/lib/text";
+
 interface ScenarioPageProps {
   action: ScenarioGA;
 }
@@ -32,22 +35,18 @@ export function ScenarioPage({ action }: ScenarioPageProps) {
     setCardUrl(action.scenario);
   }, [action]);
 
+  const gameText = json[store.game?.mode ?? "collaborative"].scenario_state;
+
   return (
     <>
       <InstructionDialog
         defaultOpen={store.isActive()}
-        title="Instruções"
+        title={gameText.instructions.title}
         key={store.game?.actionIndex}
       >
-        <p>
-          Retire uma carta de inspiração ou proponha um cenário especifico em
-          que deseje trabalhar.
-        </p>
-        <p>
-          {store.game?.mode === "collaborative"
-            ? " Atenção! O cenário que você descrever será aquele com o qual o grupo irá trabalhar"
-            : "Esse será o cenário que você irá trabalhar"}
-        </p>
+        {gameText.instructions.content.map((content) => (
+          <p>{content}</p>
+        ))}
       </InstructionDialog>
 
       <div>
@@ -81,7 +80,11 @@ export function ScenarioPage({ action }: ScenarioPageProps) {
                         alt="IDEA HERO"
                         className="h-16"
                       />
-                      <p className="text-base text-white">Tirar Carta</p>
+                      {gameText.card_text.active_user_content.map((content) => (
+                        <p className="text-base text-white w-4/5 leading-3 my-2">
+                          {content}
+                        </p>
+                      ))}
                     </div>
                     <img
                       src={cardUrl ?? ""}
@@ -109,13 +112,13 @@ export function ScenarioPage({ action }: ScenarioPageProps) {
                         alt="IDEA HERO"
                         className="h-16"
                       />
-                      <p className="text-base text-white w-4/5 leading-3 my-2">
-                        Espere {action.activeUser.name} selecionar o cenário!
-                      </p>
-                      <p className="text-base text-white w-4/5 leading-3 my-2">
-                        O cenário pode ser um pre definido pelo grupo, ou
-                        baseado na carta tirada por {action.activeUser.name}
-                      </p>
+                      {gameText.card_text.not_active_users_content.map(
+                        (content) => (
+                          <p className="text-base text-white w-4/5 leading-3 my-2">
+                            {replaceTemplate(content, action)}
+                          </p>
+                        )
+                      )}
                     </div>
                     <img
                       src={cardUrl ?? ""}

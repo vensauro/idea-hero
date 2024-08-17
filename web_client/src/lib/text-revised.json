@@ -21,28 +21,36 @@
       "Infelizmente, um incêndio no laboratório causou danos de {points} pontos.",
       "Uma campanha de marketing mal-sucedida resultou em um prejuízo de {points} pontos.",
       "Um investidor retirou seu apoio, levando a uma perda de {points} pontos.",
-      "Problemas de logística aumentaram os custos, causando uma perda de {points} pontos.",
-      "Vocês enfrentaram uma quebra de stock imprevista, perdendo {points} pontos em potenciais vendas."
+      "Uma mudança de legislação aumentou os custos da empresa, causando uma perda de {points} pontos disponíveis para o projeto.",
+      "Vocês enfrentaram uma quebra de contrato imprevista, perdendo {points} pontos."
     ]
   },
   "board": {
-    "SCENARIO": "aaaaaaaaaaaaaaaaaa",
-    "PROBLEM": "",
-    "INSIGHT": "",
-    "SOLUTION": "",
-    "PROTOTYPE": "",
-    "PILOT": "",
-    "MARKETING": "",
-    "SALES": ""
+    "SCENARIO": "Primeiro necessitamos escolher o cenário onde irá ocorrer o problema",
+    "PROBLEM": "Após o cenário, descobrimos os possíveis problemas que temos de resolver",
+    "INSIGHT": "Após os problemas, geramos algumas ideias básicas que podem indicar o caminho de resolução dos problemas",
+    "SOLUTION": "Após os insights, precisamos desenvolver uma solução completa que resolva o problema encontrado",
+    "PROTOTYPE": "Após a invenção da solução, temos de fazer um teste rápido e eficiente se a solução funciona, assim criamos um protótipo",
+    "PILOT": "Com o teste tendo sucesso, temos de fazer a primeira versão completa da solução, sendo um produto, serviço ou ",
+    "MARKETING": "Tudo está pronto em nosso projeto, mas não pode faltar o marketing! aqui selecionamos nossos investimentos de marketing para que o mundo saiba de nossa solução",
+    "SALES": "Após o marketing, nossa solução é vendida, e assim vemos o Retorno sobre o Investimento (ROI) e sucesso alcançado"
   },
-  "collaboration": {
+  "collaborative": {
     "lobby": {
       "instructions": {
         "title": "Instruções",
         "content": [
-          "Iremos gastar dinheiro ao decorrer do jogo, então tome cuidado",
+          "Boas-vindas ao Idea Hero! Prepare-se para uma jornada de inovação.",
+          "Escolha seu modo de jogo: competitivo ou colaborativo",
+          "A sua jornada com um herói da ideia começa com a definição do cenário!",
+          "Você pode inspirar a sua jornada em um contexto real ou ficcional",
+          "Em turnos, siga o tabuleiro e preste atenção nas regras de cada casa",
+          "Ao receber uma carta de inspiração, cada herói desenvolve suas ideias para o grupo de acordo com o momento da jornada.",
+          "Ao receber uma carta de ação tudo pode mudar: para o bem ou para o mal",
           "Cada turno jogado custa 1000 créditos para a equipe",
-          "Teremos vários 8 etapas que você pode ver no tabuleiro, começa em cenário"
+          "Algumas fases podem ser prolongadas e isso pode fazer toda diferença no resultado final, mas lembre-se que isso também aumenta os custos do projeto.",
+          "invista em ideias de outros jogadores: essa pode ser uma boa estratégia até no modo competitivo",
+          "Não desista se ficar sem recursos: outros heróis podem trazer você de volta ao jogo ou você pode receber um investimento."
         ]
       }
     },
@@ -50,17 +58,18 @@
       "instructions": {
         "title": "Instruções",
         "content": [
-          "Retire uma carta de inspiração ou proponha um cenário especifico em que deseje trabalhar.",
-          "Atenção! O cenário que você descrever será aquele com o qual o grupo irá trabalhar"
+          "Retire uma carta de inspiração ou proponha um cenário real para trabalhar.",
+          "Atenção! O cenário que você descrever será aquele que todo o grupo irá adotar"
         ]
       },
       "card_text": {
         "not_active_users_content": [
-          "Espere {activeUser.name} selecionar o cenário!",
-          "O cenário pode ser um pre definido pelo grupo, ou baseado na carta tirada por {activeUser.name}"
+          "Espere {activeUser.name} selecionar o cenário! Sua jornada já vai começar.",
+          "O cenário será definido por {activeUser.name}, mas o grupo também pode trazer as suas opiniões"
         ],
         "active_user_content": [
-          "Tirar Carta"
+          "Descreva o cenário que vai guiar a sua equipe",
+          "Clique aqui para tirar uma carta de inspiração"
         ]
       }
     },
@@ -68,7 +77,7 @@
       "instructions": {
         "title": "Instruções",
         "content": [
-          "De acordo a carta de inspiração e o cenário, proponha um problema especifico em que deseje trabalhar."
+          "Proponha um problema especifico baseado na carta de inspiração e no cenário definido."
         ]
       }
     },
@@ -76,8 +85,8 @@
       "instructions": {
         "title": "Instruções",
         "content": [
-          "Em sigilo, escolha o jogador que apresentou o problema em que você deseja investir e defina um valor ou invista $1000 para mais uma rodada",
-          "O resultado é definido pelo investimento coletivo"
+          "Em sigilo, escolha o jogador que apresentou o problema em que você deseja investir ou invista $1000 para mais uma rodada",
+          "O resultado é definido pelo investimento coletivo. Suas escolhas impactam o futuro da jornada."
         ]
       }
     },
@@ -85,17 +94,16 @@
       "instructions": {
         "title": "Instruções",
         "active_user_content": [
-          "Agora que o problema foi decidido e tivemos as perguntas iniciais, recapitule o ocorrido e sua opinião final sobre o discorrido!"
+          "Agora que o problema foi decidido e aprofundado, apresente o que foi consolidado na discussão!"
         ],
         "not_active_users_content": [
-          "Estamos fazendo uma rodada de imersão no problema, faça pelo menos uma pergunta a {problemWinner.name}"
+          "Vamos fazer uma imersão no problema! Faça pelo menos uma pergunta a {problemWinner.name} para entender melhor a situação."
         ]
       },
       "card_text": {
         "content": [
-          "Continuaremos com o problema de {problemWinner.name}!",
-          "Esse problema recebeu {problemWinner.value} pontos de investimento",
-          "Recomendamos recapitular o que ocorreu até agora!"
+          "O problema proposto por {problemWinner.name} recebeu {problemWinner.value} pontos de investimento",
+          "Este é o problema que vamos trabalhar. Que tal relembrá-lo?"
         ]
       }
     },
@@ -121,7 +129,7 @@
       },
       "card_text": {
         "content": [
-          "{activeUser.name} está escolhendo o insight!"
+          "{activeUser.name} está escolhendo um caminho a seguir!"
         ]
       }
     },
@@ -129,7 +137,7 @@
       "instructions": {
         "title": "Instruções",
         "content": [
-          "Transforme o insight escolhido em solução, utilize as ideias já existente dos outros jogadores"
+          "Transforme o insight escolhido em solução, você pode agregar as ideias já apresentadas por outros jogadores"
         ]
       },
       "not_active_user_bottom_text": [
@@ -140,7 +148,7 @@
       "instructions": {
         "title": "Instruções",
         "content": [
-          "Você foi o que menos investiu ao decorrer do caminho, assim investindo metade dos seus pontos você irá propor a solução definitiva!"
+          "Até aqui você foi quem mais investiu os seus recursos na jornada. Invista agora metade dos seus pontos e proponha a solução em que o grupo vai trabalhar!"
         ]
       },
       "card_text": {
@@ -149,33 +157,33 @@
         ]
       },
       "not_active_user_bottom_text": [
-        "É a vez de {activeUser.name} ajudar na construção da solução"
+        "É a vez de {activeUser.name} ajudar na construção da solução."
       ]
     },
     "solutions_advocate_state": {
       "instructions": {
         "title": "Instruções",
         "content": [
-          "Você irá assumir o papel de advogado do diabo! Questione a solução proposta para que vocês entendam os problemas possíveis"
+          "Questione a solução proposta para que vocês entendam os problemas possíveis. Não seja condescendente, faça o papel do advogado do diabo."
         ]
       },
       "card_text": {
         "content": [
-          "{activeUser.name} é o advogado do diabo"
+          "{activeUser.name} é o advogado do diabo."
         ]
       },
       "not_active_user_bottom_text": [
-        "É a vez de {activeUser.name} ajudar na construção da solução"
+        "É a vez de {activeUser.name} ajudar na construção da solução."
       ]
     },
     "prototype_state": {
       "instructions": {
         "title": "Instruções",
         "active_user_content": [
-          "Até agora, você foi quem menos investiu nesse projeto. Faça a sua parte investindo 20% dos pontos da mesa. Você pode definir como a solução definida será prototipada. Pode ser com desenhos, maquetes, encenações ou o que a sua criatividade e a realidade á sua volta permitir."
+          "Até agora, você foi quem menos investiu nesse projeto. Faça a sua parte investindo 20% dos pontos da mesa para definir como a solução definida será prototipada. Pode ser com desenhos, maquetes, encenações ou o que a sua criatividade e a realidade á sua volta permitir."
         ],
         "not_active_users_content": [
-          "{activeUser.name} está liderando a criação do protótipo da solução criada por vocês, ajude na criação!"
+          "{activeUser.name} está definindo a execução de um protótipo para a solução do grupo, prepare-se para por a mão na massa!"
         ]
       },
       "card_text": {
@@ -193,8 +201,8 @@
         "title": "Instruções",
         "content": [
           "Chegou a hora de levar o protótipo de vocês para o público mais amplo. Tudo pronto para iniciar o teste?.",
-          "O valor do teste será sorteado X vezes o valor investido no protótipo",
-          "Depois será definido se o teste funcionou, caso tenha falhado vocês voltarão ao protótipo"
+          "A equipe contratada para aplicação do piloto estimuou que ele vai custar X vezes o valor investido no protótipo",
+          "Se o teste falhar, vocês voltarão à fase de prototipagem, se for aprovado podem passar ao planejamento da venda!"
         ]
       }
     },
@@ -202,18 +210,18 @@
       "instructions": {
         "title": "Instruções",
         "active_user_content": [
-          "Defina o valor do produto em sigilo e em que Mídias de marketing irão investir. Você está com todo recurso do grupo em mãos.",
+          "Faça uma estimativa do valor da solução que o grupo desenvolveu e escolha também as Mídias para investir na sua estratégia de marketing.",
           "O produto terá sucesso nas vendas dependendo das escolhas nessa tela!",
-          "Que tal conversar com o grupo para decidir como utilizar?"
+          "Atenção! Você está com todo recurso do grupo em mãos. Que tal conversar com o grupo para decidir como utilizar?"
         ],
         "not_active_users_content": [
-          "Defina o valor do produto em sigilo, converse com {store.game.actualAction.activeUser.name} para saber em quais métodos de marketing investir"
+          "Converse com {activeUser.name}sobre as definições da estratégia de marketing."
         ]
       },
       "form": {
         "cost": {
           "label": "Quanto custa para o usuário?",
-          "placeholder": "Valor do produto"
+          "placeholder": "Valor da solução"
         },
         "midias": "Em que mídias você vai investir?"
       }
@@ -221,28 +229,28 @@
     "sales_state": {
       "win": [
         "Parabéns",
-        "Vocês tiveram um projeto de sucesso!",
-        "Teve um investimento de:",
+        "O projeto foi um sucesso!",
+        "Investimento:",
         "{actualAction.investedValue}",
-        "O valor do produto foi de",
+        "Valor do produto",
         "{actualAction.productPrice}",
-        "Vendas de:",
+        "Vendas:",
         "{actualAction.marketingResult}",
-        "Totalizando um lucro de:",
+        "Lucro total:",
         "{actualAction.profit}"
       ],
       "lose": [
         "Não foi dessa vez",
-        "Vocês tiveram um prejuízo com essa rodada do projeto.",
-        "Teve um investimento de:",
+        "Vocês tiveram prejuízo com essa rodada do projeto.",
+        "Investimento:",
         "{actualAction.investedValue}",
-        "O valor do produto foi de",
+        "Valor do produto:",
         "{actualAction.productPrice}",
-        "Vendas de:",
+        "Vendas:",
         "{actualAction.marketingResult}",
-        "Totalizando um lucro de:",
+        "Prejuízo total:",
         "{actualAction.profit}",
-        "Querem tentar fazer o marketing e vender novamente?"
+        "Que tal repensar a estratégia de marketing e tentar novamente?"
       ]
     }
   },
@@ -251,9 +259,17 @@
       "instructions": {
         "title": "Instruções",
         "content": [
-          "Iremos gastar dinheiro ao decorrer do jogo, então tome cuidado",
-          "Cada turno jogado custa 1000 créditos para o jogador",
-          "Teremos vários 8 etapas que você pode ver no tabuleiro, começa em cenário"
+          "Boas-vindas ao Idea Hero! Prepare-se para uma jornada de inovação.",
+          "Escolha seu modo de jogo: competitivo ou colaborativo",
+          "A sua jornada com um herói da ideia começa com a definição do cenário!",
+          "Você pode inspirar a sua jornada em um contexto real ou ficcional",
+          "Em turnos, siga o tabuleiro e preste atenção nas regras de cada casa",
+          "Ao receber uma carta de inspiração, cada herói desenvolve suas ideias para o grupo de acordo com o momento da jornada.",
+          "Ao receber uma carta de ação tudo pode mudar: para o bem ou para o mal",
+          "Cada turno jogado custa 1000 créditos para a equipe",
+          "Algumas fases podem ser prolongadas e isso pode fazer toda diferença no resultado final, mas lembre-se que isso também aumenta os custos do projeto.",
+          "invista em ideias de outros jogadores: essa pode ser uma boa estratégia até no modo competitivo",
+          "Não desista se ficar sem recuros: outros heróis podem trazer você de volta ao jogo ou você pode receber um investimento."
         ]
       }
     },
@@ -261,17 +277,17 @@
       "instructions": {
         "title": "Instruções",
         "content": [
-          "Retire uma carta de inspiração ou proponha um cenário especifico em que deseje trabalhar.",
-          "Esse será o cenário que você irá trabalhar"
+          "Retire uma carta de inspiração ou proponha um cenário real em que deseje trabalhar.",
+          "Atenção este será o cenário no qual você vai desenvolver toda a jornada!"
         ]
       },
       "card_text": {
         "not_active_users_content": [
-          "Espere {activeUser.name} selecionar o cenário!",
+          "Espere enquanto {activeUser.name} selecionar o cenário! A competição vai começar.",
           "O cenário pode ser um pre definido pelo grupo, ou baseado na carta tirada por {activeUser.name}"
         ],
         "active_user_content": [
-          "Tirar Carta"
+          "Descreva o cenário em que você vai trabalhar"
         ]
       }
     },
@@ -279,7 +295,7 @@
       "instructions": {
         "title": "Instruções",
         "content": [
-          "De acordo a carta de inspiração e o cenário, proponha um problema especifico em que deseje trabalhar."
+          "Proponha um problema especifico baseado na carta de inspiração e no cenário escolhido."
         ]
       }
     },
@@ -287,7 +303,7 @@
       "instructions": {
         "title": "Instruções",
         "content": [
-          "Em sigilo, escolha o jogador que apresentou o problema em que você deseja investir e defina um valor ou invista $1000 para mais uma rodada"
+          "Em sigilo, escolha o jogador que apresentou o problema em que você deseja investir ou invista $1000 em mais uma rodada"
         ]
       }
     },
@@ -295,17 +311,17 @@
       "instructions": {
         "title": "Instruções",
         "active_user_content": [
-          "Agora que o problema foi decidido e tivemos as perguntas iniciais, recapitule o ocorrido e sua opinião final sobre o discorrido!"
+          "Agora que o problema foi decidido e aprofundado, apresente o que foi consolidado na discussão!"
         ],
         "not_active_users_content": [
-          "Estamos fazendo uma rodada de imersão no problema, faça pelo menos uma pergunta a {problemWinner.name}"
+          "Vamos fazer uma imersão no problema, faça pelo menos uma pergunta a {problemWinner.name}"
         ]
       },
       "card_text": {
         "content": [
           "Continuaremos com o problema de {problemWinner.name}!",
           "Esse problema recebeu {problemWinner.value} pontos de investimento",
-          "Recomendamos recapitular o que ocorreu até agora!"
+          "Recapitule o que ocorreu até agora!"
         ]
       }
     },
@@ -313,7 +329,7 @@
       "instructions": {
         "title": "Instruções",
         "content": [
-          "Busque um insight para resolver o problema na sua carta de inspiração. Lembre-se um insight ainda não é uma solução, mas um caminho possível para ser adotado."
+          "Busque um insight para resolver o problema na sua carta de inspiração. Lembre-se: um insight ainda não é uma solução, mas um caminho possível para ser adotado."
         ]
       },
       "card_text": {
@@ -326,7 +342,7 @@
       "instructions": {
         "title": "Instruções",
         "content": [
-          "Arremate os insights escolhidos até aqui. Caso não esteja satisfeito com o resultado, você pode fazer suas considerações e propor uma nova rodada, mas lembre-se que a contribuição de cada jogador tem um custo de 1000 pontos"
+          "Recapitule os insights escolhidos até aqui. Caso não esteja satisfeito com o resultado, você pode fazer suas considerações e propor uma nova rodada, mas lembre-se que fazer mais uma rodadada de insights vai te custar mais 1000 pontos"
         ]
       },
       "card_text": {
@@ -339,11 +355,11 @@
       "instructions": {
         "title": "Instruções",
         "content": [
-          "Transforme o insight escolhido em solução"
+          "Amadureça pelo menos um insight para chegar a uma uma solução"
         ]
       },
       "not_active_user_bottom_text": [
-        "É a vez de {activeUser.name} ajudar na construção da solução"
+        "É a vez de {activeUser.name} construir a sua solução"
       ]
     },
     "solutions_selection_state": {
@@ -359,7 +375,7 @@
         ]
       },
       "not_active_user_bottom_text": [
-        "É a vez de {activeUser.name} ajudar na construção da solução"
+        "É a vez de {activeUser.name} construir a sua solução"
       ]
     },
     "solutions_advocate_state": {
@@ -382,7 +398,7 @@
       "instructions": {
         "title": "Instruções",
         "content": [
-          "Em sigilo, escolha o jogador que apresentou a solução em que você deseja investir e defina um valor ou invista $1000 para mais uma rodada",
+          "Em sigilo, escolha o jogador que apresentou a solução em que você deseja investir e defina um valor. Você também pode invistir $1000 para mais uma rodada de soluções",
           "Apenas os jogadores com investimento irão para a proxima fase do jogo, é possível investir em si mesmo!"
         ]
       },
@@ -392,8 +408,7 @@
       "instructions": {
         "title": "Instruções",
         "active_user_content": [
-          "Texto que diz que o maior investidor deve decidir como será feito o protótipo, {investor.name}",
-          "Chegou o momento de realizar um protótipo, invista 20% dos seus pontos. Você deve definir como a sua solução será prototipada. Pode ser com desenhos, maquetes, encenações ou o que a sua criatividade e a realidade á sua volta permitir."
+          "Você é o maior investidor do projeto de {invested.name} e deve decidir como será feito a solução deve ser prototipada. Pode ser com desenhos, maquetes, encenações ou o que a sua criatividade e a realidade á sua volta permitir."
         ],
         "not_active_users_content": [
           "{activeUser.name} está criando o protótipo da solução a qual propôs!"
@@ -401,7 +416,7 @@
       },
       "card_text": {
         "content": [
-          "ajude {activeUser.name} na",
+          "É hora de {activeUser.name} realizar a",
           "produção do protótipo, o tempo está contando"
         ]
       },
@@ -413,9 +428,9 @@
       "instructions": {
         "title": "Instruções",
         "content": [
-          "Chegou a hora de levar o protótipo de vocês para o público mais amplo. Tudo pronto para iniciar o teste?.",
-          "O valor do teste será sorteado X vezes o valor investido no protótipo",
-          "Depois será definido se o teste funcionou, caso tenha falhado você voltara ao protótipo"
+          "Chegou a hora de levar o seu protótipo para um público mais amplo. Tudo pronto para iniciar o teste?.",
+          "A equipe contratada para o teste piloto estimou um custo de X vezes o valor investido no protótipo",
+          "Se o piloto falhar, você voltará à fase de prototipagem, se for aprovado, pode passar à fase de vendas."
         ]
       }
     },
@@ -423,12 +438,12 @@
       "instructions": {
         "title": "Instruções",
         "active_user_content": [
-          "Defina o valor do produto em sigilo e em que Mídias de marketing irão investir. Você está com todo recurso do grupo em mãos.",
+          "Defina o valor do produto e em que Mídias vai investir em sua estratégia de marketing.",
           "O produto terá sucesso nas vendas dependendo das escolhas nessa tela!",
-          "Que tal conversar com o grupo para decidir como utilizar?"
+          "Que tal conversar com seus investidores para tomar as melhores decisões?"
         ],
         "not_active_users_content": [
-          "Defina o valor do produto de {activeUser.name} em sigilo"
+          "{activeUser.name} está definindo sua estratégia de marketing"
         ]
       },
       "form": {
@@ -442,28 +457,28 @@
     "sales_state": {
       "win": [
         "Parabéns",
-        "Vocês tiveram um projeto de sucesso!",
-        "Teve um investimento de:",
+        "Seu projeto foi um sucesso!",
+        "Investimento:",
         "{actualAction.investedValue}",
-        "O valor do produto foi de",
+        "Valor de venda:",
         "{actualAction.productPrice}",
-        "Vendas de:",
+        "Vendas:",
         "{actualAction.marketingResult}",
-        "Totalizando um lucro de:",
+        "Lucro:",
         "{actualAction.profit}"
       ],
       "lose": [
         "Não foi dessa vez",
-        "Vocês tiveram um prejuízo com essa rodada do projeto.",
-        "Teve um investimento de:",
+        "Seu projeto está gerando prejuízo.",
+        "Insvestimento:",
         "{actualAction.investedValue}",
-        "O valor do produto foi de",
+        "Valor de venda",
         "{actualAction.productPrice}",
-        "Vendas de:",
+        "Vendas:",
         "{actualAction.marketingResult}",
-        "Totalizando um lucro de:",
+        "Lucro:",
         "{actualAction.profit}",
-        "Querem tentar fazer o marketing e vender novamente?"
+        "Que tal repensar a estratégia de marketing e tentar novamente?"
       ]
     }
   }

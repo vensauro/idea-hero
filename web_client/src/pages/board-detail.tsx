@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { Minus, Square, X } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
-import json from "../lib/text.json";
+import json from "../lib/text-revised.json";
 import { BoardState } from "@/components/board/board-svg";
 
 const boardTitle = {

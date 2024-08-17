@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { socket } from "@/lib/socket";
 import { useGameStore } from "@/lib/store";
 import { replaceTemplate } from "@/lib/text";
-import { random_cards } from "@/lib/text.json";
+import { random_cards } from "@/lib/text-revised.json";
 import { Link } from "react-router-dom";
 
 interface PremiumCardPageProps {

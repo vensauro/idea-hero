@@ -7,6 +7,8 @@ import { socket } from "@/lib/socket";
 import { useGameStore } from "@/lib/store";
 import { Link } from "react-router-dom";
 
+import json from "@/lib/text-revised.json";
+
 interface PilotPageProps {
   action: PilotGA;
 }
@@ -43,6 +45,8 @@ export function PilotPage({ action }: PilotPageProps) {
 
   const investmentValue = lastPrototypeInvestment / action.value;
 
+  const gameText = json[store.game?.mode ?? "collaborative"].pilot_state;
+
   return (
     <>
       <div className="relative flex justify-center">
@@ -54,41 +58,13 @@ export function PilotPage({ action }: PilotPageProps) {
 
         <InstructionDialog
           defaultOpen={store.isActive()}
-          title="Instruções"
+          title={gameText.instructions.title}
           key={store.game?.actionIndex}
           className="absolute right-0 top-0"
         >
-          {store.game?.mode === "collaborative" ? (
-            <>
-              <p>
-                Chegou a hora de levar o protótipo de vocês para o público mais
-                amplo. Tudo pronto para iniciar o teste?
-              </p>
-              <p>
-                O valor do teste será sorteado X vezes o valor investido no
-                protótipo
-              </p>
-              <p>
-                Depois será definido se o teste funcionou, caso tenha falhado
-                vocês voltarão ao protótipo
-              </p>
-            </>
-          ) : (
-            <>
-              <p>
-                Chegou a hora de levar o seu protótipo para o público mais
-                amplo. Tudo pronto para iniciar o teste?
-              </p>
-              <p>
-                O valor do teste será sorteado X vezes o valor investido no
-                protótipo
-              </p>
-              <p>
-                Depois será definido se o teste funcionou, caso tenha falhado
-                você voltara ao protótipo
-              </p>
-            </>
-          )}
+          {gameText.instructions.content.map((content) => (
+            <p>{content}</p>
+          ))}
         </InstructionDialog>
       </div>
 

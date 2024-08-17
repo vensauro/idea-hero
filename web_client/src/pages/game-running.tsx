@@ -18,7 +18,7 @@ import { BetterSalesPage } from "./better-sales";
 export function RunningGamePage() {
   const store = useGameStore();
 
-  console.log(store.game);
+  // console.log(store.game);
 
   function wrapper(child: ReactNode) {
     return (

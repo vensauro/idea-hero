@@ -6,6 +6,9 @@ import { useGameStore } from "@/lib/store";
 import { CountdownCircleTimer } from "react-countdown-circle-timer";
 import { Link } from "react-router-dom";
 
+import json from "@/lib/text-revised.json";
+import { replaceTemplate } from "@/lib/text";
+
 interface PrototypePageProps {
   action: PrototypeGA;
 }
@@ -20,6 +23,8 @@ export function PrototypePage({ action }: PrototypePageProps) {
     socket.emit("run_problem");
   }
 
+  const gameText = json[store.game?.mode ?? "collaborative"].prototype_state;
+
   return (
     <>
       <div className="relative flex justify-center">
@@ -30,7 +35,7 @@ export function PrototypePage({ action }: PrototypePageProps) {
         )}
         <InstructionDialog
           defaultOpen={store.isActive()}
-          title="Instruções"
+          title={gameText.instructions.title}
           key={store.game?.actionIndex}
           className="absolute right-0 top-0"
           onClickContinue={startPrototype}
@@ -38,19 +43,13 @@ export function PrototypePage({ action }: PrototypePageProps) {
             opened === false && store.isActive() && startPrototype()
           }
         >
-          {store.isActive() ? (
-            <p>
-              {store.game?.mode === "collaborative"
-                ? "Até agora, você foi quem menos investiu nesse projeto. Faça a sua parte investindo 20% dos pontos da mesa. Você pode definir como a solução definida será prototipada. Pode ser com desenhos, maquetes, encenações ou o que a sua criatividade e a realidade á sua volta permitir."
-                : "Chegou o momento de realizar um protótipo, invista 20% dos seus pontos. Você deve definir como a sua solução será prototipada. Pode ser com desenhos, maquetes, encenações ou o que a sua criatividade e a realidade á sua volta permitir."}
-            </p>
-          ) : (
-            <p>
-              {store.game?.mode === "collaborative"
-                ? `${action.activeUser.name} está liderando a criação do protótipo da solução criada por vocês, ajude na criação!`
-                : `${action.activeUser.name} está criando o protótipo da solução a qual propôs!`}
-            </p>
-          )}
+          {store.isActive()
+            ? gameText.instructions.active_user_content.map((content) => (
+                <p>{content}</p>
+              ))
+            : gameText.instructions.not_active_users_content.map((content) => (
+                <p>{content}</p>
+              ))}
         </InstructionDialog>
       </div>
 
@@ -71,10 +70,11 @@ export function PrototypePage({ action }: PrototypePageProps) {
                     alt="IDEA HERO"
                     className="h-16"
                   />
-                  ajude {action.activeUser.name} na
-                  <p className="text-base text-white text-center leading-3 mt-3">
-                    produção do protótipo, o tempo está contando
-                  </p>
+                  {gameText.card_text.content.map((content) => (
+                    <p className="text-base text-white text-center leading-3 mt-3">
+                      {replaceTemplate(content, action)}
+                    </p>
+                  ))}
                 </div>
               </div>
               <div className="absolute -bottom-8 -right-8 bg-secondary rounded-full">
@@ -114,9 +114,11 @@ export function PrototypePage({ action }: PrototypePageProps) {
               </Button>
             </>
           ) : (
-            <p className="text-center text-xl text-secondary">
-              {action.activeUser.name} está com o protótipo
-            </p>
+            gameText.not_active_user_bottom_text.map((content) => (
+              <p className="text-center text-xl text-secondary">
+                {replaceTemplate(content, action)}
+              </p>
+            ))
           )}
           <Button asChild variant={"secondary"} className="w-36">
             <Link to="/board">Tabuleiro</Link>

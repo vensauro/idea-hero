@@ -1,8 +1,7 @@
-export function replaceTemplate(
-  template: string,
-  variables: { [key: string]: string | number }
-): string {
-  return template.replace(/\{(\w+)\}/g, (_, key) => {
-    return key in variables ? variables[key].toString() : `{${key}}`;
+import { get } from "radash";
+
+export function replaceTemplate(template: string, variables: unknown): string {
+  return template.replace(/\{((?:\w+(?:\.\w+)*)+)\}/g, (_, key) => {
+    return get(variables, key);
   });
 }
