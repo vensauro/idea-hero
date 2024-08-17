@@ -2,11 +2,11 @@ import {
   diff,
   draw,
   group,
+  list,
   max,
   min,
   random,
   replace,
-  replaceOrAppend,
   shift,
   shuffle,
   sum,
@@ -67,6 +67,10 @@ export function handleSocket(
     io.to(socket.id).emit("game_state_update", gameUpdate);
   }
 
+  function getCard(game: Game) {
+    return game.cardsQueue.pop() ?? 0 % game.cardQuantity;
+  }
+
   function changeUserPoints(gameUpdate: Game, value: number, userId: string) {
     const user = gameUpdate.users.find((e) => e.id === userId);
     if (!user) return;
@@ -104,6 +108,7 @@ export function handleSocket(
       actionIndex: 0,
       state: "LOBBY",
       cardQuantity,
+      cardsQueue: [],
       problemWinner: { winner: user, value: 0 },
     };
     db.set(code, newGame);
@@ -183,7 +188,7 @@ export function handleSocket(
     game.teamPoints = sum(game.users.map((e) => e.points));
     game.mode = gameMode;
     game.state = "SCENARIO";
-    const rngCard = () => random(0, game.cardQuantity - 1);
+    game.cardsQueue = shuffle(list(8 * game.users.length));
 
     if (gameMode === "collaborative") {
       const scenarioAction = {
@@ -198,7 +203,7 @@ export function handleSocket(
           ({
             activeUser: u,
             state: "PROBLEM",
-            randomCard: rngCard(),
+            randomCard: getCard(game),
           } as ProblemsGA)
       );
 
@@ -213,7 +218,7 @@ export function handleSocket(
           ({
             activeUser: u,
             state: "INSIGHT",
-            randomCard: rngCard(),
+            randomCard: getCard(game),
           } as InsightGA)
       );
 
@@ -227,7 +232,7 @@ export function handleSocket(
           ({
             activeUser: u,
             state: "SOLUTION",
-            randomCard: rngCard(),
+            randomCard: getCard(game),
           } as SolutionGA)
       );
 
@@ -282,7 +287,7 @@ export function handleSocket(
           ({
             activeUser: u,
             state: "PROBLEM",
-            randomCard: rngCard(),
+            randomCard: getCard(game),
           } as ProblemsGA)
       );
 
@@ -292,12 +297,12 @@ export function handleSocket(
         activeUser: game.owner,
       } as ProblemsInvestmentGA;
 
-      const insights = users.map(
+      const insights = [...users, ...users].map(
         (u) =>
           ({
             activeUser: u,
             state: "INSIGHT",
-            randomCard: rngCard(),
+            randomCard: getCard(game),
           } as InsightGA)
       );
 
@@ -306,7 +311,7 @@ export function handleSocket(
           ({
             activeUser: u,
             state: "SOLUTION",
-            randomCard: rngCard(),
+            randomCard: getCard(game),
           } as SolutionGA)
       );
 
@@ -339,7 +344,6 @@ export function handleSocket(
         problems,
         problemsInvestments,
         // endProblems,
-        insights,
         insights,
         solutions,
         endSolutionStage,
@@ -695,7 +699,7 @@ export function handleSocket(
               ({
                 state: "PROBLEM",
                 activeUser: u,
-                randomCard: random(0, game.cardQuantity - 1),
+                randomCard: getCard(game),
               } as ProblemsGA)
           );
 
@@ -751,7 +755,7 @@ export function handleSocket(
               {
                 state: "SOLUTION",
                 activeUser: pUser,
-                randomCard: random(0, game.cardQuantity - 1),
+                randomCard: getCard(game),
               },
               {
                 activeUser: pUser,
@@ -866,7 +870,7 @@ export function handleSocket(
     const newAction = {
       state: "PROBLEM",
       activeUser,
-      randomCard: random(0, game.cardQuantity - 1),
+      randomCard: getCard(game),
     } as ProblemsGA;
 
     const nextInvestment = {
@@ -915,7 +919,7 @@ export function handleSocket(
         ({
           activeUser: u,
           state: "INSIGHT",
-          randomCard: random(0, game.cardQuantity - 1),
+          randomCard: getCard(game),
         } as InsightGA)
     );
 

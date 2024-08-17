@@ -34,6 +34,7 @@ export interface Game {
   };
   actionIndex: number;
   cardQuantity: number;
+  cardsQueue: number[];
 }
 
 export interface GameUser {
