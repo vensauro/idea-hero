@@ -11,9 +11,11 @@ import { Link, useNavigate, useSearchParams } from "react-router-dom";
 export function EnterGamePage() {
   const store = useGameStore();
   const navigate = useNavigate();
-  const [gameCode, setGameCode] = useState("");
-
   const [searchParams] = useSearchParams();
+
+  const [gameCode, setGameCode] = useState(
+    searchParams.get("code") || store.gameCode || ""
+  );
 
   useEffect(() => {
     store.updateGameState(null);
@@ -26,9 +28,7 @@ export function EnterGamePage() {
       return toast.error("Selecione o avatar");
     }
 
-    const code = gameCode || searchParams.get("code") || store.gameCode;
-
-    if (!code) {
+    if (!gameCode) {
       return toast.error("Digite o código da sala!");
     }
 
@@ -38,12 +38,12 @@ export function EnterGamePage() {
       {
         avatar: store.avatar,
         name: store.nickname,
-        code: code,
+        code: gameCode,
       },
       ({ game, user }) => {
         store.updateGameState(game);
         store.setUser(user);
-        store.setCode(code);
+        store.setCode(gameCode);
       }
     );
     navigate("/game");

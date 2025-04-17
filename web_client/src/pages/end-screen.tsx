@@ -12,7 +12,7 @@ interface EndPageProps {
 }
 export function EndPage({ action }: EndPageProps) {
   const store = useGameStore();
-  const activeUser = store.game?.actualAction?.activeUser;
+  const activeUser = store.user;
   useEffect(() => {
     confetti();
   }, []);
