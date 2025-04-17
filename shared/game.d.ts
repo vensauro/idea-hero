@@ -35,6 +35,8 @@ export interface Game {
   actionIndex: number;
   cardQuantity: number;
   cardsQueue: number[];
+  cardsCache: number[];
+  expiresAt: number;
 }
 
 export interface GameUser {
@@ -162,6 +164,7 @@ export interface SalesGA extends GameAction {
   marketingResult: number;
   winned: boolean;
   productPrice: number;
+  cards: number[]
 }
 
 interface Sale {

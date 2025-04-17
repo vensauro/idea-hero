@@ -1,19 +1,19 @@
 import { PageWithUsersBar } from "@/components/container/page-with-users-bar";
 import { useGameStore } from "@/lib/store";
-import { ScenarioPage } from "./scenario";
-import { ProblemsPage } from "./problems";
-import { ProblemInvestment } from "./problem-investment";
-import { ProblemFinishPage } from "./problem-end";
 import { ReactNode } from "react";
-import { InsightsPage } from "./insights";
-import { SolutionsPage } from "./solutions";
-import { PrototypePage } from "./prototype";
-import { PilotPage } from "./pilot";
-import { MarketingPage } from "./marketing";
-import { SalesPage } from "./sales";
-import { LobbyPage } from "./lobby";
-import { PremiumCardPage } from "./premium-card";
 import { BetterSalesPage } from "./better-sales";
+import { EndPage } from "./end-screen";
+import { InsightsPage } from "./insights";
+import { LobbyPage } from "./lobby";
+import { MarketingPage } from "./marketing";
+import { PilotPage } from "./pilot";
+import { PremiumCardPage } from "./premium-card";
+import { ProblemFinishPage } from "./problem-end";
+import { ProblemInvestment } from "./problem-investment";
+import { ProblemsPage } from "./problems";
+import { PrototypePage } from "./prototype";
+import { ScenarioPage } from "./scenario";
+import { SolutionsPage } from "./solutions";
 
 export function RunningGamePage() {
   const store = useGameStore();
@@ -61,7 +61,9 @@ export function RunningGamePage() {
     case "MARKETING":
       return wrapper(<MarketingPage action={store.game?.actualAction} />);
     case "SALES":
-      return wrapper(<SalesPage action={store.game?.actualAction} />);
+      // return wrapper(<SalesPage action={store.game?.actualAction} />);
+      return <EndPage action={store.game?.actualAction} />;
+
     case "COMPETITIVE_SALES":
       return <BetterSalesPage action={store.game?.actualAction} />;
 

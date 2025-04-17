@@ -68,7 +68,9 @@ export function handleSocket(
   }
 
   function getCard(game: Game) {
-    return game.cardsQueue.pop() ?? 0 % game.cardQuantity;
+    const card = game.cardsQueue.pop() ?? 0 % game.cardQuantity;
+    game.cardsCache.push(card);
+    return card;
   }
 
   function changeUserPoints(gameUpdate: Game, value: number, userId: string) {
@@ -109,7 +111,9 @@ export function handleSocket(
       state: "LOBBY",
       cardQuantity,
       cardsQueue: [],
+      cardsCache: [],
       problemWinner: { winner: user, value: 0 },
+      expiresAt: Date.now() + (60 * 60 * 24 * 1000)
     };
     db.set(code, newGame);
 
@@ -188,7 +192,8 @@ export function handleSocket(
     game.teamPoints = sum(game.users.map((e) => e.points));
     game.mode = gameMode;
     game.state = "SCENARIO";
-    game.cardsQueue = shuffle(list(8 * game.users.length));
+    game.cardsQueue = shuffle(list(20 * game.users.length));
+
 
     if (gameMode === "collaborative") {
       const scenarioAction = {
@@ -1101,6 +1106,7 @@ export function handleSocket(
         loanResult,
         winned,
         productPrice,
+        cards: game.cardsCache,
       } as SalesGA;
       game.actions.splice(game.actionIndex + 1, 0, result);
     } else {
