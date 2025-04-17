@@ -1,4 +1,4 @@
-import { draw } from "radash";
+import { draw } from "radashi";
 
 const randomWords = [
   "abacaxi",

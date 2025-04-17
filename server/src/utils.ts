@@ -1,4 +1,4 @@
-import { random } from "radash";
+import { random } from "radashi";
 
 /**
  * Draw a random item from a list. Returns

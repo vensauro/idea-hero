@@ -12,7 +12,7 @@ import {
   sum,
   uid,
   unique,
-} from "radash";
+} from "radashi";
 import { Server, Socket } from "socket.io";
 import type {
   ClientToServerEvents,
@@ -200,11 +200,11 @@ export function handleSocket(
       const users = shift(game.users, -1);
       const problems = users.map(
         (u) =>
-          ({
-            activeUser: u,
-            state: "PROBLEM",
-            randomCard: getCard(game),
-          } as ProblemsGA)
+        ({
+          activeUser: u,
+          state: "PROBLEM",
+          randomCard: getCard(game),
+        } as ProblemsGA)
       );
 
       const problemsInvestments = {
@@ -215,11 +215,11 @@ export function handleSocket(
 
       const insights = users.map(
         (u) =>
-          ({
-            activeUser: u,
-            state: "INSIGHT",
-            randomCard: getCard(game),
-          } as InsightGA)
+        ({
+          activeUser: u,
+          state: "INSIGHT",
+          randomCard: getCard(game),
+        } as InsightGA)
       );
 
       const endInsight = {
@@ -229,11 +229,11 @@ export function handleSocket(
 
       const solutions = users.map(
         (u) =>
-          ({
-            activeUser: u,
-            state: "SOLUTION",
-            randomCard: getCard(game),
-          } as SolutionGA)
+        ({
+          activeUser: u,
+          state: "SOLUTION",
+          randomCard: getCard(game),
+        } as SolutionGA)
       );
 
       game.actions = [
@@ -275,20 +275,20 @@ export function handleSocket(
 
       const scenarios = users.map(
         (u) =>
-          ({
-            activeUser: u,
-            state: "SCENARIO",
-            scenario: null,
-          } as ScenarioGA)
+        ({
+          activeUser: u,
+          state: "SCENARIO",
+          scenario: null,
+        } as ScenarioGA)
       );
 
       const problems = users.map(
         (u) =>
-          ({
-            activeUser: u,
-            state: "PROBLEM",
-            randomCard: getCard(game),
-          } as ProblemsGA)
+        ({
+          activeUser: u,
+          state: "PROBLEM",
+          randomCard: getCard(game),
+        } as ProblemsGA)
       );
 
       const problemsInvestments = {
@@ -299,20 +299,20 @@ export function handleSocket(
 
       const insights = [...users, ...users].map(
         (u) =>
-          ({
-            activeUser: u,
-            state: "INSIGHT",
-            randomCard: getCard(game),
-          } as InsightGA)
+        ({
+          activeUser: u,
+          state: "INSIGHT",
+          randomCard: getCard(game),
+        } as InsightGA)
       );
 
       const solutions = users.map(
         (u) =>
-          ({
-            activeUser: u,
-            state: "SOLUTION",
-            randomCard: getCard(game),
-          } as SolutionGA)
+        ({
+          activeUser: u,
+          state: "SOLUTION",
+          randomCard: getCard(game),
+        } as SolutionGA)
       );
 
       const endSolutionStage: GameActions[] = [];
@@ -465,7 +465,7 @@ export function handleSocket(
       } else {
         changeUserPoints(
           game,
-          -game.actualAction.investment ?? 2000,
+          -(game.actualAction.investment ?? 2000),
           socket.data.id
         );
       }
@@ -696,11 +696,11 @@ export function handleSocket(
           );
           const newActions = usersWithoutInvestment.map(
             (u) =>
-              ({
-                state: "PROBLEM",
-                activeUser: u,
-                randomCard: getCard(game),
-              } as ProblemsGA)
+            ({
+              state: "PROBLEM",
+              activeUser: u,
+              randomCard: getCard(game),
+            } as ProblemsGA)
           );
 
           const nextInvestment = {
@@ -826,13 +826,13 @@ export function handleSocket(
 
           const pilots = game.users.map(
             (iUser) =>
-              ({
-                activeUser: iUser,
-                passed: Math.random() > 0.3,
-                state: "PILOT",
-                value: random(1, 6),
-                started: "idle",
-              } as GameActions)
+            ({
+              activeUser: iUser,
+              passed: Math.random() > 0.3,
+              state: "PILOT",
+              value: random(1, 6),
+              started: "idle",
+            } as GameActions)
           );
           game.actions.push(...prototypeActions, ...pilots);
         }
@@ -916,11 +916,11 @@ export function handleSocket(
 
     const insights = users.map(
       (u) =>
-        ({
-          activeUser: u,
-          state: "INSIGHT",
-          randomCard: getCard(game),
-        } as InsightGA)
+      ({
+        activeUser: u,
+        state: "INSIGHT",
+        randomCard: getCard(game),
+      } as InsightGA)
     );
 
     const endInsight = {

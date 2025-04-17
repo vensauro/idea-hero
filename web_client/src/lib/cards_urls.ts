@@ -1,4 +1,4 @@
-import { draw } from "radash";
+import { draw } from "radashi";
 export const cardsUrls = [
   "00a3fd49-a67d-4438-92e8-2dc61ef93b98.png",
   "04101468-212a-48d2-b7e4-aa5746a9cb11.png",

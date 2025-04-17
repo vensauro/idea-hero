@@ -54,7 +54,7 @@ export const server = async (PORT = 4000, HOST = "0.0.0.0") => {
 
   const assetsBuildPath = path.join(__dirname, "..", "..", "client");
   app.use(express.static(assetsBuildPath));
-  app.get("*", (req, res) => {
+  app.get("*splat", (req, res) => {
     res.sendFile(path.join(assetsBuildPath, "index.html"));
   });
 

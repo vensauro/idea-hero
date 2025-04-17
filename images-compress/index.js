@@ -1,7 +1,7 @@
 import { readdir, readFile } from "fs/promises";
 import { join } from "path";
 import sharp from "sharp";
-import { parallel } from "radash";
+import { parallel } from "radashi";
 
 const filenames = await readdir("original");
 console.log("starting");

@@ -1,7 +1,7 @@
 {
   "type": "module",
   "dependencies": {
-    "radash": "^12.1.0",
-    "sharp": "^0.33.4"
+    "radashi": "^12.4.0",
+    "sharp": "^0.34.1"
   }
 }

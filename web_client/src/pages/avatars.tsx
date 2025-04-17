@@ -1,6 +1,6 @@
 import { Avatar, useGameStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
-import { draw } from "radash";
+import { draw } from "radashi";
 import { useNavigate } from "react-router-dom";
 
 function getRandomBgColor() {

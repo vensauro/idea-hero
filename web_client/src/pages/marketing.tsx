@@ -15,7 +15,7 @@ import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { socket } from "@/lib/socket";
 import { useGameStore } from "@/lib/store";
-import { sum, toggle } from "radash";
+import { sum, toggle } from "radashi";
 import { useState } from "react";
 import { Link } from "react-router-dom";
 
