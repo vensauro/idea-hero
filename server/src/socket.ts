@@ -145,7 +145,7 @@ export function handleSocket(
       id: oldUser === undefined || oldUser.connected ? uid(10) : oldUser.id,
       connected: true,
       socketId: socket.id,
-      points: 30_000,
+      points: oldUser?.points ?? 30_000,
     };
 
     if (oldUser === undefined) {
@@ -454,14 +454,18 @@ export function handleSocket(
     }
 
     if (game.actualAction.state === "PROTOTYPE") {
-      game.actualAction.investment = game.teamPoints * 0.2;
+      const percentageToSubtract = 0.2
+      game.actualAction.investment = game.teamPoints * percentageToSubtract;
       game.teamPoints -= game.actualAction.investment;
 
       if (game.mode === "collaborative") {
-        game.users = game.users.map((u) => ({
-          ...u,
-          points: game.teamPoints / game.users.length,
-        }));
+        game.users = game.users.map((u) => {
+          return {
+            ...u,
+            points: u.points * (1 - percentageToSubtract)
+          };
+        });
+
         const newState = {
           activeUser: game.owner,
           passed: Math.random() > 0.3,
@@ -483,16 +487,17 @@ export function handleSocket(
     if (game.actualAction.state === "PILOT") {
       const lastPrototype = game.actions
         .filter((e): e is PrototypeGA => e.state === "PROTOTYPE")
-        .findLast((e) => e.to?.id === socket.data.id);
+        .findLast((e) => (game.mode === "competitive" && e.to?.id === socket.data.id) || game.mode === "collaborative");
 
       const pilotInvestment =
-        lastPrototype?.investment ?? 1 / game.actualAction.value;
+        (lastPrototype?.investment ?? 1) * game.actualAction.value;
 
       if (game.mode === "collaborative") {
         game.teamPoints -= pilotInvestment;
+        const pilotPointsPerUser = pilotInvestment / game.users.length;
         game.users = game.users.map((u) => ({
           ...u,
-          points: game.teamPoints / game.users.length,
+          points: u.points - pilotPointsPerUser,
         }));
       } else {
         changeUserPoints(game, -pilotInvestment, socket.data.id);
@@ -1044,14 +1049,17 @@ export function handleSocket(
     const lastLoanValue = game.actualAction.loan?.value ?? 0;
     const loanValue = loan?.value ?? 0;
 
-    game.teamPoints = game.teamPoints + lastLoanValue - loanValue;
-
     if (game.mode === "collaborative") {
-      const userPoints = game.teamPoints / game.users.length;
+      const valueToSub = loanValue / game.users.length;
+      const valueToAdd = lastLoanValue ? lastLoanValue / game.users.length : 0
+      const valuePerUser = valueToAdd - valueToSub
+
       game.users = game.users.map((u) => ({
         ...u,
-        points: userPoints,
+        points: u.points - valuePerUser,
       }));
+
+      game.teamPoints = sum(game.users, e => e.points);
     }
 
     game.actualAction.loan = loan;
@@ -1076,12 +1084,7 @@ export function handleSocket(
     }
 
     function randomMultiplier() {
-      const min = 1;
-      const max = 3000;
-
-      const randomValue = Math.random() * (max - min + 1) + min;
-
-      return randomValue;
+      return random(-5, 5)
     }
 
     const productPrice =
@@ -1096,10 +1099,12 @@ export function handleSocket(
 
     const startedValue = 30_000 * game.users.length;
     const investedValue = startedValue - sum(game.users, (e) => e.points);
-    const winned = marketingResult > investedValue;
-    const profit = marketingResult - investedValue;
-    const loanResult =
-      game.actualAction.loan?.type === "angel" ? profit * 0.1 : 21_000;
+    const profitBeforeLoan = marketingResult - investedValue;
+    const loanResult = game.actualAction.loan?.type === "angel" ? profitBeforeLoan * 0.1 : game.actualAction.loan?.value ?? 0;
+
+    const profit = profitBeforeLoan - loanResult;
+
+    const winned = marketingResult + loanResult > investedValue;
 
     if (game.mode === "collaborative") {
       const result = {

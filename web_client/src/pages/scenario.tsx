@@ -40,12 +40,12 @@ export function ScenarioPage({ action }: ScenarioPageProps) {
   return (
     <>
       <InstructionDialog
-        defaultOpen={store.isActive()}
+        defaultOpen
         title={gameText.instructions.title}
         key={store.game?.actionIndex}
       >
-        {gameText.instructions.content.map((content) => (
-          <p>{content}</p>
+        {gameText.instructions.content.map((content, idx) => (
+          <p key={idx}>{content}</p>
         ))}
       </InstructionDialog>
 
@@ -80,11 +80,16 @@ export function ScenarioPage({ action }: ScenarioPageProps) {
                         alt="IDEA HERO"
                         className="h-16"
                       />
-                      {gameText.card_text.active_user_content.map((content) => (
-                        <p className="text-base text-white w-4/5 leading-3 my-2">
-                          {content}
-                        </p>
-                      ))}
+                      {gameText.card_text.active_user_content.map(
+                        (content, idx) => (
+                          <p
+                            key={idx}
+                            className="text-base text-white w-4/5 leading-3 my-2"
+                          >
+                            {content}
+                          </p>
+                        )
+                      )}
                     </div>
                     <img
                       src={cardUrl ?? ""}
@@ -113,8 +118,11 @@ export function ScenarioPage({ action }: ScenarioPageProps) {
                         className="h-16"
                       />
                       {gameText.card_text.not_active_users_content.map(
-                        (content) => (
-                          <p className="text-base text-white w-4/5 leading-3 my-2">
+                        (content, idx) => (
+                          <p
+                            key={idx}
+                            className="text-base text-white w-4/5 leading-3 my-2"
+                          >
                             {replaceTemplate(content, action)}
                           </p>
                         )

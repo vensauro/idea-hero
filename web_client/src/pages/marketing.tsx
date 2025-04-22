@@ -26,6 +26,8 @@ interface MarketingPageProps {
   action: MarketingGA;
 }
 
+const formatter = new Intl.NumberFormat("pt-BR");
+
 export function MarketingPage({ action }: MarketingPageProps) {
   const store = useGameStore();
 
@@ -37,6 +39,11 @@ export function MarketingPage({ action }: MarketingPageProps) {
     game.mode === "collaborative"
       ? game.teamPoints - sum(action.investment, (e) => e.value)
       : game.users.find((e) => e.id === store.user?.id)?.points ?? 0;
+
+  const investmentBuffer =
+    restingPoints - (action.loan?.value ?? 0) < 0
+      ? restingPoints * -1 + (action.loan?.value ?? 0)
+      : 0;
 
   const showFinishButton =
     store.isActive() &&
@@ -98,15 +105,17 @@ export function MarketingPage({ action }: MarketingPageProps) {
           <InstructionDialog defaultOpen title={gameText.instructions.title}>
             {store.isActive() ? (
               <>
-                {gameText.instructions.active_user_content.map((content) => (
-                  <p>{replaceTemplate(content, action)}</p>
-                ))}
+                {gameText.instructions.active_user_content.map(
+                  (content, idx) => (
+                    <p key={idx}>{replaceTemplate(content, action)}</p>
+                  )
+                )}
               </>
             ) : (
               <>
                 {gameText.instructions.not_active_users_content.map(
-                  (content) => (
-                    <p>{replaceTemplate(content, action)}</p>
+                  (content, idx) => (
+                    <p key={idx}>{replaceTemplate(content, action)}</p>
                   )
                 )}
               </>
@@ -167,7 +176,7 @@ export function MarketingPage({ action }: MarketingPageProps) {
                     socket.emit("update_marketing_investment", {
                       values: toggle(
                         action.investment,
-                        { name: "social_media", value: 1000, multiplier: 1 },
+                        { name: "social_media", value: 1000, multiplier: 0.3 },
                         (e) => e.name
                       ),
                     })
@@ -191,7 +200,7 @@ export function MarketingPage({ action }: MarketingPageProps) {
                     socket.emit("update_marketing_investment", {
                       values: toggle(
                         action.investment,
-                        { name: "trafego_pago", value: 3000, multiplier: 1 },
+                        { name: "trafego_pago", value: 3000, multiplier: 0.3 },
                         (e) => e.name
                       ),
                     })
@@ -215,7 +224,7 @@ export function MarketingPage({ action }: MarketingPageProps) {
                     socket.emit("update_marketing_investment", {
                       values: toggle(
                         action.investment,
-                        { name: "assessor", value: 5000, multiplier: 1 },
+                        { name: "assessor", value: 5000, multiplier: 0.3 },
                         (e) => e.name
                       ),
                     })
@@ -239,7 +248,7 @@ export function MarketingPage({ action }: MarketingPageProps) {
                     socket.emit("update_marketing_investment", {
                       values: toggle(
                         action.investment,
-                        { name: "tv", value: 10000, multiplier: 1 },
+                        { name: "tv", value: 10000, multiplier: 0.3 },
                         (e) => e.name
                       ),
                     })
@@ -274,12 +283,18 @@ export function MarketingPage({ action }: MarketingPageProps) {
                     <DialogHeader>
                       <DialogDescription className="py-4">
                         <p>
-                          O banco está te oferecendo um empréstimo de 15.000
-                          pontos
+                          O banco está te oferecendo um empréstimo de{" "}
+                          {formatter.format(investmentBuffer + 15000)} pontos
                         </p>
                         <p>
                           Após a venda, terá de devolver ao banco com 40% de
-                          juros (21.000 pontos)
+                          juros (
+                          {formatter.format(
+                            investmentBuffer +
+                              15000 +
+                              (investmentBuffer + 15000) * 0.4
+                          )}{" "}
+                          pontos)
                         </p>
                       </DialogDescription>
                     </DialogHeader>
@@ -299,12 +314,12 @@ export function MarketingPage({ action }: MarketingPageProps) {
                       <DialogClose asChild>
                         <Button
                           type="submit"
-                          onClick={() =>
-                            socket.emit("make_marketing_loan", {
+                          onClick={() => {
+                            return socket.emit("make_marketing_loan", {
                               type: "bank",
-                              value: 15000,
-                            })
-                          }
+                              value: investmentBuffer + 15000,
+                            });
+                          }}
                         >
                           Aceitar
                         </Button>
@@ -331,8 +346,8 @@ export function MarketingPage({ action }: MarketingPageProps) {
                     <DialogHeader>
                       <DialogDescription className="py-4">
                         <p>
-                          Um investidor está de olho no projeto, e oferecendo
-                          5.000 pontos.
+                          Um investidor está de olho no projeto, e oferecendo{" "}
+                          {formatter.format(investmentBuffer + 5000)} pontos.
                         </p>
                         <p>
                           Após a venda, o investidor terá 10% do valor vendido
@@ -357,7 +372,7 @@ export function MarketingPage({ action }: MarketingPageProps) {
                           onClick={() =>
                             socket.emit("make_marketing_loan", {
                               type: "angel",
-                              value: 5000,
+                              value: investmentBuffer + 5000,
                             })
                           }
                         >

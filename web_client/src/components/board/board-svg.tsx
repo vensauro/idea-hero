@@ -190,7 +190,7 @@ export function BoardSvg({ active }: BoardSvgProps) {
               x="109.09145"
               y="174.95509"
             >
-              Piloto
+              MVP
             </tspan>
           </text>
         </g>

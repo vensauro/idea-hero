@@ -113,8 +113,8 @@ export function ProblemInvestment({ action }: ProblemInvestmentProps) {
             <div className="w-full border-2 bg-white h-5" />
 
             <InstructionDialog defaultOpen title={gameText.instructions.title}>
-              {gameText.instructions.content.map((content) => (
-                <p>{content}</p>
+              {gameText.instructions.content.map((content, idx) => (
+                <p key={idx}>{content}</p>
               ))}
             </InstructionDialog>
           </div>

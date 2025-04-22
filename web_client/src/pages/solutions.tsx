@@ -35,8 +35,8 @@ export function SolutionsPage({ action }: SolutionsPageProps) {
         title={gameText.instructions.title}
         key={store.game?.actionIndex}
       >
-        {gameText.instructions.content.map((content) => (
-          <p>{content}</p>
+        {gameText.instructions.content.map((content, idx) => (
+          <p key={idx}>{content}</p>
         ))}
       </InstructionDialog>
 
@@ -64,8 +64,11 @@ export function SolutionsPage({ action }: SolutionsPageProps) {
                       className="h-16"
                     />
                     {"card_text" in gameText &&
-                      gameText.card_text.content.map((content) => (
-                        <p className="text-base text-white text-center leading-3 mt-3">
+                      gameText.card_text.content.map((content, idx) => (
+                        <p
+                          key={idx}
+                          className="text-base text-white text-center leading-3 mt-3"
+                        >
                           {replaceTemplate(content, action)}
                         </p>
                       ))}
@@ -85,8 +88,8 @@ export function SolutionsPage({ action }: SolutionsPageProps) {
               </Button>
             </>
           ) : (
-            gameText.not_active_user_bottom_text.map((content) => (
-              <p className="text-center text-xl text-secondary">
+            gameText.not_active_user_bottom_text.map((content, idx) => (
+              <p key={idx} className="text-center text-xl text-secondary">
                 {replaceTemplate(content, action)}
               </p>
             ))

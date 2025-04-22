@@ -40,10 +40,12 @@ export function PilotPage({ action }: PilotPageProps) {
   const lastPrototypeInvestment =
     game.actions.findLast(
       (e: GameActions): e is PrototypeGA =>
-        e.state === "PROTOTYPE" && e.to?.id === store.user?.id
+        e.state === "PROTOTYPE" &&
+        ((store.game?.mode === "competitive" && e.to?.id === store.user?.id) ||
+          store.game?.mode === "collaborative")
     )?.investment ?? 1;
 
-  const investmentValue = lastPrototypeInvestment / action.value;
+  const investmentValue = lastPrototypeInvestment * action.value;
 
   const gameText = json[store.game?.mode ?? "collaborative"].pilot_state;
 
@@ -62,8 +64,8 @@ export function PilotPage({ action }: PilotPageProps) {
           key={store.game?.actionIndex}
           className="absolute right-0 top-0"
         >
-          {gameText.instructions.content.map((content) => (
-            <p>{content}</p>
+          {gameText.instructions.content.map((content, idx) => (
+            <p key={idx}>{content}</p>
           ))}
         </InstructionDialog>
       </div>

@@ -23,6 +23,9 @@ export function PrototypePage({ action }: PrototypePageProps) {
     socket.emit("run_problem");
   }
 
+  // const teamPrice = Math.floor(store.game!.teamPoints * 0.2)
+  // const price = teamPrice > 0 ? teamPrice : 10000
+
   const gameText = json[store.game?.mode ?? "collaborative"].prototype_state;
 
   return (
@@ -44,12 +47,12 @@ export function PrototypePage({ action }: PrototypePageProps) {
           }
         >
           {store.isActive()
-            ? gameText.instructions.active_user_content.map((content) => (
-                <p>{content}</p>
+            ? gameText.instructions.active_user_content.map((content, idx) => (
+                <p key={idx}>{content}</p>
               ))
-            : gameText.instructions.not_active_users_content.map((content) => (
-                <p>{content}</p>
-              ))}
+            : gameText.instructions.not_active_users_content.map(
+                (content, idx) => <p key={idx}>{content}</p>
+              )}
         </InstructionDialog>
       </div>
 
@@ -70,8 +73,11 @@ export function PrototypePage({ action }: PrototypePageProps) {
                     alt="IDEA HERO"
                     className="h-16"
                   />
-                  {gameText.card_text.content.map((content) => (
-                    <p className="text-base text-white text-center leading-3 mt-3">
+                  {gameText.card_text.content.map((content, idx) => (
+                    <p
+                      key={idx}
+                      className="text-base text-white text-center leading-3 mt-3"
+                    >
                       {replaceTemplate(content, action)}
                     </p>
                   ))}

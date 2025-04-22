@@ -39,16 +39,21 @@ export function ProblemFinishPage({ action }: ProblemFinishPageProps) {
         key={store.game?.actionIndex}
       >
         {problemWinner?.winner.id === store.user?.id
-          ? gameText.instructions.active_user_content.map((content) => (
-              <p>{content}</p>
+          ? gameText.instructions.active_user_content.map((content, idx) => (
+              <p key={idx}>{content}</p>
             ))
-          : gameText.instructions.not_active_users_content.map((content) => (
-              <p>
-                {replaceTemplate(content, {
-                  problemWinner: { ...problemWinner?.winner, ...problemWinner },
-                })}
-              </p>
-            ))}
+          : gameText.instructions.not_active_users_content.map(
+              (content, idx) => (
+                <p key={idx}>
+                  {replaceTemplate(content, {
+                    problemWinner: {
+                      ...problemWinner?.winner,
+                      ...problemWinner,
+                    },
+                  })}
+                </p>
+              )
+            )}
       </InstructionDialog>
 
       <div>
@@ -68,8 +73,11 @@ export function ProblemFinishPage({ action }: ProblemFinishPageProps) {
                     alt="IDEA HERO"
                     className="h-16"
                   />
-                  {gameText.card_text.content.map((content) => (
-                    <p className="text-base text-white text-center w-4/5 leading-3 mt-2 mb-1">
+                  {gameText.card_text.content.map((content, idx) => (
+                    <p
+                      key={idx}
+                      className="text-base text-white text-center w-4/5 leading-3 mt-2 mb-1"
+                    >
                       {replaceTemplate(content, {
                         problemWinner: {
                           ...problemWinner?.winner,

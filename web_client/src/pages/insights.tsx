@@ -42,8 +42,8 @@ export function InsightsPage({ action }: InsightsPageProps) {
         title={gameText.instructions.title}
         key={store.game?.actionIndex}
       >
-        {gameText.instructions.content.map((content) => (
-          <p>{content}</p>
+        {gameText.instructions.content.map((content, idx) => (
+          <p key={idx}>{content}</p>
         ))}
       </InstructionDialog>
 
@@ -72,8 +72,11 @@ export function InsightsPage({ action }: InsightsPageProps) {
                       alt="IDEA HERO"
                       className="h-16"
                     />
-                    {gameText.card_text.content.map((content) => (
-                      <p className="text-base text-white text-center w-4/5 leading-3 mt-2 mb-1">
+                    {gameText.card_text.content.map((content, idx) => (
+                      <p
+                        key={idx}
+                        className="text-base text-white text-center w-4/5 leading-3 mt-2 mb-1"
+                      >
                         {replaceTemplate(content, action)}
                       </p>
                     ))}
