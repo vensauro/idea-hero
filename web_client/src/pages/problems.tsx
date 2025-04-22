@@ -9,6 +9,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 
 import json from "@/lib/text-revised.json";
+import { replaceTemplate } from "@/lib/text";
 
 interface ProblemsPageProps {
   action: ProblemsGA;
@@ -36,7 +37,24 @@ export function ProblemsPage({ action }: ProblemsPageProps) {
         title={gameText.instructions.title}
         key={store.game?.actionIndex}
       >
-        <p>{gameText.instructions.content}</p>
+        {gameText.instructions.content.map((content, idx) => (
+          <p className="text-lg" key={idx}>
+            {content}
+          </p>
+        ))}
+        {store.isActive()
+          ? gameText.instructions.active_user_content.map((content, idx) => (
+              <p className="text-lg mt-4" key={idx}>
+                {replaceTemplate(content, action)}
+              </p>
+            ))
+          : gameText.instructions.not_active_users_content.map(
+              (content, idx) => (
+                <p className="text-lg mt-4" key={idx}>
+                  {replaceTemplate(content, action)}
+                </p>
+              )
+            )}
       </InstructionDialog>
 
       <div>

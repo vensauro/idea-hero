@@ -34,18 +34,27 @@ export function ProblemFinishPage({ action }: ProblemFinishPageProps) {
   return (
     <>
       <InstructionDialog
-        defaultOpen={store.isActive()}
+        defaultOpen
         title={gameText.instructions.title}
         key={store.game?.actionIndex}
       >
         {problemWinner?.winner.id === store.user?.id
           ? gameText.instructions.active_user_content.map((content, idx) => (
-              <p key={idx}>{content}</p>
+              <p key={idx}>
+                {replaceTemplate(content, {
+                  ...action,
+                  problemWinner: {
+                    ...problemWinner?.winner,
+                    ...problemWinner,
+                  },
+                })}
+              </p>
             ))
           : gameText.instructions.not_active_users_content.map(
               (content, idx) => (
                 <p key={idx}>
                   {replaceTemplate(content, {
+                    ...action,
                     problemWinner: {
                       ...problemWinner?.winner,
                       ...problemWinner,

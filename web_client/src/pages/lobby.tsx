@@ -4,12 +4,17 @@ import { socket } from "@/lib/socket";
 import { useGameStore } from "@/lib/store";
 import { RWebShare } from "react-web-share";
 
+// import json from "@/lib/text-revised.json";
+// import { replaceTemplate } from "@/lib/text";
+
 export function LobbyPage() {
   const store = useGameStore();
 
   function copyToClipboard() {
     navigator.clipboard.writeText(store.game?.code ?? "");
   }
+
+  // const gameText = json[store.game?.mode ?? "collaborative"].lobby;
 
   return (
     <>

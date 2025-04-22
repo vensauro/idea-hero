@@ -38,13 +38,28 @@ export function InsightsPage({ action }: InsightsPageProps) {
   return (
     <>
       <InstructionDialog
-        defaultOpen={store.isActive()}
+        defaultOpen
         title={gameText.instructions.title}
         key={store.game?.actionIndex}
       >
         {gameText.instructions.content.map((content, idx) => (
-          <p key={idx}>{content}</p>
+          <p className="text-lg" key={idx}>
+            {content}
+          </p>
         ))}
+        {store.isActive()
+          ? gameText.instructions.active_user_content.map((content, idx) => (
+              <p className="text-lg mt-4" key={idx}>
+                {replaceTemplate(content, action)}
+              </p>
+            ))
+          : gameText.instructions.not_active_users_content.map(
+              (content, idx) => (
+                <p className="text-lg mt-4" key={idx}>
+                  {replaceTemplate(content, action)}
+                </p>
+              )
+            )}
       </InstructionDialog>
 
       <div>
