@@ -11,7 +11,7 @@ import {
   shuffle,
   sum,
   uid,
-  unique,
+  unique
 } from "radashi";
 import { Server, Socket } from "socket.io";
 import type {
@@ -88,8 +88,12 @@ export function handleSocket(
     );
   }
 
-  socket.on("create_game", ({ name, avatar, cardQuantity }, callback) => {
-    const code = getRandomWord();
+  socket.on("create_game", ({ name, avatar, cardQuantity, code: paramCode }, callback) => {
+    let code = getRandomWord();
+    if (paramCode && !db.has(paramCode)) {
+      code = paramCode
+    }
+
     const user: GameUser = {
       avatar,
       name,
@@ -128,7 +132,7 @@ export function handleSocket(
   socket.on("enter_game", ({ name, avatar, code }, callback) => {
     const game = db.get(code);
     if (!game) {
-      return;
+      return callback(null);
     }
 
     const oldUser = game.users.find((e) => e.name === name);
@@ -577,6 +581,7 @@ export function handleSocket(
       return;
     }
 
+    // game.cardsCache.push(s)
     game.actualAction = { ...game.actualAction, scenario };
     game.actions[game.actionIndex] = game.actualAction;
 

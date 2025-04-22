@@ -22,7 +22,7 @@ export interface ServerToClientEvents {
 
 export interface ClientToServerEvents {
   create_game: (
-    body: { name: string; avatar: GameUserAvatar; cardQuantity: number },
+    body: { name: string; avatar: GameUserAvatar; cardQuantity: number, code?: string },
     callback: ({ game: Game, user: GameUser }) => void
   ) => void;
   enter_game: (
@@ -31,7 +31,7 @@ export interface ClientToServerEvents {
       avatar: GameUserAvatar;
       code: string;
     },
-    callback: ({ game: Game, user: GameUser }) => void
+    callback: (gameResponse: null | { game: Game, user: GameUser }) => void
   ) => void;
   start_game: (mode: GameMode) => void;
   get_scenario: (scenario: string | null) => void;

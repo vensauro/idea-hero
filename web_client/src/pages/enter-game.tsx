@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { cardsUrls } from "@/lib/cards_urls";
 import { socket } from "@/lib/socket";
 import { useGameStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
@@ -23,7 +24,7 @@ export function EnterGamePage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  function startGame() {
+  async function startGame() {
     if (store.avatar === null) {
       return toast.error("Selecione o avatar");
     }
@@ -33,19 +34,26 @@ export function EnterGamePage() {
     }
 
     socket.connect();
-    socket.emit(
-      "enter_game",
-      {
+
+    let response = await socket.emitWithAck("enter_game", {
+      avatar: store.avatar,
+      name: store.nickname,
+      code: gameCode,
+    });
+
+    if (!response) {
+      response = await socket.emitWithAck("create_game", {
         avatar: store.avatar,
         name: store.nickname,
+        cardQuantity: cardsUrls.length,
         code: gameCode,
-      },
-      ({ game, user }) => {
-        store.updateGameState(game);
-        store.setUser(user);
-        store.setCode(gameCode);
-      }
-    );
+      });
+    }
+
+    store.updateGameState(response.game);
+    store.setUser(response.user);
+    store.setCode(gameCode);
+
     navigate("/game");
   }
 
