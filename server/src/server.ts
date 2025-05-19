@@ -26,7 +26,8 @@ export const server = async (PORT = 4000, HOST = "0.0.0.0") => {
         `http://${HOST}:5173`,
         "http://localhost:5173",
         "https://admin.socket.io",
-      ],
+        (process.env.CORS ?? '').split(',')
+      ].flat(),
       credentials: true,
     },
   });

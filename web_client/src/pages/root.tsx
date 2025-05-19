@@ -45,7 +45,9 @@ export function Root() {
             avatar: store.user.avatar,
             code: store.gameCode,
           },
-          ({ game, user }) => {
+          (result) => {
+            if(result === null) return
+            const {game, user} = result;
             console.log({ game, user });
             store.updateGameState(game);
             store.setUser(user);
