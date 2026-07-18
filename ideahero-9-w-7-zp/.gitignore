@@ -1,0 +1,11 @@
+node_modules
+dist
+dist-ssr
+*.local
+.env.local
+.env.*.local
+*.log
+*.rej
+*.orig
+.DS_Store
+spacetime.local.json
