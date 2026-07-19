@@ -606,3 +606,34 @@ Essa fatia deve usar SpacetimeDB, registrar as contribuições, suportar reconex
 `PROTOTYPE → PILOT → MARKETING → SALES → artefato final`
 
 Assim, o Idea Hero preserva seu melhor elemento — a aventura completa da criação ao mercado — enquanto ganha clareza, memória, confiabilidade e espaço real para a criatividade do grupo.
+
+## Progresso implementado na V2
+
+### Fundação concluída
+
+- V1 preservada na branch histórica `codex/v1-mvp-archive`.
+- V2 isolada na branch `codex/v2-spacetimedb` e no diretório `ideahero-9-w-7-zp/`.
+- React, TypeScript e SpacetimeDB operacionais no WSL.
+- Identidade, perfil, sala, lobby, presença, reconexão, contribuições e ciclo de oito etapas persistidos.
+- Catálogo inicial com 16 cartas de IA curadas, otimizadas e acessíveis.
+- Linguagem visual original IDEA HERO, logo e fontes Palmer Lake recuperados.
+
+### Vertical slice colaborativa implementada
+
+As quatro primeiras etapas agora mantêm o ciclo canônico e adicionam o microciclo `CONTRIBUTING → VOTING → REVIEW`.
+
+- Cada participante online registra uma contribuição antes da votação.
+- Apenas o anfitrião abre a votação e revela a decisão.
+- Cada pessoa tem um voto por etapa e pode alterá-lo antes da revelação.
+- A interface esconde autoria durante a escolha para reduzir viés social.
+- O servidor valida sala, etapa, autoria da ação, contribuição escolhida e quórum online.
+- Empates são resolvidos deterministicamente pela contribuição de menor ID.
+- A decisão escolhida fica persistida e aparece na memória cumulativa e no documento final.
+- Salas ativas anteriores ao novo schema recebem a sessão colaborativa ao abrir a votação.
+
+### Próximas validações
+
+- Executar E2E real com 2 a 6 navegadores, incluindo refresh, desconexão e retorno.
+- Auditar visualmente 320 px, tablet e desktop assim que a automação do navegador estiver disponível.
+- Fazer playtests para validar anonimato, clareza do desempate e ritmo de `Criar → Escolher → Revelar`.
+- Depois da validação, decidir se `PROTOTYPE`, `PILOT`, `MARKETING` e `SALES` recebem microciclos próprios ou mantêm avanço direto.

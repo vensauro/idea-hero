@@ -7,16 +7,22 @@ import { type Infer as __Infer } from "spacetimedb";
 
 // Import all reducer arg schemas
 import AdvanceStageReducer from "../advance_stage_reducer";
+import CastVoteReducer from "../cast_vote_reducer";
 import CreateRoomReducer from "../create_room_reducer";
 import JoinRoomReducer from "../join_room_reducer";
+import OpenVotingReducer from "../open_voting_reducer";
+import ResolveStageReducer from "../resolve_stage_reducer";
 import SetProfileReducer from "../set_profile_reducer";
 import SetReadyReducer from "../set_ready_reducer";
 import StartGameReducer from "../start_game_reducer";
 import SubmitContributionReducer from "../submit_contribution_reducer";
 
 export type AdvanceStageParams = __Infer<typeof AdvanceStageReducer>;
+export type CastVoteParams = __Infer<typeof CastVoteReducer>;
 export type CreateRoomParams = __Infer<typeof CreateRoomReducer>;
 export type JoinRoomParams = __Infer<typeof JoinRoomReducer>;
+export type OpenVotingParams = __Infer<typeof OpenVotingReducer>;
+export type ResolveStageParams = __Infer<typeof ResolveStageReducer>;
 export type SetProfileParams = __Infer<typeof SetProfileReducer>;
 export type SetReadyParams = __Infer<typeof SetReadyReducer>;
 export type StartGameParams = __Infer<typeof StartGameReducer>;

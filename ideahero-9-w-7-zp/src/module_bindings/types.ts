@@ -42,6 +42,17 @@ export const Contribution = __t.object("Contribution", {
 });
 export type Contribution = __Infer<typeof Contribution>;
 
+export const Decision = __t.object("Decision", {
+  id: __t.u64(),
+  roomId: __t.u64(),
+  stage: __t.string(),
+  selectedContributionId: __t.u64(),
+  summary: __t.string(),
+  totalVotes: __t.u32(),
+  decidedAt: __t.timestamp(),
+});
+export type Decision = __Infer<typeof Decision>;
+
 export const Player = __t.object("Player", {
   id: __t.u64(),
   roomId: __t.u64(),
@@ -78,3 +89,24 @@ export const Room = __t.object("Room", {
   updatedAt: __t.timestamp(),
 });
 export type Room = __Infer<typeof Room>;
+
+export const StageSession = __t.object("StageSession", {
+  id: __t.u64(),
+  roomId: __t.u64(),
+  stage: __t.string(),
+  phase: __t.string(),
+  createdAt: __t.timestamp(),
+  updatedAt: __t.timestamp(),
+});
+export type StageSession = __Infer<typeof StageSession>;
+
+export const Vote = __t.object("Vote", {
+  id: __t.u64(),
+  roomId: __t.u64(),
+  stage: __t.string(),
+  voterIdentity: __t.identity(),
+  contributionId: __t.u64(),
+  createdAt: __t.timestamp(),
+  updatedAt: __t.timestamp(),
+});
+export type Vote = __Infer<typeof Vote>;

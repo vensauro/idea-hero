@@ -35,8 +35,11 @@ import {
 
 // Import all reducer arg schemas
 import AdvanceStageReducer from "./advance_stage_reducer";
+import CastVoteReducer from "./cast_vote_reducer";
 import CreateRoomReducer from "./create_room_reducer";
 import JoinRoomReducer from "./join_room_reducer";
+import OpenVotingReducer from "./open_voting_reducer";
+import ResolveStageReducer from "./resolve_stage_reducer";
 import SetProfileReducer from "./set_profile_reducer";
 import SetReadyReducer from "./set_ready_reducer";
 import StartGameReducer from "./start_game_reducer";
@@ -48,9 +51,12 @@ import SubmitContributionReducer from "./submit_contribution_reducer";
 import CardRow from "./card_table";
 import CardDrawRow from "./card_draw_table";
 import ContributionRow from "./contribution_table";
+import DecisionRow from "./decision_table";
 import PlayerRow from "./player_table";
 import ProfileRow from "./profile_table";
 import RoomRow from "./room_table";
+import StageSessionRow from "./stage_session_table";
+import VoteRow from "./vote_table";
 
 /** Type-only namespace exports for generated type groups. */
 
@@ -110,6 +116,26 @@ const tablesSchema = __schema({
       { name: 'contribution_id_key', constraint: 'unique', columns: ['id'] },
     ],
   }, ContributionRow),
+  decision: __table({
+    name: 'decision',
+    indexes: [
+      { accessor: 'id', name: 'decision_id_idx_btree', algorithm: 'btree', columns: [
+        'id',
+      ] },
+      { accessor: 'roomId', name: 'decision_room_id_idx_btree', algorithm: 'btree', columns: [
+        'roomId',
+      ] },
+      { accessor: 'selectedContributionId', name: 'decision_selected_contribution_id_idx_btree', algorithm: 'btree', columns: [
+        'selectedContributionId',
+      ] },
+      { accessor: 'stage', name: 'decision_stage_idx_btree', algorithm: 'btree', columns: [
+        'stage',
+      ] },
+    ],
+    constraints: [
+      { name: 'decision_id_key', constraint: 'unique', columns: ['id'] },
+    ],
+  }, DecisionRow),
   player: __table({
     name: 'player',
     indexes: [
@@ -153,13 +179,56 @@ const tablesSchema = __schema({
       { name: 'room_id_key', constraint: 'unique', columns: ['id'] },
     ],
   }, RoomRow),
+  stageSession: __table({
+    name: 'stage_session',
+    indexes: [
+      { accessor: 'id', name: 'stage_session_id_idx_btree', algorithm: 'btree', columns: [
+        'id',
+      ] },
+      { accessor: 'roomId', name: 'stage_session_room_id_idx_btree', algorithm: 'btree', columns: [
+        'roomId',
+      ] },
+      { accessor: 'stage', name: 'stage_session_stage_idx_btree', algorithm: 'btree', columns: [
+        'stage',
+      ] },
+    ],
+    constraints: [
+      { name: 'stage_session_id_key', constraint: 'unique', columns: ['id'] },
+    ],
+  }, StageSessionRow),
+  vote: __table({
+    name: 'vote',
+    indexes: [
+      { accessor: 'contributionId', name: 'vote_contribution_id_idx_btree', algorithm: 'btree', columns: [
+        'contributionId',
+      ] },
+      { accessor: 'id', name: 'vote_id_idx_btree', algorithm: 'btree', columns: [
+        'id',
+      ] },
+      { accessor: 'roomId', name: 'vote_room_id_idx_btree', algorithm: 'btree', columns: [
+        'roomId',
+      ] },
+      { accessor: 'stage', name: 'vote_stage_idx_btree', algorithm: 'btree', columns: [
+        'stage',
+      ] },
+      { accessor: 'voterIdentity', name: 'vote_voter_identity_idx_btree', algorithm: 'btree', columns: [
+        'voterIdentity',
+      ] },
+    ],
+    constraints: [
+      { name: 'vote_id_key', constraint: 'unique', columns: ['id'] },
+    ],
+  }, VoteRow),
 });
 
 /** The schema information for all reducers in this module. This is defined the same way as the reducers would have been defined in the server, except the body of the reducer is omitted in code generation. */
 const reducersSchema = __reducers(
   __reducerSchema("advance_stage", AdvanceStageReducer),
+  __reducerSchema("cast_vote", CastVoteReducer),
   __reducerSchema("create_room", CreateRoomReducer),
   __reducerSchema("join_room", JoinRoomReducer),
+  __reducerSchema("open_voting", OpenVotingReducer),
+  __reducerSchema("resolve_stage", ResolveStageReducer),
   __reducerSchema("set_profile", SetProfileReducer),
   __reducerSchema("set_ready", SetReadyReducer),
   __reducerSchema("start_game", StartGameReducer),

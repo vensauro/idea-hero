@@ -12,6 +12,8 @@ const BOARD_STATES = [
   "SALES",
 ] as const;
 
+const COLLABORATIVE_STAGES = new Set<string>(BOARD_STATES.slice(0, 4));
+
 const profile = table(
   { name: "profile", public: true },
   {
@@ -93,6 +95,44 @@ const cardDraw = table(
   },
 );
 
+const stageSession = table(
+  { name: "stage_session", public: true },
+  {
+    id: t.u64().primaryKey().autoInc(),
+    roomId: t.u64().index("btree"),
+    stage: t.string().index("btree"),
+    phase: t.string(),
+    createdAt: t.timestamp(),
+    updatedAt: t.timestamp(),
+  },
+);
+
+const vote = table(
+  { name: "vote", public: true },
+  {
+    id: t.u64().primaryKey().autoInc(),
+    roomId: t.u64().index("btree"),
+    stage: t.string().index("btree"),
+    voterIdentity: t.identity().index("btree"),
+    contributionId: t.u64().index("btree"),
+    createdAt: t.timestamp(),
+    updatedAt: t.timestamp(),
+  },
+);
+
+const decision = table(
+  { name: "decision", public: true },
+  {
+    id: t.u64().primaryKey().autoInc(),
+    roomId: t.u64().index("btree"),
+    stage: t.string().index("btree"),
+    selectedContributionId: t.u64().index("btree"),
+    summary: t.string(),
+    totalVotes: t.u32(),
+    decidedAt: t.timestamp(),
+  },
+);
+
 const spacetimedb = schema({
   profile,
   room,
@@ -100,6 +140,9 @@ const spacetimedb = schema({
   contribution,
   card,
   cardDraw,
+  stageSession,
+  vote,
+  decision,
 });
 export default spacetimedb;
 
@@ -304,6 +347,15 @@ export const start_game = spacetimedb.reducer(
       cardId: drawnCard.id,
       drawnAt: ctx.timestamp,
     });
+
+    ctx.db.stageSession.insert({
+      id: 0n,
+      roomId,
+      stage: BOARD_STATES[0],
+      phase: "CONTRIBUTING",
+      createdAt: ctx.timestamp,
+      updatedAt: ctx.timestamp,
+    });
   },
 );
 
@@ -313,6 +365,16 @@ export const submit_contribution = spacetimedb.reducer(
     const currentRoom = ctx.db.room.id.find(roomId);
     if (!currentRoom || currentRoom.status !== "ACTIVE") {
       throw new SenderError("Esta jornada não está ativa.");
+    }
+
+    const currentSession = [...ctx.db.stageSession.iter()].find(
+      (item) =>
+        item.roomId === roomId && item.stage === currentRoom.currentStage,
+    );
+    if (currentSession && currentSession.phase !== "CONTRIBUTING") {
+      throw new SenderError(
+        "As contribuições desta etapa já foram encerradas.",
+      );
     }
 
     const currentPlayer = [...ctx.db.player.iter()].find(
@@ -357,6 +419,211 @@ export const submit_contribution = spacetimedb.reducer(
   },
 );
 
+export const open_voting = spacetimedb.reducer(
+  { roomId: t.u64() },
+  (ctx, { roomId }) => {
+    const currentRoom = ctx.db.room.id.find(roomId);
+    if (!currentRoom || currentRoom.status !== "ACTIVE") {
+      throw new SenderError("Esta jornada não está ativa.");
+    }
+    if (!currentRoom.ownerIdentity.isEqual(ctx.sender)) {
+      throw new SenderError("Apenas o anfitrião pode abrir a votação.");
+    }
+    if (!COLLABORATIVE_STAGES.has(currentRoom.currentStage)) {
+      throw new SenderError("Esta etapa não utiliza votação.");
+    }
+
+    const currentSession = [...ctx.db.stageSession.iter()].find(
+      (item) =>
+        item.roomId === roomId && item.stage === currentRoom.currentStage,
+    );
+    if (currentSession && currentSession.phase !== "CONTRIBUTING") {
+      throw new SenderError("A votação desta etapa não pode ser aberta agora.");
+    }
+
+    const contributions = [...ctx.db.contribution.iter()].filter(
+      (item) =>
+        item.roomId === roomId &&
+        item.stage === currentRoom.currentStage &&
+        item.kind === "MAIN",
+    );
+    const onlinePlayers = [...ctx.db.player.iter()].filter(
+      (item) => item.roomId === roomId && item.online,
+    );
+    const waitingPlayer = onlinePlayers.find(
+      (currentPlayer) =>
+        !contributions.some((item) =>
+          item.authorIdentity.isEqual(currentPlayer.identity),
+        ),
+    );
+    if (waitingPlayer) {
+      throw new SenderError(
+        `${waitingPlayer.displayName} ainda precisa contribuir.`,
+      );
+    }
+
+    if (currentSession) {
+      ctx.db.stageSession.id.update({
+        ...currentSession,
+        phase: "VOTING",
+        updatedAt: ctx.timestamp,
+      });
+    } else {
+      ctx.db.stageSession.insert({
+        id: 0n,
+        roomId,
+        stage: currentRoom.currentStage,
+        phase: "VOTING",
+        createdAt: ctx.timestamp,
+        updatedAt: ctx.timestamp,
+      });
+    }
+  },
+);
+
+export const cast_vote = spacetimedb.reducer(
+  { roomId: t.u64(), contributionId: t.u64() },
+  (ctx, { roomId, contributionId }) => {
+    const currentRoom = ctx.db.room.id.find(roomId);
+    if (!currentRoom || currentRoom.status !== "ACTIVE") {
+      throw new SenderError("Esta jornada não está ativa.");
+    }
+
+    const currentPlayer = [...ctx.db.player.iter()].find(
+      (item) => item.roomId === roomId && item.identity.isEqual(ctx.sender),
+    );
+    if (!currentPlayer) throw new SenderError("Você não pertence a esta sala.");
+
+    const currentSession = [...ctx.db.stageSession.iter()].find(
+      (item) =>
+        item.roomId === roomId && item.stage === currentRoom.currentStage,
+    );
+    if (!currentSession || currentSession.phase !== "VOTING") {
+      throw new SenderError("A votação ainda não está aberta.");
+    }
+
+    const selectedContribution = ctx.db.contribution.id.find(contributionId);
+    if (
+      !selectedContribution ||
+      selectedContribution.roomId !== roomId ||
+      selectedContribution.stage !== currentRoom.currentStage ||
+      selectedContribution.kind !== "MAIN"
+    ) {
+      throw new SenderError("Escolha uma contribuição válida desta etapa.");
+    }
+
+    const existingVote = [...ctx.db.vote.iter()].find(
+      (item) =>
+        item.roomId === roomId &&
+        item.stage === currentRoom.currentStage &&
+        item.voterIdentity.isEqual(ctx.sender),
+    );
+    if (existingVote) {
+      ctx.db.vote.id.update({
+        ...existingVote,
+        contributionId,
+        updatedAt: ctx.timestamp,
+      });
+      return;
+    }
+
+    ctx.db.vote.insert({
+      id: 0n,
+      roomId,
+      stage: currentRoom.currentStage,
+      voterIdentity: ctx.sender,
+      contributionId,
+      createdAt: ctx.timestamp,
+      updatedAt: ctx.timestamp,
+    });
+  },
+);
+
+export const resolve_stage = spacetimedb.reducer(
+  { roomId: t.u64() },
+  (ctx, { roomId }) => {
+    const currentRoom = ctx.db.room.id.find(roomId);
+    if (!currentRoom || currentRoom.status !== "ACTIVE") {
+      throw new SenderError("Esta jornada não está ativa.");
+    }
+    if (!currentRoom.ownerIdentity.isEqual(ctx.sender)) {
+      throw new SenderError("Apenas o anfitrião pode revelar a decisão.");
+    }
+
+    const currentSession = [...ctx.db.stageSession.iter()].find(
+      (item) =>
+        item.roomId === roomId && item.stage === currentRoom.currentStage,
+    );
+    if (!currentSession || currentSession.phase !== "VOTING") {
+      throw new SenderError("Esta etapa não está em votação.");
+    }
+
+    const onlinePlayers = [...ctx.db.player.iter()].filter(
+      (item) => item.roomId === roomId && item.online,
+    );
+    const stageVotes = [...ctx.db.vote.iter()].filter(
+      (item) =>
+        item.roomId === roomId &&
+        item.stage === currentRoom.currentStage &&
+        onlinePlayers.some((currentPlayer) =>
+          item.voterIdentity.isEqual(currentPlayer.identity),
+        ),
+    );
+    const waitingPlayer = onlinePlayers.find(
+      (currentPlayer) =>
+        !stageVotes.some((item) =>
+          item.voterIdentity.isEqual(currentPlayer.identity),
+        ),
+    );
+    if (waitingPlayer) {
+      throw new SenderError(
+        `${waitingPlayer.displayName} ainda precisa votar.`,
+      );
+    }
+
+    const contributions = [...ctx.db.contribution.iter()].filter(
+      (item) =>
+        item.roomId === roomId &&
+        item.stage === currentRoom.currentStage &&
+        item.kind === "MAIN",
+    );
+    if (contributions.length === 0) {
+      throw new SenderError("Nenhuma contribuição disponível para decidir.");
+    }
+
+    let selectedContribution = contributions[0];
+    let winningVotes = -1;
+    for (const currentContribution of contributions) {
+      const total = stageVotes.filter(
+        (item) => item.contributionId === currentContribution.id,
+      ).length;
+      if (
+        total > winningVotes ||
+        (total === winningVotes &&
+          currentContribution.id < selectedContribution.id)
+      ) {
+        selectedContribution = currentContribution;
+        winningVotes = total;
+      }
+    }
+
+    ctx.db.decision.insert({
+      id: 0n,
+      roomId,
+      stage: currentRoom.currentStage,
+      selectedContributionId: selectedContribution.id,
+      summary: selectedContribution.content,
+      totalVotes: winningVotes,
+      decidedAt: ctx.timestamp,
+    });
+    ctx.db.stageSession.id.update({
+      ...currentSession,
+      phase: "REVIEW",
+      updatedAt: ctx.timestamp,
+    });
+  },
+);
+
 export const advance_stage = spacetimedb.reducer(
   { roomId: t.u64() },
   (ctx, { roomId }) => {
@@ -367,6 +634,26 @@ export const advance_stage = spacetimedb.reducer(
     }
     if (currentRoom.status !== "ACTIVE") {
       throw new SenderError("A jornada não está ativa.");
+    }
+
+    if (COLLABORATIVE_STAGES.has(currentRoom.currentStage)) {
+      const currentSession = [...ctx.db.stageSession.iter()].find(
+        (item) =>
+          item.roomId === roomId && item.stage === currentRoom.currentStage,
+      );
+      const currentDecision = [...ctx.db.decision.iter()].find(
+        (item) =>
+          item.roomId === roomId && item.stage === currentRoom.currentStage,
+      );
+      if (
+        !currentSession ||
+        currentSession.phase !== "REVIEW" ||
+        !currentDecision
+      ) {
+        throw new SenderError(
+          "Revele e revise a decisão coletiva antes de avançar.",
+        );
+      }
     }
 
     const stageContributions = [...ctx.db.contribution.iter()].filter(
@@ -417,6 +704,14 @@ export const advance_stage = spacetimedb.reducer(
       stage: nextStage,
       cardId: drawnCard.id,
       drawnAt: ctx.timestamp,
+    });
+    ctx.db.stageSession.insert({
+      id: 0n,
+      roomId,
+      stage: nextStage,
+      phase: "CONTRIBUTING",
+      createdAt: ctx.timestamp,
+      updatedAt: ctx.timestamp,
     });
 
     ctx.db.room.id.update({

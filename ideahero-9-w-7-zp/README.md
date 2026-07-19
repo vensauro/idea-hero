@@ -12,6 +12,9 @@ Fundação funcional da nova experiência multiplayer do Idea Hero, construída 
 - sorteio determinístico e persistido de uma carta por sala e etapa;
 - instrução contextual, confirmação de salvamento e indicação do próximo passo;
 - contribuição individual persistida em cada etapa;
+- microciclo `CONTRIBUTING → VOTING → REVIEW` em `SCENARIO`, `PROBLEM`, `INSIGHT` e `SOLUTION`;
+- votação sem autoria visível, um voto atualizável por pessoa e desempate determinístico;
+- decisão coletiva persistida no resumo cumulativo e no documento final;
 - painel compartilhado da jornada e encerramento após `SALES`;
 - regras de sala e progressão validadas no servidor.
 
@@ -30,7 +33,7 @@ Essa sequência é uma regra central do domínio. Mudanças de interface podem e
 - `spacetime.json`: configuração do banco e geração de bindings;
 - `.env.example`: configuração pública esperada pelo cliente.
 
-As tabelas públicas atuais são `profile`, `room`, `player`, `contribution`, `card` e `card_draw`. Toda alteração de estado compartilhado passa por reducers do SpacetimeDB.
+As tabelas públicas atuais são `profile`, `room`, `player`, `contribution`, `card`, `card_draw`, `stage_session`, `vote` e `decision`. Toda alteração de estado compartilhado passa por reducers do SpacetimeDB.
 
 ## Requisitos no WSL
 
@@ -77,4 +80,4 @@ Banco de desenvolvimento: [ideahero-9w7zp no Maincloud](https://spacetimedb.com/
 
 ## Próximo marco
 
-Completar a vertical slice criativa de `SCENARIO → PROBLEM → INSIGHT → SOLUTION` com síntese coletiva, votação/combinação de contribuições e decisões persistidas; depois validar a experiência em playtests com grupos reais.
+Validar a vertical slice colaborativa de `SCENARIO → PROBLEM → INSIGHT → SOLUTION` em sessões multiusuário reais, incluindo refresh e reconexão. Depois dos playtests, refinar o microciclo e estender padrões aprovados para `PROTOTYPE → PILOT → MARKETING → SALES`.
