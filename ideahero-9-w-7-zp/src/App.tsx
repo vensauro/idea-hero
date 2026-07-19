@@ -21,6 +21,11 @@ import {
   buildJourneyShareText,
   journeyFilename,
 } from "./journey-artifact";
+import {
+  buildRoomInviteUrl,
+  clearRoomInviteUrl,
+  roomCodeFromUrl,
+} from "./room-invite";
 
 export const BOARD_STATES = [
   "SCENARIO",
@@ -187,6 +192,16 @@ function App() {
   const currentRoom = currentPlayer
     ? rooms.find((item) => item.id === currentPlayer.roomId)
     : undefined;
+  const currentRoomCode = currentRoom?.code;
+
+  useEffect(() => {
+    if (!currentRoomCode) return;
+    window.history.replaceState(
+      null,
+      "",
+      buildRoomInviteUrl(currentRoomCode, window.location.href),
+    );
+  }, [currentRoomCode]);
 
   if (!connected || !identity) {
     return <LoadingScreen label="Conectando sua identidade criativa…" />;
@@ -330,7 +345,9 @@ function ProfileSetup() {
 function RoomEntry({ displayName }: { displayName: string }) {
   const createRoom = useReducer(reducers.createRoom);
   const joinRoom = useReducer(reducers.joinRoom);
-  const [joinCode, setJoinCode] = useState("");
+  const invitedCode = roomCodeFromUrl(window.location.href);
+  const [joinCode, setJoinCode] = useState(invitedCode ?? "");
+  const hasInvite = Boolean(invitedCode);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
 
@@ -362,16 +379,26 @@ function RoomEntry({ displayName }: { displayName: string }) {
           </div>
         </div>
         <p className="intro">
-          Crie uma nova sala ou entre pelo código compartilhado pelo grupo.
+          {hasInvite
+            ? "Seu grupo já deixou um lugar reservado para você."
+            : "Crie uma nova sala ou entre pelo código compartilhado pelo grupo."}
         </p>
+        {hasInvite && (
+          <div className="invite-banner" role="status">
+            <span aria-hidden="true">✦</span>
+            <p>
+              Convite encontrado para a sala <strong>{invitedCode}</strong>
+            </p>
+          </div>
+        )}
 
         <div className="room-actions">
           <button
-            className="primary-button"
+            className={hasInvite ? "secondary-button" : "primary-button"}
             disabled={busy}
             onClick={() => run(() => createRoom({ code: makeRoomCode() }))}
           >
-            Criar uma sala
+            {hasInvite ? "Criar outra sala" : "Criar uma sala"}
           </button>
 
           <div className="divider">
@@ -394,10 +421,14 @@ function RoomEntry({ displayName }: { displayName: string }) {
                 }
                 placeholder="ideia-abc123"
                 required
+                autoFocus={hasInvite}
               />
             </label>
-            <button className="secondary-button" disabled={busy}>
-              Entrar na sala
+            <button
+              className={hasInvite ? "primary-button" : "secondary-button"}
+              disabled={busy}
+            >
+              {hasInvite ? "Entrar nesta sala" : "Entrar na sala"}
             </button>
           </form>
         </div>
@@ -433,10 +464,27 @@ function Lobby({
     }
   }
 
-  async function copyCode() {
-    await navigator.clipboard.writeText(room.code);
-    setCopied(true);
-    window.setTimeout(() => setCopied(false), 1800);
+  async function shareInvite() {
+    setError("");
+    const url = buildRoomInviteUrl(room.code, window.location.href);
+    try {
+      if (navigator.share) {
+        await navigator.share({
+          title: "Convite para o Idea Hero",
+          text: `Entre na sala ${room.code} e crie uma ideia com a gente.`,
+          url,
+        });
+      } else {
+        await copyText(url);
+      }
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 1800);
+    } catch (caught) {
+      if (caught instanceof DOMException && caught.name === "AbortError") {
+        return;
+      }
+      setError(errorMessage(caught));
+    }
   }
 
   return (
@@ -449,12 +497,17 @@ function Lobby({
       <section className="lobby-hero">
         <p className="kicker">Sala de preparação</p>
         <h1>A aventura começa com o grupo</h1>
-        <p>Compartilhe o código e espere todo mundo ficar pronto.</p>
+        <p>Compartilhe o convite e espere todo mundo ficar pronto.</p>
 
-        <button className="room-code" onClick={() => void copyCode()}>
+        <button className="room-code" onClick={() => void shareInvite()}>
           <span>{room.code}</span>
-          <small>{copied ? "Copiado!" : "Copiar código"}</small>
+          <small>
+            {copied ? "Convite compartilhado!" : "Compartilhar convite"}
+          </small>
         </button>
+        <small className="invite-help">
+          O link já leva cada pessoa para esta sala.
+        </small>
       </section>
 
       <section className="players-panel" aria-labelledby="players-title">
@@ -1061,10 +1114,12 @@ function JourneyResult({
     try {
       await task();
       setNotice(successMessage);
+      return true;
     } catch (caught) {
       if (caught instanceof DOMException && caught.name === "AbortError")
-        return;
+        return false;
       setError(errorMessage(caught));
+      return false;
     } finally {
       setBusyAction(undefined);
     }
@@ -1125,11 +1180,18 @@ function JourneyResult({
     ) {
       return;
     }
-    await runFinalAction(
+    const leftRoom = await runFinalAction(
       "leave",
       () => leaveFinishedRoom({ roomId: room.id }),
       "Tudo pronto para uma nova jornada.",
     );
+    if (leftRoom) {
+      window.history.replaceState(
+        null,
+        "",
+        clearRoomInviteUrl(window.location.href),
+      );
+    }
   }
 
   return (

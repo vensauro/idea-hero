@@ -615,6 +615,7 @@ Assim, o Idea Hero preserva seu melhor elemento — a aventura completa da cria�
 - V2 isolada na branch `codex/v2-spacetimedb` e no diretório `ideahero-9-w-7-zp/`.
 - React, TypeScript e SpacetimeDB operacionais no WSL.
 - Identidade, perfil, sala, lobby, presença, reconexão, contribuições e ciclo de oito etapas persistidos.
+- Convites por URL preservam a sala durante o onboarding e usam compartilhamento nativo com fallback para cópia.
 - Catálogo inicial com 16 cartas de IA curadas, otimizadas e acessíveis.
 - Linguagem visual original IDEA HERO, logo e fontes Palmer Lake recuperados.
 

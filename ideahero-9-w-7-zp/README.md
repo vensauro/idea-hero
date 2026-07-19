@@ -4,7 +4,8 @@ Fundação funcional da nova experiência multiplayer do Idea Hero, construída 
 
 ## O que já funciona
 
-- criação e entrada em salas por código;
+- criação e entrada em salas por código ou convite em URL;
+- compartilhamento nativo do convite com cópia do link como fallback;
 - perfil, avatar, presença e status de pronto em tempo real;
 - início da partida controlado pelo anfitrião;
 - ciclo completo de oito etapas;
