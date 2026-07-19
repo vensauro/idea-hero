@@ -133,6 +133,18 @@ const decision = table(
   },
 );
 
+const journey = table(
+  { name: "journey", public: true },
+  {
+    id: t.u64().primaryKey().autoInc(),
+    roomId: t.u64().unique(),
+    title: t.string(),
+    summary: t.string(),
+    createdAt: t.timestamp(),
+    updatedAt: t.timestamp(),
+  },
+);
+
 const spacetimedb = schema({
   profile,
   room,
@@ -143,6 +155,7 @@ const spacetimedb = schema({
   stageSession,
   vote,
   decision,
+  journey,
 });
 export default spacetimedb;
 
@@ -168,6 +181,22 @@ function normalizeRoomCode(code: string) {
     throw new SenderError(
       "O código deve ter entre 4 e 24 caracteres, usando letras, números ou hífen.",
     );
+  }
+  return normalized;
+}
+
+function normalizeJourneyTitle(title: string) {
+  const normalized = title.trim().replace(/\s+/g, " ");
+  if (normalized.length < 3 || normalized.length > 80) {
+    throw new SenderError("O título deve ter entre 3 e 80 caracteres.");
+  }
+  return normalized;
+}
+
+function normalizeJourneySummary(summary: string) {
+  const normalized = summary.trim().replace(/\s+/g, " ");
+  if (normalized.length < 10 || normalized.length > 400) {
+    throw new SenderError("O manifesto deve ter entre 10 e 400 caracteres.");
   }
   return normalized;
 }
@@ -677,6 +706,28 @@ export const advance_stage = spacetimedb.reducer(
 
     const nextIndex = currentRoom.stageIndex + 1;
     if (nextIndex >= BOARD_STATES.length) {
+      if (!ctx.db.journey.roomId.find(roomId)) {
+        const solutionDecision = [...ctx.db.decision.iter()].find(
+          (item) => item.roomId === roomId && item.stage === "SOLUTION",
+        );
+        const solutionContribution = [...ctx.db.contribution.iter()].find(
+          (item) =>
+            item.roomId === roomId &&
+            item.stage === "SOLUTION" &&
+            item.kind === "MAIN",
+        );
+        ctx.db.journey.insert({
+          id: 0n,
+          roomId,
+          title: `Ideia da sala ${currentRoom.code.toUpperCase()}`,
+          summary:
+            solutionDecision?.summary ??
+            solutionContribution?.content ??
+            "Uma ideia construída coletivamente para transformar o mundo.",
+          createdAt: ctx.timestamp,
+          updatedAt: ctx.timestamp,
+        });
+      }
       ctx.db.room.id.update({
         ...currentRoom,
         status: "FINISHED",
@@ -721,6 +772,66 @@ export const advance_stage = spacetimedb.reducer(
       round: currentRoom.round + 1,
       updatedAt: ctx.timestamp,
     });
+  },
+);
+
+export const update_journey = spacetimedb.reducer(
+  { roomId: t.u64(), title: t.string(), summary: t.string() },
+  (ctx, { roomId, title, summary }) => {
+    const currentRoom = ctx.db.room.id.find(roomId);
+    if (!currentRoom || currentRoom.status !== "FINISHED") {
+      throw new SenderError("A jornada ainda não foi concluída.");
+    }
+    if (!currentRoom.ownerIdentity.isEqual(ctx.sender)) {
+      throw new SenderError(
+        "Apenas o anfitrião pode editar o manifesto final.",
+      );
+    }
+    const currentPlayer = [...ctx.db.player.iter()].find(
+      (item) => item.roomId === roomId && item.identity.isEqual(ctx.sender),
+    );
+    if (!currentPlayer) {
+      throw new SenderError("Você não pertence a esta sala.");
+    }
+
+    const normalizedTitle = normalizeJourneyTitle(title);
+    const normalizedSummary = normalizeJourneySummary(summary);
+    const currentJourney = ctx.db.journey.roomId.find(roomId);
+    if (currentJourney) {
+      ctx.db.journey.id.update({
+        ...currentJourney,
+        title: normalizedTitle,
+        summary: normalizedSummary,
+        updatedAt: ctx.timestamp,
+      });
+      return;
+    }
+
+    ctx.db.journey.insert({
+      id: 0n,
+      roomId,
+      title: normalizedTitle,
+      summary: normalizedSummary,
+      createdAt: ctx.timestamp,
+      updatedAt: ctx.timestamp,
+    });
+  },
+);
+
+export const leave_finished_room = spacetimedb.reducer(
+  { roomId: t.u64() },
+  (ctx, { roomId }) => {
+    const currentRoom = ctx.db.room.id.find(roomId);
+    if (!currentRoom || currentRoom.status !== "FINISHED") {
+      throw new SenderError("Você só pode sair depois de concluir a jornada.");
+    }
+    const currentPlayer = [...ctx.db.player.iter()].find(
+      (item) => item.roomId === roomId && item.identity.isEqual(ctx.sender),
+    );
+    if (!currentPlayer) {
+      throw new SenderError("Você não pertence a esta sala.");
+    }
+    ctx.db.player.delete(currentPlayer);
   },
 );
 

@@ -38,12 +38,14 @@ import AdvanceStageReducer from "./advance_stage_reducer";
 import CastVoteReducer from "./cast_vote_reducer";
 import CreateRoomReducer from "./create_room_reducer";
 import JoinRoomReducer from "./join_room_reducer";
+import LeaveFinishedRoomReducer from "./leave_finished_room_reducer";
 import OpenVotingReducer from "./open_voting_reducer";
 import ResolveStageReducer from "./resolve_stage_reducer";
 import SetProfileReducer from "./set_profile_reducer";
 import SetReadyReducer from "./set_ready_reducer";
 import StartGameReducer from "./start_game_reducer";
 import SubmitContributionReducer from "./submit_contribution_reducer";
+import UpdateJourneyReducer from "./update_journey_reducer";
 
 // Import all procedure arg schemas
 
@@ -52,6 +54,7 @@ import CardRow from "./card_table";
 import CardDrawRow from "./card_draw_table";
 import ContributionRow from "./contribution_table";
 import DecisionRow from "./decision_table";
+import JourneyRow from "./journey_table";
 import PlayerRow from "./player_table";
 import ProfileRow from "./profile_table";
 import RoomRow from "./room_table";
@@ -136,6 +139,21 @@ const tablesSchema = __schema({
       { name: 'decision_id_key', constraint: 'unique', columns: ['id'] },
     ],
   }, DecisionRow),
+  journey: __table({
+    name: 'journey',
+    indexes: [
+      { accessor: 'id', name: 'journey_id_idx_btree', algorithm: 'btree', columns: [
+        'id',
+      ] },
+      { accessor: 'roomId', name: 'journey_room_id_idx_btree', algorithm: 'btree', columns: [
+        'roomId',
+      ] },
+    ],
+    constraints: [
+      { name: 'journey_id_key', constraint: 'unique', columns: ['id'] },
+      { name: 'journey_room_id_key', constraint: 'unique', columns: ['roomId'] },
+    ],
+  }, JourneyRow),
   player: __table({
     name: 'player',
     indexes: [
@@ -227,12 +245,14 @@ const reducersSchema = __reducers(
   __reducerSchema("cast_vote", CastVoteReducer),
   __reducerSchema("create_room", CreateRoomReducer),
   __reducerSchema("join_room", JoinRoomReducer),
+  __reducerSchema("leave_finished_room", LeaveFinishedRoomReducer),
   __reducerSchema("open_voting", OpenVotingReducer),
   __reducerSchema("resolve_stage", ResolveStageReducer),
   __reducerSchema("set_profile", SetProfileReducer),
   __reducerSchema("set_ready", SetReadyReducer),
   __reducerSchema("start_game", StartGameReducer),
   __reducerSchema("submit_contribution", SubmitContributionReducer),
+  __reducerSchema("update_journey", UpdateJourneyReducer),
 );
 
 /** The schema information for all procedures in this module. This is defined the same way as the procedures would have been defined in the server. */

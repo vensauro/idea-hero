@@ -15,6 +15,10 @@ Fundação funcional da nova experiência multiplayer do Idea Hero, construída 
 - microciclo `CONTRIBUTING → VOTING → REVIEW` em `SCENARIO`, `PROBLEM`, `INSIGHT` e `SOLUTION`;
 - votação sem autoria visível, um voto atualizável por pessoa e desempate determinístico;
 - decisão coletiva persistida no resumo cumulativo e no documento final;
+- manifesto final persistente e editável pelo anfitrião;
+- compartilhamento nativo com fallback para cópia, download em Markdown e impressão;
+- arquivo final com cartas, decisões, votos, contribuições e autoria das oito etapas;
+- saída segura da sala concluída para começar uma nova jornada;
 - painel compartilhado da jornada e encerramento após `SALES`;
 - regras de sala e progressão validadas no servidor.
 
@@ -33,7 +37,7 @@ Essa sequência é uma regra central do domínio. Mudanças de interface podem e
 - `spacetime.json`: configuração do banco e geração de bindings;
 - `.env.example`: configuração pública esperada pelo cliente.
 
-As tabelas públicas atuais são `profile`, `room`, `player`, `contribution`, `card`, `card_draw`, `stage_session`, `vote` e `decision`. Toda alteração de estado compartilhado passa por reducers do SpacetimeDB.
+As tabelas públicas atuais são `profile`, `room`, `player`, `contribution`, `card`, `card_draw`, `stage_session`, `vote`, `decision` e `journey`. Toda alteração de estado compartilhado passa por reducers do SpacetimeDB.
 
 ## Requisitos no WSL
 

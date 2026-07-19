@@ -613,6 +613,171 @@ h1 {
   box-shadow: 3px 3px 0 var(--line);
 }
 
+.result-page {
+  width: min(calc(100% - 2rem), 1080px);
+}
+
+.result-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: clamp(2rem, 6vw, 4rem);
+  padding-bottom: 1rem;
+  border-bottom: 2px dashed rgba(52, 44, 59, 0.35);
+}
+
+.result-hero h1 {
+  max-width: 18ch;
+  color: var(--ink);
+  font-size: clamp(3.4rem, 9vw, 6.4rem);
+}
+
+.result-manifest-copy {
+  max-width: 720px;
+  margin: 0 auto 1rem;
+  color: var(--ink) !important;
+  font-size: clamp(1.1rem, 2.5vw, 1.45rem);
+  font-weight: 780;
+  line-height: 1.55;
+}
+
+.result-people {
+  font-size: 0.88rem;
+}
+
+.manifest-editor {
+  margin-top: clamp(2rem, 7vw, 4rem);
+  padding: clamp(1.25rem, 5vw, 2.25rem);
+  border: 3px solid var(--line);
+  border-radius: 24px 16px 28px 18px;
+  background: var(--sun);
+  box-shadow: 8px 8px 0 var(--line);
+  transform: rotate(-0.25deg);
+}
+
+.manifest-heading,
+.document-heading,
+.manifest-footer {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.manifest-heading h2,
+.document-heading h2,
+.result-footer h2 {
+  margin-bottom: 0;
+  font-family: "Palmer Lake Print", Inter, sans-serif;
+  font-size: clamp(2.2rem, 5vw, 3.4rem);
+  font-weight: 400;
+}
+
+.manifest-heading > span,
+.document-heading > span {
+  padding: 0.45rem 0.7rem;
+  border: 2px solid var(--line);
+  border-radius: 999px;
+  background: var(--paper);
+  font-size: 0.68rem;
+  font-weight: 900;
+  white-space: nowrap;
+  text-transform: uppercase;
+}
+
+.manifest-editor form {
+  display: grid;
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+
+.manifest-editor input,
+.manifest-editor textarea {
+  border-color: var(--line);
+  background: #fffdf8;
+}
+
+.manifest-editor textarea {
+  min-height: 120px;
+  resize: vertical;
+  line-height: 1.55;
+}
+
+.manifest-footer {
+  align-items: center;
+}
+
+.manifest-footer small {
+  color: rgba(41, 35, 50, 0.72);
+  font-weight: 800;
+}
+
+.document-heading {
+  align-items: end;
+  margin-top: clamp(3.5rem, 9vw, 6rem);
+  padding-bottom: 1rem;
+  border-bottom: 3px solid var(--line);
+}
+
+.journey-document {
+  margin-top: 1.25rem;
+}
+
+.result-footer {
+  margin-top: clamp(3rem, 8vw, 5rem);
+  padding: clamp(2rem, 6vw, 3.5rem);
+  border: 3px solid var(--line);
+  border-radius: 24px;
+  background: var(--teal);
+  color: #102f33;
+  box-shadow: 8px 8px 0 var(--line);
+}
+
+.result-footer > p:not(.kicker) {
+  max-width: 620px;
+  margin-bottom: 0;
+  color: #153f43;
+  line-height: 1.55;
+}
+
+.result-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.85rem;
+  width: min(100%, 700px);
+}
+
+.quiet-button {
+  min-height: 48px;
+  padding: 0.75rem 1rem;
+  border: 2px dashed var(--line);
+  border-radius: 12px;
+  background: transparent;
+  color: var(--ink);
+  font-weight: 900;
+}
+
+.quiet-button:hover:not(:disabled) {
+  border-style: solid;
+  background: rgba(255, 249, 237, 0.42);
+}
+
+.quiet-button:focus-visible {
+  outline: 4px solid var(--sun);
+  outline-offset: 4px;
+}
+
+.result-feedback {
+  min-height: 1.5rem;
+}
+
+.success-message {
+  margin: 0;
+  color: #134f45;
+  font-weight: 900;
+}
+
 .journey-document article {
   grid-template-columns: auto auto 1fr;
   align-items: start;
@@ -692,6 +857,22 @@ h1 {
     width: 100%;
     max-height: 220px;
   }
+
+  .manifest-heading,
+  .document-heading,
+  .manifest-footer {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .manifest-heading > span,
+  .document-heading > span {
+    align-self: flex-start;
+  }
+
+  .result-actions {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -704,5 +885,15 @@ h1 {
 @media print {
   .document-card-image {
     box-shadow: none;
+  }
+
+  .result-topbar,
+  .manifest-editor,
+  .result-footer {
+    display: none;
+  }
+
+  .result-page {
+    width: 100%;
   }
 }

@@ -53,6 +53,16 @@ export const Decision = __t.object("Decision", {
 });
 export type Decision = __Infer<typeof Decision>;
 
+export const Journey = __t.object("Journey", {
+  id: __t.u64(),
+  roomId: __t.u64(),
+  title: __t.string(),
+  summary: __t.string(),
+  createdAt: __t.timestamp(),
+  updatedAt: __t.timestamp(),
+});
+export type Journey = __Infer<typeof Journey>;
+
 export const Player = __t.object("Player", {
   id: __t.u64(),
   roomId: __t.u64(),

@@ -631,6 +631,17 @@ As quatro primeiras etapas agora mantêm o ciclo canônico e adicionam o microci
 - A decisão escolhida fica persistida e aparece na memória cumulativa e no documento final.
 - Salas ativas anteriores ao novo schema recebem a sessão colaborativa ao abrir a votação.
 
+### Encerramento útil implementado
+
+- A conclusão de `SALES` cria um registro `journey` persistente com título e manifesto.
+- O anfitrião pode editar o manifesto final; os demais participantes recebem a atualização em tempo real.
+- A tela final mantém cartas, decisões escolhidas, votos e contribuições das oito etapas.
+- O resultado pode ser compartilhado pelo recurso nativo do dispositivo ou copiado como texto.
+- A jornada completa pode ser baixada como Markdown e impressa com layout limpo.
+- O arquivo exportado preserva autoria, carta inspiradora e síntese coletiva de cada etapa.
+- Depois de salvar ou compartilhar, cada participante pode sair da sala concluída e iniciar outra jornada.
+- O servidor impede saída durante uma partida ativa e restringe a edição final ao anfitrião.
+
 ### Próximas validações
 
 - Executar E2E real com 2 a 6 navegadores, incluindo refresh, desconexão e retorno.

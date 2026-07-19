@@ -7,6 +7,7 @@ import type {
   CardDraw,
   Contribution,
   Decision,
+  Journey,
   Player,
   Room,
   StageSession,
@@ -15,6 +16,11 @@ import type {
 import { useReducer, useSpacetimeDB, useTable } from "spacetimedb/react";
 import { BrandLogo, InspirationCard, StageMission } from "./experience";
 import { STAGE_GUIDANCE } from "./stage-guidance";
+import {
+  buildJourneyMarkdown,
+  buildJourneyShareText,
+  journeyFilename,
+} from "./journey-artifact";
 
 export const BOARD_STATES = [
   "SCENARIO",
@@ -132,6 +138,25 @@ function errorMessage(error: unknown) {
   return String(error);
 }
 
+async function copyText(text: string) {
+  if (navigator.clipboard?.writeText) {
+    await navigator.clipboard.writeText(text);
+    return;
+  }
+  const textarea = document.createElement("textarea");
+  textarea.value = text;
+  textarea.setAttribute("readonly", "");
+  textarea.style.position = "fixed";
+  textarea.style.opacity = "0";
+  document.body.appendChild(textarea);
+  textarea.select();
+  const copied = document.execCommand("copy");
+  textarea.remove();
+  if (!copied) {
+    throw new Error("Não foi possível copiar o resumo neste navegador.");
+  }
+}
+
 function App() {
   const { identity, isActive: connected } = useSpacetimeDB();
   const [profiles, profilesReady] = useTable(tables.profile);
@@ -143,6 +168,7 @@ function App() {
   const [stageSessions, stageSessionsReady] = useTable(tables.stageSession);
   const [votes, votesReady] = useTable(tables.vote);
   const [decisions, decisionsReady] = useTable(tables.decision);
+  const [journeys, journeysReady] = useTable(tables.journey);
 
   const currentProfile = identity
     ? profiles.find((item) => sameIdentity(item.identity, identity))
@@ -175,7 +201,8 @@ function App() {
     !cardDrawsReady ||
     !stageSessionsReady ||
     !votesReady ||
-    !decisionsReady
+    !decisionsReady ||
+    !journeysReady
   ) {
     return <LoadingScreen label="Sincronizando a jornada…" />;
   }
@@ -213,6 +240,7 @@ function App() {
       stageSessions={stageSessions}
       votes={votes}
       decisions={decisions}
+      journeys={journeys}
       currentPlayer={currentPlayer}
     />
   );
@@ -500,6 +528,7 @@ function GameBoard({
   stageSessions,
   votes,
   decisions,
+  journeys,
   currentPlayer,
 }: {
   room: Room;
@@ -510,6 +539,7 @@ function GameBoard({
   stageSessions: readonly StageSession[];
   votes: readonly Vote[];
   decisions: readonly Decision[];
+  journeys: readonly Journey[];
   currentPlayer: Player;
 }) {
   const submitContribution = useReducer(reducers.submitContribution);
@@ -618,6 +648,8 @@ function GameBoard({
         cards={cards}
         cardDraws={cardDraws}
         decisions={decisions}
+        journey={journeys.find((item) => item.roomId === room.id)}
+        currentPlayer={currentPlayer}
       />
     );
   }
@@ -971,6 +1003,8 @@ function JourneyResult({
   cards,
   cardDraws,
   decisions,
+  journey,
+  currentPlayer,
 }: {
   room: Room;
   players: Player[];
@@ -978,22 +1012,198 @@ function JourneyResult({
   cards: readonly Card[];
   cardDraws: readonly CardDraw[];
   decisions: readonly Decision[];
+  journey?: Journey;
+  currentPlayer: Player;
 }) {
+  const updateJourney = useReducer(reducers.updateJourney);
+  const leaveFinishedRoom = useReducer(reducers.leaveFinishedRoom);
+  const solutionDecision = decisions.find(
+    (item) => item.roomId === room.id && item.stage === "SOLUTION",
+  );
+  const solutionContribution = contributions.find(
+    (item) => item.stage === "SOLUTION",
+  );
+  const fallbackTitle = `Ideia da sala ${room.code.toUpperCase()}`;
+  const fallbackSummary =
+    solutionDecision?.summary ??
+    solutionContribution?.content ??
+    "Uma ideia construída coletivamente para transformar o mundo.";
+  const [title, setTitle] = useState(journey?.title ?? fallbackTitle);
+  const [summary, setSummary] = useState(journey?.summary ?? fallbackSummary);
+  const [busyAction, setBusyAction] = useState<string>();
+  const [notice, setNotice] = useState("");
+  const [error, setError] = useState("");
+  const isHost = currentPlayer.role === "HOST";
+  const manifest = { title, summary };
+  const validManifest =
+    title.trim().length >= 3 &&
+    title.trim().length <= 80 &&
+    summary.trim().length >= 10 &&
+    summary.trim().length <= 400;
+  const manifestChanged =
+    title !== (journey?.title ?? fallbackTitle) ||
+    summary !== (journey?.summary ?? fallbackSummary) ||
+    !journey;
+
+  useEffect(() => {
+    setTitle(journey?.title ?? fallbackTitle);
+    setSummary(journey?.summary ?? fallbackSummary);
+  }, [fallbackSummary, fallbackTitle, journey?.summary, journey?.title]);
+
+  async function runFinalAction(
+    action: string,
+    task: () => Promise<unknown>,
+    successMessage: string,
+  ) {
+    setBusyAction(action);
+    setError("");
+    setNotice("");
+    try {
+      await task();
+      setNotice(successMessage);
+    } catch (caught) {
+      if (caught instanceof DOMException && caught.name === "AbortError")
+        return;
+      setError(errorMessage(caught));
+    } finally {
+      setBusyAction(undefined);
+    }
+  }
+
+  async function saveManifest(event: FormEvent) {
+    event.preventDefault();
+    await runFinalAction(
+      "save",
+      () => updateJourney({ roomId: room.id, title, summary }),
+      "Manifesto salvo para todo o grupo.",
+    );
+  }
+
+  async function shareResult() {
+    const text = buildJourneyShareText(manifest, room.code);
+    if (navigator.share) {
+      await runFinalAction(
+        "share",
+        () => navigator.share({ title: title.trim(), text }),
+        "Resultado compartilhado.",
+      );
+      return;
+    }
+    await runFinalAction(
+      "share",
+      () => copyText(text),
+      "Resumo copiado. Agora é só colar onde quiser.",
+    );
+  }
+
+  function downloadResult() {
+    setError("");
+    const markdown = buildJourneyMarkdown({
+      journey: manifest,
+      room,
+      players,
+      contributions,
+      decisions,
+      cards,
+      cardDraws,
+    });
+    const blob = new Blob([markdown], { type: "text/markdown;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = journeyFilename(title);
+    anchor.click();
+    window.setTimeout(() => URL.revokeObjectURL(url), 0);
+    setNotice("Arquivo Markdown baixado.");
+  }
+
+  async function startAnotherJourney() {
+    if (
+      !window.confirm(
+        "Começar outra jornada? Baixe ou compartilhe este resultado antes de sair.",
+      )
+    ) {
+      return;
+    }
+    await runFinalAction(
+      "leave",
+      () => leaveFinishedRoom({ roomId: room.id }),
+      "Tudo pronto para uma nova jornada.",
+    );
+  }
+
   return (
     <main className="result-page">
+      <header className="result-topbar">
+        <BrandLogo compact />
+        <span className="room-pill">Sala {room.code}</span>
+      </header>
       <section className="result-hero">
         <span className="result-star" aria-hidden="true">
           ★
         </span>
         <p className="kicker">Jornada concluída</p>
-        <h1>Uma ideia agora existe onde antes havia possibilidades.</h1>
-        <p>
+        <h1>{title}</h1>
+        <p className="result-manifest-copy">{summary}</p>
+        <p className="result-people">
           {players.length}{" "}
           {players.length === 1 ? "pessoa percorreu" : "pessoas percorreram"} as
           oito etapas na sala {room.code}.
         </p>
       </section>
 
+      {isHost && (
+        <section className="manifest-editor" aria-labelledby="manifest-title">
+          <div className="manifest-heading">
+            <div>
+              <p className="kicker">Manifesto final</p>
+              <h2 id="manifest-title">Dê um nome ao que vocês criaram</h2>
+            </div>
+            <span>Somente o anfitrião edita</span>
+          </div>
+          <form onSubmit={saveManifest}>
+            <label htmlFor="journey-title">
+              Nome do projeto
+              <input
+                id="journey-title"
+                value={title}
+                onChange={(event) => setTitle(event.target.value)}
+                minLength={3}
+                maxLength={80}
+                required
+              />
+            </label>
+            <label htmlFor="journey-summary">
+              Manifesto em uma frase
+              <textarea
+                id="journey-summary"
+                value={summary}
+                onChange={(event) => setSummary(event.target.value)}
+                minLength={10}
+                maxLength={400}
+                required
+              />
+            </label>
+            <div className="manifest-footer">
+              <small>{summary.length}/400 caracteres</small>
+              <button
+                className="primary-button"
+                disabled={!validManifest || !manifestChanged || !!busyAction}
+              >
+                {busyAction === "save" ? "Salvando…" : "Salvar manifesto"}
+              </button>
+            </div>
+          </form>
+        </section>
+      )}
+
+      <div className="document-heading">
+        <div>
+          <p className="kicker">A aventura completa</p>
+          <h2>Como a ideia ganhou forma</h2>
+        </div>
+        <span>8 etapas · {players.length} heróis</span>
+      </div>
       <section className="journey-document">
         {BOARD_STATES.map((stage) => {
           const entries = contributions.filter((item) => item.stage === stage);
@@ -1048,14 +1258,49 @@ function JourneyResult({
         })}
       </section>
 
-      <footer className="result-footer">
+      <footer className="result-footer" aria-labelledby="take-result-title">
+        <p className="kicker">A ideia não termina aqui</p>
+        <h2 id="take-result-title">Leve a jornada com o grupo</h2>
         <p>
-          Este é o primeiro artefato persistente da V2. Exportação e
-          compartilhamento vêm na próxima fatia.
+          Compartilhe o manifesto, baixe o registro completo ou imprima para
+          continuar criando fora do jogo.
         </p>
-        <button className="primary-button" onClick={() => window.print()}>
-          Imprimir jornada
-        </button>
+        <div className="result-actions">
+          <button
+            className="primary-button"
+            disabled={!validManifest || !!busyAction}
+            onClick={() => void shareResult()}
+          >
+            {busyAction === "share"
+              ? "Compartilhando…"
+              : "Compartilhar resultado"}
+          </button>
+          <button
+            className="secondary-button"
+            disabled={!validManifest || !!busyAction}
+            onClick={downloadResult}
+          >
+            Baixar jornada (.md)
+          </button>
+          <button
+            className="secondary-button"
+            disabled={!!busyAction}
+            onClick={() => window.print()}
+          >
+            Imprimir jornada
+          </button>
+          <button
+            className="quiet-button"
+            disabled={!!busyAction}
+            onClick={() => void startAnotherJourney()}
+          >
+            {busyAction === "leave" ? "Preparando…" : "Começar nova jornada"}
+          </button>
+        </div>
+        <div className="result-feedback" aria-live="polite">
+          {notice && <p className="success-message">✓ {notice}</p>}
+          {error && <p className="error-message">{error}</p>}
+        </div>
       </footer>
     </main>
   );
