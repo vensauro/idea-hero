@@ -20,6 +20,4 @@ export type JoinRoomParams = __Infer<typeof JoinRoomReducer>;
 export type SetProfileParams = __Infer<typeof SetProfileReducer>;
 export type SetReadyParams = __Infer<typeof SetReadyReducer>;
 export type StartGameParams = __Infer<typeof StartGameReducer>;
-export type SubmitContributionParams = __Infer<
-  typeof SubmitContributionReducer
->;
+export type SubmitContributionParams = __Infer<typeof SubmitContributionReducer>;

@@ -45,6 +45,8 @@ import SubmitContributionReducer from "./submit_contribution_reducer";
 // Import all procedure arg schemas
 
 // Import all table schema definitions
+import CardRow from "./card_table";
+import CardDrawRow from "./card_draw_table";
 import ContributionRow from "./contribution_table";
 import PlayerRow from "./player_table";
 import ProfileRow from "./profile_table";
@@ -54,115 +56,103 @@ import RoomRow from "./room_table";
 
 /** The schema information for all tables in this module. This is defined the same was as the tables would have been defined in the server. */
 const tablesSchema = __schema({
-  contribution: __table(
-    {
-      name: "contribution",
-      indexes: [
-        {
-          accessor: "authorIdentity",
-          name: "contribution_author_identity_idx_btree",
-          algorithm: "btree",
-          columns: ["authorIdentity"],
-        },
-        {
-          accessor: "id",
-          name: "contribution_id_idx_btree",
-          algorithm: "btree",
-          columns: ["id"],
-        },
-        {
-          accessor: "roomId",
-          name: "contribution_room_id_idx_btree",
-          algorithm: "btree",
-          columns: ["roomId"],
-        },
-        {
-          accessor: "stage",
-          name: "contribution_stage_idx_btree",
-          algorithm: "btree",
-          columns: ["stage"],
-        },
-      ],
-      constraints: [
-        { name: "contribution_id_key", constraint: "unique", columns: ["id"] },
-      ],
-    },
-    ContributionRow,
-  ),
-  player: __table(
-    {
-      name: "player",
-      indexes: [
-        {
-          accessor: "id",
-          name: "player_id_idx_btree",
-          algorithm: "btree",
-          columns: ["id"],
-        },
-        {
-          accessor: "identity",
-          name: "player_identity_idx_btree",
-          algorithm: "btree",
-          columns: ["identity"],
-        },
-        {
-          accessor: "roomId",
-          name: "player_room_id_idx_btree",
-          algorithm: "btree",
-          columns: ["roomId"],
-        },
-      ],
-      constraints: [
-        { name: "player_id_key", constraint: "unique", columns: ["id"] },
-      ],
-    },
-    PlayerRow,
-  ),
-  profile: __table(
-    {
-      name: "profile",
-      indexes: [
-        {
-          accessor: "identity",
-          name: "profile_identity_idx_btree",
-          algorithm: "btree",
-          columns: ["identity"],
-        },
-      ],
-      constraints: [
-        {
-          name: "profile_identity_key",
-          constraint: "unique",
-          columns: ["identity"],
-        },
-      ],
-    },
-    ProfileRow,
-  ),
-  room: __table(
-    {
-      name: "room",
-      indexes: [
-        {
-          accessor: "code",
-          name: "room_code_idx_btree",
-          algorithm: "btree",
-          columns: ["code"],
-        },
-        {
-          accessor: "id",
-          name: "room_id_idx_btree",
-          algorithm: "btree",
-          columns: ["id"],
-        },
-      ],
-      constraints: [
-        { name: "room_code_key", constraint: "unique", columns: ["code"] },
-        { name: "room_id_key", constraint: "unique", columns: ["id"] },
-      ],
-    },
-    RoomRow,
-  ),
+  card: __table({
+    name: 'card',
+    indexes: [
+      { accessor: 'id', name: 'card_id_idx_btree', algorithm: 'btree', columns: [
+        'id',
+      ] },
+      { accessor: 'stage', name: 'card_stage_idx_btree', algorithm: 'btree', columns: [
+        'stage',
+      ] },
+    ],
+    constraints: [
+      { name: 'card_id_key', constraint: 'unique', columns: ['id'] },
+    ],
+  }, CardRow),
+  cardDraw: __table({
+    name: 'card_draw',
+    indexes: [
+      { accessor: 'cardId', name: 'card_draw_card_id_idx_btree', algorithm: 'btree', columns: [
+        'cardId',
+      ] },
+      { accessor: 'id', name: 'card_draw_id_idx_btree', algorithm: 'btree', columns: [
+        'id',
+      ] },
+      { accessor: 'roomId', name: 'card_draw_room_id_idx_btree', algorithm: 'btree', columns: [
+        'roomId',
+      ] },
+      { accessor: 'stage', name: 'card_draw_stage_idx_btree', algorithm: 'btree', columns: [
+        'stage',
+      ] },
+    ],
+    constraints: [
+      { name: 'card_draw_id_key', constraint: 'unique', columns: ['id'] },
+    ],
+  }, CardDrawRow),
+  contribution: __table({
+    name: 'contribution',
+    indexes: [
+      { accessor: 'authorIdentity', name: 'contribution_author_identity_idx_btree', algorithm: 'btree', columns: [
+        'authorIdentity',
+      ] },
+      { accessor: 'id', name: 'contribution_id_idx_btree', algorithm: 'btree', columns: [
+        'id',
+      ] },
+      { accessor: 'roomId', name: 'contribution_room_id_idx_btree', algorithm: 'btree', columns: [
+        'roomId',
+      ] },
+      { accessor: 'stage', name: 'contribution_stage_idx_btree', algorithm: 'btree', columns: [
+        'stage',
+      ] },
+    ],
+    constraints: [
+      { name: 'contribution_id_key', constraint: 'unique', columns: ['id'] },
+    ],
+  }, ContributionRow),
+  player: __table({
+    name: 'player',
+    indexes: [
+      { accessor: 'id', name: 'player_id_idx_btree', algorithm: 'btree', columns: [
+        'id',
+      ] },
+      { accessor: 'identity', name: 'player_identity_idx_btree', algorithm: 'btree', columns: [
+        'identity',
+      ] },
+      { accessor: 'roomId', name: 'player_room_id_idx_btree', algorithm: 'btree', columns: [
+        'roomId',
+      ] },
+    ],
+    constraints: [
+      { name: 'player_id_key', constraint: 'unique', columns: ['id'] },
+    ],
+  }, PlayerRow),
+  profile: __table({
+    name: 'profile',
+    indexes: [
+      { accessor: 'identity', name: 'profile_identity_idx_btree', algorithm: 'btree', columns: [
+        'identity',
+      ] },
+    ],
+    constraints: [
+      { name: 'profile_identity_key', constraint: 'unique', columns: ['identity'] },
+    ],
+  }, ProfileRow),
+  room: __table({
+    name: 'room',
+    indexes: [
+      { accessor: 'code', name: 'room_code_idx_btree', algorithm: 'btree', columns: [
+        'code',
+      ] },
+      { accessor: 'id', name: 'room_id_idx_btree', algorithm: 'btree', columns: [
+        'id',
+      ] },
+    ],
+    constraints: [
+      { name: 'room_code_key', constraint: 'unique', columns: ['code'] },
+      { name: 'room_id_key', constraint: 'unique', columns: ['id'] },
+    ],
+  }, RoomRow),
 });
 
 /** The schema information for all reducers in this module. This is defined the same way as the reducers would have been defined in the server, except the body of the reducer is omitted in code generation. */
@@ -177,7 +167,8 @@ const reducersSchema = __reducers(
 );
 
 /** The schema information for all procedures in this module. This is defined the same way as the procedures would have been defined in the server. */
-const proceduresSchema = __procedures();
+const proceduresSchema = __procedures(
+);
 
 /** The remote SpacetimeDB module schema, both runtime and type information. */
 const REMOTE_MODULE = {
@@ -194,13 +185,10 @@ const REMOTE_MODULE = {
 >;
 
 /** The tables available in this remote SpacetimeDB module. Each table reference doubles as a query builder. */
-export const tables: __QueryBuilder<typeof tablesSchema.schemaType> =
-  __makeQueryBuilder(tablesSchema.schemaType);
+export const tables: __QueryBuilder<typeof tablesSchema.schemaType> = __makeQueryBuilder(tablesSchema.schemaType);
 
 /** The reducers available in this remote SpacetimeDB module. */
-export const reducers = __convertToAccessorMap(
-  reducersSchema.reducersType.reducers,
-);
+export const reducers = __convertToAccessorMap(reducersSchema.reducersType.reducers);
 
 /** The procedures available in this remote SpacetimeDB module. */
 export const procedures = __convertToAccessorMap(proceduresSchema.procedures);
@@ -208,22 +196,16 @@ export const procedures = __convertToAccessorMap(proceduresSchema.procedures);
 /** The context type returned in callbacks for all possible events. */
 export type EventContext = __EventContextInterface<typeof REMOTE_MODULE>;
 /** The context type returned in callbacks for reducer events. */
-export type ReducerEventContext = __ReducerEventContextInterface<
-  typeof REMOTE_MODULE
->;
+export type ReducerEventContext = __ReducerEventContextInterface<typeof REMOTE_MODULE>;
 /** The context type returned in callbacks for subscription events. */
-export type SubscriptionEventContext = __SubscriptionEventContextInterface<
-  typeof REMOTE_MODULE
->;
+export type SubscriptionEventContext = __SubscriptionEventContextInterface<typeof REMOTE_MODULE>;
 /** The context type returned in callbacks for error events. */
 export type ErrorContext = __ErrorContextInterface<typeof REMOTE_MODULE>;
 /** The subscription handle type to manage active subscriptions created from a {@link SubscriptionBuilder}. */
 export type SubscriptionHandle = __SubscriptionHandleImpl<typeof REMOTE_MODULE>;
 
 /** Builder class to configure a new subscription to the remote SpacetimeDB instance. */
-export class SubscriptionBuilder extends __SubscriptionBuilderImpl<
-  typeof REMOTE_MODULE
-> {}
+export class SubscriptionBuilder extends __SubscriptionBuilderImpl<typeof REMOTE_MODULE> {}
 
 /** Builder class to configure a new database connection to the remote SpacetimeDB instance. */
 export class DbConnectionBuilder extends __DbConnectionBuilder<DbConnection> {}
@@ -232,11 +214,7 @@ export class DbConnectionBuilder extends __DbConnectionBuilder<DbConnection> {}
 export class DbConnection extends __DbConnectionImpl<typeof REMOTE_MODULE> {
   /** Creates a new {@link DbConnectionBuilder} to configure and connect to the remote SpacetimeDB instance. */
   static builder = (): DbConnectionBuilder => {
-    return new DbConnectionBuilder(
-      REMOTE_MODULE,
-      (config: __DbConnectionConfig<typeof REMOTE_MODULE>) =>
-        new DbConnection(config),
-    );
+    return new DbConnectionBuilder(REMOTE_MODULE, (config: __DbConnectionConfig<typeof REMOTE_MODULE>) => new DbConnection(config));
   };
 
   /** Creates a new {@link SubscriptionBuilder} to configure a subscription to the remote SpacetimeDB instance. */

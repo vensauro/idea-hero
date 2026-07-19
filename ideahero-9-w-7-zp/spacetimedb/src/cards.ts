@@ -1,0 +1,186 @@
+export const CARD_CATALOG = [
+  {
+    id: "00a3fd49-a67d-4438-92e8-2dc61ef93b98",
+    stage: "SCENARIO",
+    title: "Chuva de histórias",
+    lens: "Mundo",
+    imagePath: "/cards/00a3fd49-a67d-4438-92e8-2dc61ef93b98.webp",
+    altText:
+      "Livros abertos formam uma paisagem sob um céu noturno de estrelas douradas.",
+    provocation:
+      "Que mundo nasce quando o conhecimento deixa de ter fronteiras?",
+  },
+  {
+    id: "230e679f-867c-465c-a99c-6db7a9efbe68",
+    stage: "SCENARIO",
+    title: "Floresta que observa",
+    lens: "Ambiente",
+    imagePath: "/cards/230e679f-867c-465c-a99c-6db7a9efbe68.webp",
+    altText:
+      "Uma floresta de árvores muito altas cria um corredor verde e silencioso.",
+    provocation: "O que este lugar protege, esconde ou torna possível?",
+  },
+  {
+    id: "069c0d85-906b-42ba-86a6-7c41e97a95c9",
+    stage: "PROBLEM",
+    title: "Peso invisível",
+    lens: "Tensão",
+    imagePath: "/cards/069c0d85-906b-42ba-86a6-7c41e97a95c9.webp",
+    altText:
+      "Uma criatura escura de orelhas longas aparece isolada sobre um fundo claro.",
+    provocation: "Que obstáculo todos sentem, mas ninguém consegue nomear?",
+  },
+  {
+    id: "415e74fc-ae8e-4d42-89fb-d37376845486",
+    stage: "PROBLEM",
+    title: "Vozes comprimidas",
+    lens: "Pessoas",
+    imagePath: "/cards/415e74fc-ae8e-4d42-89fb-d37376845486.webp",
+    altText:
+      "Muitos rostos desenhados se sobrepõem em uma composição densa de tons verdes.",
+    provocation: "Quem não está conseguindo ser visto ou ouvido neste cenário?",
+  },
+  {
+    id: "04101468-212a-48d2-b7e4-aa5746a9cb11",
+    stage: "INSIGHT",
+    title: "Correntes inesperadas",
+    lens: "Padrão",
+    imagePath: "/cards/04101468-212a-48d2-b7e4-aa5746a9cb11.webp",
+    altText:
+      "Faixas coloridas ondulam e se entrelaçam como água, vento ou caminhos.",
+    provocation: "Que padrão aparece quando você deixa de olhar em linha reta?",
+  },
+  {
+    id: "3cc0558e-274d-4ea7-8fce-bd679de75938",
+    stage: "INSIGHT",
+    title: "Olhar de outra espécie",
+    lens: "Perspectiva",
+    imagePath: "/cards/3cc0558e-274d-4ea7-8fce-bd679de75938.webp",
+    altText:
+      "Um peixe laranja com um grande olho atravessa um céu azul cheio de estrelas.",
+    provocation:
+      "O que se torna óbvio quando você muda radicalmente de perspectiva?",
+  },
+  {
+    id: "09d3bfc2-879d-41fc-86aa-008c98b098aa",
+    stage: "SOLUTION",
+    title: "Cidade em movimento",
+    lens: "Possibilidade",
+    imagePath: "/cards/09d3bfc2-879d-41fc-86aa-008c98b098aa.webp",
+    altText:
+      "Uma rua futurista em cores neon mistura arquitetura, natureza e caminhos líquidos.",
+    provocation: "Como seria a solução se ela já fizesse parte da paisagem?",
+  },
+  {
+    id: "27f865fe-60fb-4f78-8c6f-f38c57e7f649",
+    stage: "SOLUTION",
+    title: "Portal para o possível",
+    lens: "Combinação",
+    imagePath: "/cards/27f865fe-60fb-4f78-8c6f-f38c57e7f649.webp",
+    altText:
+      "Um castelo multicolorido surge no topo de uma escadaria sob raios luminosos.",
+    provocation: "Que duas ideias improváveis podem abrir este portal?",
+  },
+  {
+    id: "0707b746-2626-4f05-b097-814e423bea75",
+    stage: "PROTOTYPE",
+    title: "Oficina de futuros",
+    lens: "Forma",
+    imagePath: "/cards/0707b746-2626-4f05-b097-814e423bea75.webp",
+    altText:
+      "Uma longa mesa de criação ocupa uma biblioteca acolhedora cheia de objetos.",
+    provocation: "O que você consegue montar hoje para tornar a ideia visível?",
+  },
+  {
+    id: "2fc1fbea-0f75-49f8-8c1c-e831af9340dd",
+    stage: "PROTOTYPE",
+    title: "Dueto improvável",
+    lens: "Interação",
+    imagePath: "/cards/2fc1fbea-0f75-49f8-8c1c-e831af9340dd.webp",
+    altText:
+      "Uma bailarina e um robô repetem o mesmo gesto como parceiros de dança.",
+    provocation:
+      "Que interação precisa ser encenada para a ideia ser compreendida?",
+  },
+  {
+    id: "0ba59d82-c596-4fc6-9cdc-b73beafffe22",
+    stage: "PILOT",
+    title: "Equilíbrio delicado",
+    lens: "Teste",
+    imagePath: "/cards/0ba59d82-c596-4fc6-9cdc-b73beafffe22.webp",
+    altText:
+      "Uma ave fantástica de pernas muito longas caminha cautelosamente em preto e branco.",
+    provocation: "Qual condição pode desequilibrar o primeiro teste?",
+  },
+  {
+    id: "405f009f-c3b7-4a64-a5e3-ea8d33323a69",
+    stage: "PILOT",
+    title: "Distância da realidade",
+    lens: "Condição",
+    imagePath: "/cards/405f009f-c3b7-4a64-a5e3-ea8d33323a69.webp",
+    altText:
+      "Uma lua enorme flutua sobre montanhas enquanto uma pequena figura paira abaixo dela.",
+    provocation: "O que parece perto, mas ainda exige uma travessia?",
+  },
+  {
+    id: "16d17b42-9b9c-4f4a-b792-5573c116ffa0",
+    stage: "MARKETING",
+    title: "Caminhos que chamam",
+    lens: "Canal",
+    imagePath: "/cards/16d17b42-9b9c-4f4a-b792-5573c116ffa0.webp",
+    altText:
+      "Um rio rosa serpenteia por uma paisagem azul e roxa de aparência fantástica.",
+    provocation: "Por qual caminho a mensagem encontra quem mais precisa dela?",
+  },
+  {
+    id: "22d440f3-97b3-4de6-8bc4-e98cfe8b19b0",
+    stage: "MARKETING",
+    title: "O tempo da mensagem",
+    lens: "Momento",
+    imagePath: "/cards/22d440f3-97b3-4de6-8bc4-e98cfe8b19b0.webp",
+    altText:
+      "Relógios ornamentados se encaixam em uma composição laranja, azul e rosa.",
+    provocation:
+      "Quando esta história precisa chegar para realmente mobilizar alguém?",
+  },
+  {
+    id: "185db6df-7fcc-4ed8-869d-e57148b956a1",
+    stage: "SALES",
+    title: "Valor que floresce",
+    lens: "Impacto",
+    imagePath: "/cards/185db6df-7fcc-4ed8-869d-e57148b956a1.webp",
+    altText:
+      "Mãos, flores e formas orgânicas se conectam em uma colagem de tons quentes.",
+    provocation:
+      "Que transformação concreta provaria que esta ideia tem valor?",
+  },
+  {
+    id: "380f0ddd-3b79-4af0-8200-15fade24b735",
+    stage: "SALES",
+    title: "Constelação de aliados",
+    lens: "Legado",
+    imagePath: "/cards/380f0ddd-3b79-4af0-8200-15fade24b735.webp",
+    altText:
+      "Animais de diferentes espécies formam uma constelação sobre um fundo azul escuro.",
+    provocation: "Quem precisa se tornar aliado para a ideia continuar viva?",
+  },
+] as const;
+
+function stableHash(value: string) {
+  let hash = 2_166_136_261;
+  for (let index = 0; index < value.length; index += 1) {
+    hash ^= value.charCodeAt(index);
+    hash = Math.imul(hash, 16_777_619);
+  }
+  return hash >>> 0;
+}
+
+export function cardForRoomStage(roomCode: string, stage: string) {
+  const stageCards = CARD_CATALOG.filter((card) => card.stage === stage);
+  if (stageCards.length === 0) {
+    throw new Error(`Nenhuma carta configurada para a etapa ${stage}.`);
+  }
+  return stageCards[
+    stableHash(`${roomCode}:${stage}:deck-v1`) % stageCards.length
+  ];
+}

@@ -10,6 +10,26 @@ import {
   type Infer as __Infer,
 } from "spacetimedb";
 
+export const Card = __t.object("Card", {
+  id: __t.string(),
+  stage: __t.string(),
+  title: __t.string(),
+  lens: __t.string(),
+  imagePath: __t.string(),
+  altText: __t.string(),
+  provocation: __t.string(),
+});
+export type Card = __Infer<typeof Card>;
+
+export const CardDraw = __t.object("CardDraw", {
+  id: __t.u64(),
+  roomId: __t.u64(),
+  stage: __t.string(),
+  cardId: __t.string(),
+  drawnAt: __t.timestamp(),
+});
+export type CardDraw = __Infer<typeof CardDraw>;
+
 export const Contribution = __t.object("Contribution", {
   id: __t.u64(),
   roomId: __t.u64(),

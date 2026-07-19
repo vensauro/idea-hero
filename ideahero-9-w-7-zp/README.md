@@ -8,6 +8,9 @@ Fundação funcional da nova experiência multiplayer do Idea Hero, construída 
 - perfil, avatar, presença e status de pronto em tempo real;
 - início da partida controlado pelo anfitrião;
 - ciclo completo de oito etapas;
+- catálogo inicial com 16 cartas de IA curadas, metadata e texto alternativo;
+- sorteio determinístico e persistido de uma carta por sala e etapa;
+- instrução contextual, confirmação de salvamento e indicação do próximo passo;
 - contribuição individual persistida em cada etapa;
 - painel compartilhado da jornada e encerramento após `SALES`;
 - regras de sala e progressão validadas no servidor.
@@ -27,7 +30,7 @@ Essa sequência é uma regra central do domínio. Mudanças de interface podem e
 - `spacetime.json`: configuração do banco e geração de bindings;
 - `.env.example`: configuração pública esperada pelo cliente.
 
-As tabelas públicas atuais são `profile`, `room`, `player` e `contribution`. Toda alteração de estado compartilhado passa por reducers do SpacetimeDB.
+As tabelas públicas atuais são `profile`, `room`, `player`, `contribution`, `card` e `card_draw`. Toda alteração de estado compartilhado passa por reducers do SpacetimeDB.
 
 ## Requisitos no WSL
 
@@ -74,4 +77,4 @@ Banco de desenvolvimento: [ideahero-9w7zp no Maincloud](https://spacetimedb.com/
 
 ## Próximo marco
 
-Evoluir o protótipo para o sistema de cartas visuais: catálogo e sorteio autoritativo, seleção inspirada em Dixit, narrativa guiada por etapa, votação/facilitação e testes de usabilidade com grupos reais.
+Completar a vertical slice criativa de `SCENARIO → PROBLEM → INSIGHT → SOLUTION` com síntese coletiva, votação/combinação de contribuições e decisões persistidas; depois validar a experiência em playtests com grupos reais.

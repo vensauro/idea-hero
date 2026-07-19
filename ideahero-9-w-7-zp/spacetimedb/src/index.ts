@@ -1,4 +1,5 @@
 import { schema, t, table, SenderError } from "spacetimedb/server";
+import { CARD_CATALOG, cardForRoomStage } from "./cards";
 
 const BOARD_STATES = [
   "SCENARIO",
@@ -68,7 +69,38 @@ const contribution = table(
   },
 );
 
-const spacetimedb = schema({ profile, room, player, contribution });
+const card = table(
+  { name: "card", public: true },
+  {
+    id: t.string().primaryKey(),
+    stage: t.string().index("btree"),
+    title: t.string(),
+    lens: t.string(),
+    imagePath: t.string(),
+    altText: t.string(),
+    provocation: t.string(),
+  },
+);
+
+const cardDraw = table(
+  { name: "card_draw", public: true },
+  {
+    id: t.u64().primaryKey().autoInc(),
+    roomId: t.u64().index("btree"),
+    stage: t.string().index("btree"),
+    cardId: t.string().index("btree"),
+    drawnAt: t.timestamp(),
+  },
+);
+
+const spacetimedb = schema({
+  profile,
+  room,
+  player,
+  contribution,
+  card,
+  cardDraw,
+});
 export default spacetimedb;
 
 function normalizeName(name: string) {
@@ -252,6 +284,26 @@ export const start_game = spacetimedb.reducer(
       round: 1,
       updatedAt: ctx.timestamp,
     });
+
+    const drawnCard = cardForRoomStage(currentRoom.code, BOARD_STATES[0]);
+    if (!ctx.db.card.id.find(drawnCard.id)) {
+      ctx.db.card.insert({
+        id: drawnCard.id,
+        stage: drawnCard.stage,
+        title: drawnCard.title,
+        lens: drawnCard.lens,
+        imagePath: drawnCard.imagePath,
+        altText: drawnCard.altText,
+        provocation: drawnCard.provocation,
+      });
+    }
+    ctx.db.cardDraw.insert({
+      id: 0n,
+      roomId,
+      stage: BOARD_STATES[0],
+      cardId: drawnCard.id,
+      drawnAt: ctx.timestamp,
+    });
   },
 );
 
@@ -321,9 +373,18 @@ export const advance_stage = spacetimedb.reducer(
       (item) =>
         item.roomId === roomId && item.stage === currentRoom.currentStage,
     );
-    if (stageContributions.length === 0) {
+    const onlinePlayers = [...ctx.db.player.iter()].filter(
+      (item) => item.roomId === roomId && item.online,
+    );
+    const waitingPlayer = onlinePlayers.find(
+      (currentPlayer) =>
+        !stageContributions.some((item) =>
+          item.authorIdentity.isEqual(currentPlayer.identity),
+        ),
+    );
+    if (waitingPlayer) {
       throw new SenderError(
-        "Registre ao menos uma contribuição antes de avançar.",
+        `${waitingPlayer.displayName} ainda precisa contribuir.`,
       );
     }
 
@@ -337,9 +398,30 @@ export const advance_stage = spacetimedb.reducer(
       return;
     }
 
+    const nextStage = BOARD_STATES[nextIndex];
+    const drawnCard = cardForRoomStage(currentRoom.code, nextStage);
+    if (!ctx.db.card.id.find(drawnCard.id)) {
+      ctx.db.card.insert({
+        id: drawnCard.id,
+        stage: drawnCard.stage,
+        title: drawnCard.title,
+        lens: drawnCard.lens,
+        imagePath: drawnCard.imagePath,
+        altText: drawnCard.altText,
+        provocation: drawnCard.provocation,
+      });
+    }
+    ctx.db.cardDraw.insert({
+      id: 0n,
+      roomId,
+      stage: nextStage,
+      cardId: drawnCard.id,
+      drawnAt: ctx.timestamp,
+    });
+
     ctx.db.room.id.update({
       ...currentRoom,
-      currentStage: BOARD_STATES[nextIndex],
+      currentStage: nextStage,
       stageIndex: nextIndex,
       round: currentRoom.round + 1,
       updatedAt: ctx.timestamp,
@@ -347,7 +429,19 @@ export const advance_stage = spacetimedb.reducer(
   },
 );
 
-export const init = spacetimedb.init(() => {
+export const init = spacetimedb.init((ctx) => {
+  for (const catalogCard of CARD_CATALOG) {
+    ctx.db.card.insert({
+      id: catalogCard.id,
+      stage: catalogCard.stage,
+      title: catalogCard.title,
+      lens: catalogCard.lens,
+      imagePath: catalogCard.imagePath,
+      altText: catalogCard.altText,
+      provocation: catalogCard.provocation,
+    });
+  }
+
   console.info("Idea Hero V2 database initialized.");
 });
 

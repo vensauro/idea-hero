@@ -1,8 +1,17 @@
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import "./App.css";
+import "./idea-hero.css";
 import { reducers, tables } from "./module_bindings";
-import type { Contribution, Player, Room } from "./module_bindings/types";
+import type {
+  Card,
+  CardDraw,
+  Contribution,
+  Player,
+  Room,
+} from "./module_bindings/types";
 import { useReducer, useSpacetimeDB, useTable } from "spacetimedb/react";
+import { BrandLogo, InspirationCard, StageMission } from "./experience";
+import { STAGE_GUIDANCE } from "./stage-guidance";
 
 export const BOARD_STATES = [
   "SCENARIO",
@@ -115,6 +124,8 @@ function App() {
   const { identity, isActive: connected } = useSpacetimeDB();
   const [profiles, profilesReady] = useTable(tables.profile);
   const [rooms, roomsReady] = useTable(tables.room);
+  const [cards, cardsReady] = useTable(tables.card);
+  const [cardDraws, cardDrawsReady] = useTable(tables.cardDraw);
   const [players, playersReady] = useTable(tables.player);
   const [contributions, contributionsReady] = useTable(tables.contribution);
 
@@ -140,7 +151,14 @@ function App() {
     return <LoadingScreen label="Conectando sua identidade criativa…" />;
   }
 
-  if (!profilesReady || !roomsReady || !playersReady || !contributionsReady) {
+  if (
+    !profilesReady ||
+    !roomsReady ||
+    !playersReady ||
+    !contributionsReady ||
+    !cardsReady ||
+    !cardDrawsReady
+  ) {
     return <LoadingScreen label="Sincronizando a jornada…" />;
   }
 
@@ -172,6 +190,8 @@ function App() {
       room={currentRoom}
       players={roomPlayers}
       contributions={roomContributions}
+      cards={cards}
+      cardDraws={cardDraws}
       currentPlayer={currentPlayer}
     />
   );
@@ -180,9 +200,7 @@ function App() {
 function LoadingScreen({ label }: { label: string }) {
   return (
     <main className="loading-screen">
-      <div className="brand-mark" aria-hidden="true">
-        ✦
-      </div>
+      <BrandLogo />
       <p>{label}</p>
     </main>
   );
@@ -211,6 +229,7 @@ function ProfileSetup() {
   return (
     <main className="centered-page">
       <section className="welcome-card">
+        <BrandLogo />
         <p className="kicker">Idea Hero 2.0</p>
         <h1>Quem entra nesta aventura?</h1>
         <p className="intro">
@@ -287,9 +306,7 @@ function RoomEntry({ displayName }: { displayName: string }) {
     <main className="centered-page">
       <section className="welcome-card room-entry-card">
         <div className="brand-lockup">
-          <span className="brand-mark" aria-hidden="true">
-            ✦
-          </span>
+          <BrandLogo compact />
           <div>
             <p className="kicker">Olá, {displayName}</p>
             <h1>Vamos mudar o mundo?</h1>
@@ -376,9 +393,7 @@ function Lobby({
   return (
     <main className="app-shell lobby-page">
       <header className="topbar">
-        <div className="mini-brand">
-          <span>✦</span> Idea Hero
-        </div>
+        <BrandLogo compact />
         <span className="connection-status">● Sincronizado</span>
       </header>
 
@@ -459,23 +474,41 @@ function GameBoard({
   room,
   players,
   contributions,
+  cards,
+  cardDraws,
   currentPlayer,
 }: {
   room: Room;
   players: Player[];
   contributions: Contribution[];
+  cards: readonly Card[];
+  cardDraws: readonly CardDraw[];
   currentPlayer: Player;
 }) {
   const submitContribution = useReducer(reducers.submitContribution);
   const advanceStage = useReducer(reducers.advanceStage);
   const stage = room.currentStage as BoardState;
   const content = STAGE_CONTENT[stage] ?? STAGE_CONTENT.SCENARIO;
+  const guidance = STAGE_GUIDANCE[stage];
+  const stageDraw = cardDraws.find(
+    (item) => item.roomId === room.id && item.stage === stage,
+  );
+  const stageCard = stageDraw
+    ? cards.find((item) => item.id === stageDraw.cardId)
+    : undefined;
   const stageContributions = contributions.filter(
     (item) => item.stage === stage,
   );
   const ownContribution = stageContributions.find((item) =>
     sameIdentity(item.authorIdentity, currentPlayer.identity),
   );
+  const onlinePlayers = players.filter((item) => item.online);
+  const groupReady = onlinePlayers.every((player) =>
+    stageContributions.some((item) =>
+      sameIdentity(item.authorIdentity, player.identity),
+    ),
+  );
+
   const [draft, setDraft] = useState(ownContribution?.content ?? "");
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
@@ -514,6 +547,8 @@ function GameBoard({
         room={room}
         players={players}
         contributions={contributions}
+        cards={cards}
+        cardDraws={cardDraws}
       />
     );
   }
@@ -521,9 +556,7 @@ function GameBoard({
   return (
     <main className="game-shell">
       <header className="game-header">
-        <div className="game-brand">
-          <span>✦</span> Idea Hero
-        </div>
+        <BrandLogo compact />
         <div className="room-pill">Sala {room.code}</div>
         <button
           className="journey-toggle"
@@ -573,29 +606,18 @@ function GameBoard({
           </p>
           <h1>{content.title}</h1>
           <p>{content.objective}</p>
-          <div
-            className="stage-card"
-            aria-label={`Carta da etapa ${content.eyebrow}`}
-          >
-            <span className="card-orbit" aria-hidden="true">
-              {content.icon}
-            </span>
-            <strong>Imagine sem limites</strong>
-            <small>
-              A imagem inspiracional será conectada ao catálogo na próxima
-              fatia.
-            </small>
-          </div>
+          <InspirationCard card={stageCard} stageLabel={content.eyebrow} />
         </article>
 
         <article className="contribution-panel">
+          <StageMission stage={stage} />
           <div className="section-heading">
             <div>
               <p className="kicker">Sua contribuição</p>
               <h2>{content.prompt}</h2>
             </div>
             <span>
-              {stageContributions.length}/{players.length} enviadas
+              {stageContributions.length}/{onlinePlayers.length} enviadas
             </span>
           </div>
 
@@ -607,13 +629,16 @@ function GameBoard({
               id="contribution"
               value={draft}
               onChange={(event) => setDraft(event.target.value)}
-              placeholder="Registre uma frase para o grupo…"
+              placeholder={guidance.placeholder}
               minLength={2}
               maxLength={280}
               required
             />
             <div className="form-footer">
-              <small>{draft.length}/280</small>
+              <div className="contribution-status" aria-live="polite">
+                <small>{draft.length}/280</small>
+                {ownContribution && <span>✓ Sua ideia está segura</span>}
+              </div>
               <button className="primary-button" disabled={saving}>
                 {saving
                   ? "Salvando…"
@@ -647,16 +672,21 @@ function GameBoard({
               })
             )}
           </div>
+          <p className="next-up">
+            <strong>Em seguida:</strong> {guidance.next}
+          </p>
 
           {isHost && (
             <button
               className="secondary-button next-stage-button"
-              disabled={stageContributions.length === 0}
+              disabled={!groupReady}
               onClick={() => void nextStage()}
             >
               {stage === "SALES"
                 ? "Concluir a jornada"
-                : "Avançar para a próxima etapa"}
+                : `Avançar para ${
+                    STAGE_CONTENT[BOARD_STATES[room.stageIndex + 1]].eyebrow
+                  }`}
             </button>
           )}
           {!isHost && (
@@ -720,10 +750,14 @@ function JourneyResult({
   room,
   players,
   contributions,
+  cards,
+  cardDraws,
 }: {
   room: Room;
   players: Player[];
   contributions: Contribution[];
+  cards: readonly Card[];
+  cardDraws: readonly CardDraw[];
 }) {
   return (
     <main className="result-page">
@@ -743,8 +777,21 @@ function JourneyResult({
       <section className="journey-document">
         {BOARD_STATES.map((stage) => {
           const entries = contributions.filter((item) => item.stage === stage);
+          const draw = cardDraws.find(
+            (item) => item.roomId === room.id && item.stage === stage,
+          );
+          const stageCard = draw
+            ? cards.find((item) => item.id === draw.cardId)
+            : undefined;
           return (
             <article key={stage}>
+              {stageCard && (
+                <img
+                  className="document-card-image"
+                  src={stageCard.imagePath}
+                  alt={stageCard.altText}
+                />
+              )}
               <div className="document-stage-number">
                 {BOARD_STATES.indexOf(stage) + 1}
               </div>
