@@ -30,6 +30,7 @@ const connectionBuilder = DbConnection.builder()
   .withUri(HOST)
   .withDatabaseName(DB_NAME)
   .withToken(localStorage.getItem(TOKEN_KEY) || undefined)
+  .withCompression("none")
   .onConnect(onConnect)
   .onDisconnect(onDisconnect)
   .onConnectError(onConnectError);
