@@ -15,7 +15,7 @@ const BOARD_STATES = [
 const COLLABORATIVE_STAGES = new Set<string>(BOARD_STATES.slice(0, 4));
 
 const profile = table(
-  { name: "profile", public: true },
+  { name: "profile" },
   {
     identity: t.identity().primaryKey(),
     displayName: t.string().optional(),
@@ -26,7 +26,7 @@ const profile = table(
 );
 
 const room = table(
-  { name: "room", public: true },
+  { name: "room" },
   {
     id: t.u64().primaryKey().autoInc(),
     code: t.string().unique(),
@@ -42,7 +42,7 @@ const room = table(
 );
 
 const player = table(
-  { name: "player", public: true },
+  { name: "player" },
   {
     id: t.u64().primaryKey().autoInc(),
     roomId: t.u64().index("btree"),
@@ -58,7 +58,7 @@ const player = table(
 );
 
 const contribution = table(
-  { name: "contribution", public: true },
+  { name: "contribution" },
   {
     id: t.u64().primaryKey().autoInc(),
     roomId: t.u64().index("btree"),
@@ -85,7 +85,7 @@ const card = table(
 );
 
 const cardDraw = table(
-  { name: "card_draw", public: true },
+  { name: "card_draw" },
   {
     id: t.u64().primaryKey().autoInc(),
     roomId: t.u64().index("btree"),
@@ -96,7 +96,7 @@ const cardDraw = table(
 );
 
 const stageSession = table(
-  { name: "stage_session", public: true },
+  { name: "stage_session" },
   {
     id: t.u64().primaryKey().autoInc(),
     roomId: t.u64().index("btree"),
@@ -108,7 +108,7 @@ const stageSession = table(
 );
 
 const vote = table(
-  { name: "vote", public: true },
+  { name: "vote" },
   {
     id: t.u64().primaryKey().autoInc(),
     roomId: t.u64().index("btree"),
@@ -121,7 +121,7 @@ const vote = table(
 );
 
 const decision = table(
-  { name: "decision", public: true },
+  { name: "decision" },
   {
     id: t.u64().primaryKey().autoInc(),
     roomId: t.u64().index("btree"),
@@ -134,7 +134,7 @@ const decision = table(
 );
 
 const journey = table(
-  { name: "journey", public: true },
+  { name: "journey" },
   {
     id: t.u64().primaryKey().autoInc(),
     roomId: t.u64().unique(),
@@ -144,6 +144,31 @@ const journey = table(
     updatedAt: t.timestamp(),
   },
 );
+
+const contributionStatus = t.object("ContributionStatus", {
+  id: t.u64(),
+  roomId: t.u64(),
+  stage: t.string(),
+  authorIdentity: t.identity(),
+});
+
+const voteStatus = t.object("VoteStatus", {
+  id: t.u64(),
+  roomId: t.u64(),
+  stage: t.string(),
+  voterIdentity: t.identity(),
+});
+
+const visibleContribution = t.object("VisibleContribution", {
+  id: t.u64(),
+  roomId: t.u64(),
+  stage: t.string(),
+  authorIdentity: t.identity().optional(),
+  kind: t.string(),
+  content: t.string(),
+  createdAt: t.timestamp(),
+  updatedAt: t.timestamp(),
+});
 
 const spacetimedb = schema({
   profile,
@@ -158,6 +183,174 @@ const spacetimedb = schema({
   journey,
 });
 export default spacetimedb;
+
+export const current_profile = spacetimedb.view(
+  { name: "current_profile", public: true },
+  t.option(profile.rowType),
+  (ctx) => ctx.db.profile.identity.find(ctx.sender) ?? undefined,
+);
+
+export const member_rooms = spacetimedb.view(
+  { name: "member_rooms", public: true },
+  t.array(room.rowType),
+  (ctx) => {
+    const rooms = [];
+    for (const membership of ctx.db.player.identity.filter(ctx.sender)) {
+      const currentRoom = ctx.db.room.id.find(membership.roomId);
+      if (currentRoom) rooms.push(currentRoom);
+    }
+    return rooms;
+  },
+);
+
+export const room_players = spacetimedb.view(
+  { name: "room_players", public: true },
+  t.array(player.rowType),
+  (ctx) => {
+    const players = [];
+    for (const membership of ctx.db.player.identity.filter(ctx.sender)) {
+      players.push(...ctx.db.player.roomId.filter(membership.roomId));
+    }
+    return players;
+  },
+);
+
+export const room_card_draws = spacetimedb.view(
+  { name: "room_card_draws", public: true },
+  t.array(cardDraw.rowType),
+  (ctx) => {
+    const draws = [];
+    for (const membership of ctx.db.player.identity.filter(ctx.sender)) {
+      draws.push(...ctx.db.cardDraw.roomId.filter(membership.roomId));
+    }
+    return draws;
+  },
+);
+
+export const room_stage_sessions = spacetimedb.view(
+  { name: "room_stage_sessions", public: true },
+  t.array(stageSession.rowType),
+  (ctx) => {
+    const sessions = [];
+    for (const membership of ctx.db.player.identity.filter(ctx.sender)) {
+      sessions.push(...ctx.db.stageSession.roomId.filter(membership.roomId));
+    }
+    return sessions;
+  },
+);
+
+export const visible_contributions = spacetimedb.view(
+  { name: "visible_contributions", public: true },
+  t.array(visibleContribution),
+  (ctx) => {
+    const visible = [];
+    for (const membership of ctx.db.player.identity.filter(ctx.sender)) {
+      const currentRoom = ctx.db.room.id.find(membership.roomId);
+      if (!currentRoom) continue;
+
+      const activeSession = Array.from(
+        ctx.db.stageSession.roomId.filter(membership.roomId),
+      ).find((item) => item.stage === currentRoom.currentStage);
+
+      for (const item of ctx.db.contribution.roomId.filter(membership.roomId)) {
+        const hiddenFromGroup =
+          COLLABORATIVE_STAGES.has(item.stage) &&
+          item.stage === currentRoom.currentStage &&
+          activeSession?.phase === "CONTRIBUTING" &&
+          !item.authorIdentity.isEqual(ctx.sender);
+        if (hiddenFromGroup) continue;
+
+        const hideAuthor =
+          COLLABORATIVE_STAGES.has(item.stage) &&
+          item.stage === currentRoom.currentStage &&
+          activeSession?.phase === "VOTING";
+        visible.push({
+          ...item,
+          authorIdentity: hideAuthor ? undefined : item.authorIdentity,
+        });
+      }
+    }
+    return visible;
+  },
+);
+
+export const room_contribution_status = spacetimedb.view(
+  { name: "room_contribution_status", public: true },
+  t.array(contributionStatus),
+  (ctx) => {
+    const statuses = [];
+    for (const membership of ctx.db.player.identity.filter(ctx.sender)) {
+      for (const item of ctx.db.contribution.roomId.filter(membership.roomId)) {
+        statuses.push({
+          id: item.id,
+          roomId: item.roomId,
+          stage: item.stage,
+          authorIdentity: item.authorIdentity,
+        });
+      }
+    }
+    return statuses;
+  },
+);
+
+export const own_votes = spacetimedb.view(
+  { name: "own_votes", public: true },
+  t.array(vote.rowType),
+  (ctx) => {
+    const roomIds = new Set(
+      Array.from(ctx.db.player.identity.filter(ctx.sender)).map(
+        (item) => item.roomId,
+      ),
+    );
+    return Array.from(ctx.db.vote.voterIdentity.filter(ctx.sender)).filter(
+      (item) => roomIds.has(item.roomId),
+    );
+  },
+);
+
+export const room_vote_status = spacetimedb.view(
+  { name: "room_vote_status", public: true },
+  t.array(voteStatus),
+  (ctx) => {
+    const statuses = [];
+    for (const membership of ctx.db.player.identity.filter(ctx.sender)) {
+      for (const item of ctx.db.vote.roomId.filter(membership.roomId)) {
+        statuses.push({
+          id: item.id,
+          roomId: item.roomId,
+          stage: item.stage,
+          voterIdentity: item.voterIdentity,
+        });
+      }
+    }
+    return statuses;
+  },
+);
+
+export const room_decisions = spacetimedb.view(
+  { name: "room_decisions", public: true },
+  t.array(decision.rowType),
+  (ctx) => {
+    const decisions = [];
+    for (const membership of ctx.db.player.identity.filter(ctx.sender)) {
+      decisions.push(...ctx.db.decision.roomId.filter(membership.roomId));
+    }
+    return decisions;
+  },
+);
+
+export const room_journeys = spacetimedb.view(
+  { name: "room_journeys", public: true },
+  t.array(journey.rowType),
+  (ctx) => {
+    const journeys = [];
+    for (const membership of ctx.db.player.identity.filter(ctx.sender)) {
+      const currentJourney = ctx.db.journey.roomId.find(membership.roomId);
+      if (currentJourney) journeys.push(currentJourney);
+    }
+    return journeys;
+  },
+);
 
 function normalizeName(name: string) {
   const normalized = name.trim().replace(/\s+/g, " ");

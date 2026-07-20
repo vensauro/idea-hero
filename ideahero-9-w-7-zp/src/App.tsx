@@ -6,12 +6,15 @@ import type {
   Card,
   CardDraw,
   Contribution,
+  ContributionStatus,
   Decision,
   Journey,
   Player,
   Room,
   StageSession,
+  VisibleContribution,
   Vote,
+  VoteStatus,
 } from "./module_bindings/types";
 import { useReducer, useSpacetimeDB, useTable } from "spacetimedb/react";
 import { BrandLogo, InspirationCard, StageMission } from "./experience";
@@ -174,16 +177,24 @@ async function copyText(text: string) {
 
 function App() {
   const { identity, isActive: connected } = useSpacetimeDB();
-  const [profiles, profilesReady] = useTable(tables.profile);
-  const [rooms, roomsReady] = useTable(tables.room);
+  const [profiles, profilesReady] = useTable(tables.current_profile);
+  const [rooms, roomsReady] = useTable(tables.member_rooms);
   const [cards, cardsReady] = useTable(tables.card);
-  const [cardDraws, cardDrawsReady] = useTable(tables.cardDraw);
-  const [players, playersReady] = useTable(tables.player);
-  const [contributions, contributionsReady] = useTable(tables.contribution);
-  const [stageSessions, stageSessionsReady] = useTable(tables.stageSession);
-  const [votes, votesReady] = useTable(tables.vote);
-  const [decisions, decisionsReady] = useTable(tables.decision);
-  const [journeys, journeysReady] = useTable(tables.journey);
+  const [cardDraws, cardDrawsReady] = useTable(tables.room_card_draws);
+  const [players, playersReady] = useTable(tables.room_players);
+  const [contributions, contributionsReady] = useTable(
+    tables.visible_contributions,
+  );
+  const [contributionStatuses, contributionStatusesReady] = useTable(
+    tables.room_contribution_status,
+  );
+  const [stageSessions, stageSessionsReady] = useTable(
+    tables.room_stage_sessions,
+  );
+  const [votes, votesReady] = useTable(tables.own_votes);
+  const [voteStatuses, voteStatusesReady] = useTable(tables.room_vote_status);
+  const [decisions, decisionsReady] = useTable(tables.room_decisions);
+  const [journeys, journeysReady] = useTable(tables.room_journeys);
 
   const currentProfile = identity
     ? profiles.find((item) => sameIdentity(item.identity, identity))
@@ -222,10 +233,12 @@ function App() {
     !roomsReady ||
     !playersReady ||
     !contributionsReady ||
+    !contributionStatusesReady ||
     !cardsReady ||
     !cardDrawsReady ||
     !stageSessionsReady ||
     !votesReady ||
+    !voteStatusesReady ||
     !decisionsReady ||
     !journeysReady
   ) {
@@ -244,6 +257,12 @@ function App() {
   const roomContributions = contributions.filter(
     (item) => item.roomId === currentRoom.id,
   );
+  const roomContributionStatuses = contributionStatuses.filter(
+    (item) => item.roomId === currentRoom.id,
+  );
+  const roomVoteStatuses = voteStatuses.filter(
+    (item) => item.roomId === currentRoom.id,
+  );
 
   if (currentRoom.status === "LOBBY") {
     return (
@@ -260,10 +279,12 @@ function App() {
       room={currentRoom}
       players={roomPlayers}
       contributions={roomContributions}
+      contributionStatuses={roomContributionStatuses}
       cards={cards}
       cardDraws={cardDraws}
       stageSessions={stageSessions}
       votes={votes}
+      voteStatuses={roomVoteStatuses}
       decisions={decisions}
       journeys={journeys}
       currentPlayer={currentPlayer}
@@ -616,21 +637,25 @@ function GameBoard({
   room,
   players,
   contributions,
+  contributionStatuses,
   cards,
   cardDraws,
   stageSessions,
   votes,
+  voteStatuses,
   decisions,
   journeys,
   currentPlayer,
 }: {
   room: Room;
   players: Player[];
-  contributions: Contribution[];
+  contributions: VisibleContribution[];
+  contributionStatuses: ContributionStatus[];
   cards: readonly Card[];
   cardDraws: readonly CardDraw[];
   stageSessions: readonly StageSession[];
   votes: readonly Vote[];
+  voteStatuses: VoteStatus[];
   decisions: readonly Decision[];
   journeys: readonly Journey[];
   currentPlayer: Player;
@@ -652,6 +677,9 @@ function GameBoard({
   const stageContributions = contributions.filter(
     (item) => item.stage === stage,
   );
+  const stageContributionStatuses = contributionStatuses.filter(
+    (item) => item.stage === stage,
+  );
   const stageSession = stageSessions.find(
     (item) => item.roomId === room.id && item.stage === stage,
   );
@@ -660,11 +688,14 @@ function GameBoard({
   const stageVotes = votes.filter(
     (item) => item.roomId === room.id && item.stage === stage,
   );
+  const stageVoteStatuses = voteStatuses.filter((item) => item.stage === stage);
   const stageDecision = decisions.find(
     (item) => item.roomId === room.id && item.stage === stage,
   );
-  const ownContribution = stageContributions.find((item) =>
-    sameIdentity(item.authorIdentity, currentPlayer.identity),
+  const ownContribution = stageContributions.find(
+    (item) =>
+      item.authorIdentity &&
+      sameIdentity(item.authorIdentity, currentPlayer.identity),
   );
   const ownVote = stageVotes.find((item) =>
     sameIdentity(item.voterIdentity, currentPlayer.identity),
@@ -676,11 +707,11 @@ function GameBoard({
     : undefined;
   const onlinePlayers = players.filter((item) => item.online);
   const contributingPlayers = onlinePlayers.filter((player) =>
-    stageContributions.some((item) =>
+    stageContributionStatuses.some((item) =>
       sameIdentity(item.authorIdentity, player.identity),
     ),
   );
-  const activeStageVotes = stageVotes.filter((vote) =>
+  const activeStageVotes = stageVoteStatuses.filter((vote) =>
     onlinePlayers.some((player) =>
       sameIdentity(vote.voterIdentity, player.identity),
     ),
@@ -927,13 +958,15 @@ function GameBoard({
                   <>
                     {" "}
                     · criada por{" "}
-                    {players.find((item) =>
-                      sameIdentity(
-                        item.identity,
-                        selectedContribution.authorIdentity,
-                      ),
-                    )?.displayName ??
-                      shortIdentity(selectedContribution.authorIdentity)}
+                    {selectedContribution.authorIdentity
+                      ? (players.find((item) =>
+                          sameIdentity(
+                            item.identity,
+                            selectedContribution.authorIdentity!,
+                          ),
+                        )?.displayName ??
+                        shortIdentity(selectedContribution.authorIdentity))
+                      : "autoria indisponível"}
                   </>
                 )}
               </p>
@@ -944,20 +977,25 @@ function GameBoard({
             <div className="shared-ideas" aria-live="polite">
               {stageContributions.length === 0 ? (
                 <p className="empty-state">
-                  As contribuições aparecerão aqui em tempo real.
+                  Sua contribuição fica visível apenas para você até a votação.
                 </p>
               ) : (
                 stageContributions.map((item) => {
-                  const author = players.find((player) =>
-                    sameIdentity(player.identity, item.authorIdentity),
-                  );
+                  const authorIdentity = item.authorIdentity;
+                  const author = authorIdentity
+                    ? players.find((player) =>
+                        sameIdentity(player.identity, authorIdentity),
+                      )
+                    : undefined;
                   return (
                     <blockquote key={item.id.toString()}>
                       <p>{item.content}</p>
                       <footer>
                         —{" "}
                         {author?.displayName ??
-                          shortIdentity(item.authorIdentity)}
+                          (item.authorIdentity
+                            ? shortIdentity(item.authorIdentity)
+                            : "Anônimo")}
                       </footer>
                     </blockquote>
                   );
@@ -1042,7 +1080,7 @@ function JourneySummary({
   decisions,
 }: {
   room: Room;
-  contributions: Contribution[];
+  contributions: VisibleContribution[];
   players: Player[];
   decisions: readonly Decision[];
 }) {
@@ -1071,12 +1109,16 @@ function JourneySummary({
                 <small>Em construção</small>
               ) : (
                 entries.map((entry) => {
-                  const author = players.find((item) =>
-                    sameIdentity(item.identity, entry.authorIdentity),
-                  );
+                  const authorIdentity = entry.authorIdentity;
+                  const author = authorIdentity
+                    ? players.find((item) =>
+                        sameIdentity(item.identity, authorIdentity),
+                      )
+                    : undefined;
                   return (
                     <p key={entry.id.toString()}>
-                      {entry.content} <em>— {author?.displayName}</em>
+                      {entry.content}{" "}
+                      <em>— {author?.displayName ?? "Anônimo"}</em>
                     </p>
                   );
                 })
@@ -1101,7 +1143,7 @@ function JourneyResult({
 }: {
   room: Room;
   players: Player[];
-  contributions: Contribution[];
+  contributions: VisibleContribution[];
   cards: readonly Card[];
   cardDraws: readonly CardDraw[];
   decisions: readonly Decision[];
@@ -1193,11 +1235,14 @@ function JourneyResult({
 
   function downloadResult() {
     setError("");
+    const exportableContributions = contributions.filter(
+      (item): item is Contribution => item.authorIdentity !== undefined,
+    );
     const markdown = buildJourneyMarkdown({
       journey: manifest,
       room,
       players,
-      contributions,
+      contributions: exportableContributions,
       decisions,
       cards,
       cardDraws,
@@ -1345,12 +1390,16 @@ function JourneyResult({
                       entry.id !== stageDecision?.selectedContributionId,
                   )
                   .map((entry) => {
-                    const author = players.find((item) =>
-                      sameIdentity(item.identity, entry.authorIdentity),
-                    );
+                    const authorIdentity = entry.authorIdentity;
+                    const author = authorIdentity
+                      ? players.find((item) =>
+                          sameIdentity(item.identity, authorIdentity),
+                        )
+                      : undefined;
                     return (
                       <p key={entry.id.toString()}>
-                        “{entry.content}” <small>— {author?.displayName}</small>
+                        “{entry.content}”{" "}
+                        <small>— {author?.displayName ?? "Anônimo"}</small>
                       </p>
                     );
                   })}

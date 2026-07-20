@@ -42,6 +42,17 @@ export const Contribution = __t.object("Contribution", {
 });
 export type Contribution = __Infer<typeof Contribution>;
 
+export const ContributionStatus = __t.object("ContributionStatus", {
+  id: __t.u64(),
+  roomId: __t.u64(),
+  stage: __t.string(),
+  authorIdentity: __t.identity(),
+});
+export type ContributionStatus = __Infer<typeof ContributionStatus>;
+
+export const CurrentProfile = __t.object("CurrentProfile", {});
+export type CurrentProfile = __Infer<typeof CurrentProfile>;
+
 export const Decision = __t.object("Decision", {
   id: __t.u64(),
   roomId: __t.u64(),
@@ -62,6 +73,12 @@ export const Journey = __t.object("Journey", {
   updatedAt: __t.timestamp(),
 });
 export type Journey = __Infer<typeof Journey>;
+
+export const MemberRooms = __t.object("MemberRooms", {});
+export type MemberRooms = __Infer<typeof MemberRooms>;
+
+export const OwnVotes = __t.object("OwnVotes", {});
+export type OwnVotes = __Infer<typeof OwnVotes>;
 
 export const Player = __t.object("Player", {
   id: __t.u64(),
@@ -100,6 +117,27 @@ export const Room = __t.object("Room", {
 });
 export type Room = __Infer<typeof Room>;
 
+export const RoomCardDraws = __t.object("RoomCardDraws", {});
+export type RoomCardDraws = __Infer<typeof RoomCardDraws>;
+
+export const RoomContributionStatus = __t.object("RoomContributionStatus", {});
+export type RoomContributionStatus = __Infer<typeof RoomContributionStatus>;
+
+export const RoomDecisions = __t.object("RoomDecisions", {});
+export type RoomDecisions = __Infer<typeof RoomDecisions>;
+
+export const RoomJourneys = __t.object("RoomJourneys", {});
+export type RoomJourneys = __Infer<typeof RoomJourneys>;
+
+export const RoomPlayers = __t.object("RoomPlayers", {});
+export type RoomPlayers = __Infer<typeof RoomPlayers>;
+
+export const RoomStageSessions = __t.object("RoomStageSessions", {});
+export type RoomStageSessions = __Infer<typeof RoomStageSessions>;
+
+export const RoomVoteStatus = __t.object("RoomVoteStatus", {});
+export type RoomVoteStatus = __Infer<typeof RoomVoteStatus>;
+
 export const StageSession = __t.object("StageSession", {
   id: __t.u64(),
   roomId: __t.u64(),
@@ -109,6 +147,21 @@ export const StageSession = __t.object("StageSession", {
   updatedAt: __t.timestamp(),
 });
 export type StageSession = __Infer<typeof StageSession>;
+
+export const VisibleContribution = __t.object("VisibleContribution", {
+  id: __t.u64(),
+  roomId: __t.u64(),
+  stage: __t.string(),
+  authorIdentity: __t.option(__t.identity()),
+  kind: __t.string(),
+  content: __t.string(),
+  createdAt: __t.timestamp(),
+  updatedAt: __t.timestamp(),
+});
+export type VisibleContribution = __Infer<typeof VisibleContribution>;
+
+export const VisibleContributions = __t.object("VisibleContributions", {});
+export type VisibleContributions = __Infer<typeof VisibleContributions>;
 
 export const Vote = __t.object("Vote", {
   id: __t.u64(),
@@ -120,3 +173,11 @@ export const Vote = __t.object("Vote", {
   updatedAt: __t.timestamp(),
 });
 export type Vote = __Infer<typeof Vote>;
+
+export const VoteStatus = __t.object("VoteStatus", {
+  id: __t.u64(),
+  roomId: __t.u64(),
+  stage: __t.string(),
+  voterIdentity: __t.identity(),
+});
+export type VoteStatus = __Infer<typeof VoteStatus>;

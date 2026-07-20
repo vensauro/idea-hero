@@ -51,15 +51,17 @@ import UpdateJourneyReducer from "./update_journey_reducer";
 
 // Import all table schema definitions
 import CardRow from "./card_table";
-import CardDrawRow from "./card_draw_table";
-import ContributionRow from "./contribution_table";
-import DecisionRow from "./decision_table";
-import JourneyRow from "./journey_table";
-import PlayerRow from "./player_table";
-import ProfileRow from "./profile_table";
-import RoomRow from "./room_table";
-import StageSessionRow from "./stage_session_table";
-import VoteRow from "./vote_table";
+import CurrentProfileRow from "./current_profile_table";
+import MemberRoomsRow from "./member_rooms_table";
+import OwnVotesRow from "./own_votes_table";
+import RoomCardDrawsRow from "./room_card_draws_table";
+import RoomContributionStatusRow from "./room_contribution_status_table";
+import RoomDecisionsRow from "./room_decisions_table";
+import RoomJourneysRow from "./room_journeys_table";
+import RoomPlayersRow from "./room_players_table";
+import RoomStageSessionsRow from "./room_stage_sessions_table";
+import RoomVoteStatusRow from "./room_vote_status_table";
+import VisibleContributionsRow from "./visible_contributions_table";
 
 /** Type-only namespace exports for generated type groups. */
 
@@ -79,164 +81,83 @@ const tablesSchema = __schema({
       { name: 'card_id_key', constraint: 'unique', columns: ['id'] },
     ],
   }, CardRow),
-  cardDraw: __table({
-    name: 'card_draw',
+  current_profile: __table({
+    name: 'current_profile',
     indexes: [
-      { accessor: 'cardId', name: 'card_draw_card_id_idx_btree', algorithm: 'btree', columns: [
-        'cardId',
-      ] },
-      { accessor: 'id', name: 'card_draw_id_idx_btree', algorithm: 'btree', columns: [
-        'id',
-      ] },
-      { accessor: 'roomId', name: 'card_draw_room_id_idx_btree', algorithm: 'btree', columns: [
-        'roomId',
-      ] },
-      { accessor: 'stage', name: 'card_draw_stage_idx_btree', algorithm: 'btree', columns: [
-        'stage',
-      ] },
     ],
     constraints: [
-      { name: 'card_draw_id_key', constraint: 'unique', columns: ['id'] },
     ],
-  }, CardDrawRow),
-  contribution: __table({
-    name: 'contribution',
+  }, CurrentProfileRow),
+  member_rooms: __table({
+    name: 'member_rooms',
     indexes: [
-      { accessor: 'authorIdentity', name: 'contribution_author_identity_idx_btree', algorithm: 'btree', columns: [
-        'authorIdentity',
-      ] },
-      { accessor: 'id', name: 'contribution_id_idx_btree', algorithm: 'btree', columns: [
-        'id',
-      ] },
-      { accessor: 'roomId', name: 'contribution_room_id_idx_btree', algorithm: 'btree', columns: [
-        'roomId',
-      ] },
-      { accessor: 'stage', name: 'contribution_stage_idx_btree', algorithm: 'btree', columns: [
-        'stage',
-      ] },
     ],
     constraints: [
-      { name: 'contribution_id_key', constraint: 'unique', columns: ['id'] },
     ],
-  }, ContributionRow),
-  decision: __table({
-    name: 'decision',
+  }, MemberRoomsRow),
+  own_votes: __table({
+    name: 'own_votes',
     indexes: [
-      { accessor: 'id', name: 'decision_id_idx_btree', algorithm: 'btree', columns: [
-        'id',
-      ] },
-      { accessor: 'roomId', name: 'decision_room_id_idx_btree', algorithm: 'btree', columns: [
-        'roomId',
-      ] },
-      { accessor: 'selectedContributionId', name: 'decision_selected_contribution_id_idx_btree', algorithm: 'btree', columns: [
-        'selectedContributionId',
-      ] },
-      { accessor: 'stage', name: 'decision_stage_idx_btree', algorithm: 'btree', columns: [
-        'stage',
-      ] },
     ],
     constraints: [
-      { name: 'decision_id_key', constraint: 'unique', columns: ['id'] },
     ],
-  }, DecisionRow),
-  journey: __table({
-    name: 'journey',
+  }, OwnVotesRow),
+  room_card_draws: __table({
+    name: 'room_card_draws',
     indexes: [
-      { accessor: 'id', name: 'journey_id_idx_btree', algorithm: 'btree', columns: [
-        'id',
-      ] },
-      { accessor: 'roomId', name: 'journey_room_id_idx_btree', algorithm: 'btree', columns: [
-        'roomId',
-      ] },
     ],
     constraints: [
-      { name: 'journey_id_key', constraint: 'unique', columns: ['id'] },
-      { name: 'journey_room_id_key', constraint: 'unique', columns: ['roomId'] },
     ],
-  }, JourneyRow),
-  player: __table({
-    name: 'player',
+  }, RoomCardDrawsRow),
+  room_contribution_status: __table({
+    name: 'room_contribution_status',
     indexes: [
-      { accessor: 'id', name: 'player_id_idx_btree', algorithm: 'btree', columns: [
-        'id',
-      ] },
-      { accessor: 'identity', name: 'player_identity_idx_btree', algorithm: 'btree', columns: [
-        'identity',
-      ] },
-      { accessor: 'roomId', name: 'player_room_id_idx_btree', algorithm: 'btree', columns: [
-        'roomId',
-      ] },
     ],
     constraints: [
-      { name: 'player_id_key', constraint: 'unique', columns: ['id'] },
     ],
-  }, PlayerRow),
-  profile: __table({
-    name: 'profile',
+  }, RoomContributionStatusRow),
+  room_decisions: __table({
+    name: 'room_decisions',
     indexes: [
-      { accessor: 'identity', name: 'profile_identity_idx_btree', algorithm: 'btree', columns: [
-        'identity',
-      ] },
     ],
     constraints: [
-      { name: 'profile_identity_key', constraint: 'unique', columns: ['identity'] },
     ],
-  }, ProfileRow),
-  room: __table({
-    name: 'room',
+  }, RoomDecisionsRow),
+  room_journeys: __table({
+    name: 'room_journeys',
     indexes: [
-      { accessor: 'code', name: 'room_code_idx_btree', algorithm: 'btree', columns: [
-        'code',
-      ] },
-      { accessor: 'id', name: 'room_id_idx_btree', algorithm: 'btree', columns: [
-        'id',
-      ] },
     ],
     constraints: [
-      { name: 'room_code_key', constraint: 'unique', columns: ['code'] },
-      { name: 'room_id_key', constraint: 'unique', columns: ['id'] },
     ],
-  }, RoomRow),
-  stageSession: __table({
-    name: 'stage_session',
+  }, RoomJourneysRow),
+  room_players: __table({
+    name: 'room_players',
     indexes: [
-      { accessor: 'id', name: 'stage_session_id_idx_btree', algorithm: 'btree', columns: [
-        'id',
-      ] },
-      { accessor: 'roomId', name: 'stage_session_room_id_idx_btree', algorithm: 'btree', columns: [
-        'roomId',
-      ] },
-      { accessor: 'stage', name: 'stage_session_stage_idx_btree', algorithm: 'btree', columns: [
-        'stage',
-      ] },
     ],
     constraints: [
-      { name: 'stage_session_id_key', constraint: 'unique', columns: ['id'] },
     ],
-  }, StageSessionRow),
-  vote: __table({
-    name: 'vote',
+  }, RoomPlayersRow),
+  room_stage_sessions: __table({
+    name: 'room_stage_sessions',
     indexes: [
-      { accessor: 'contributionId', name: 'vote_contribution_id_idx_btree', algorithm: 'btree', columns: [
-        'contributionId',
-      ] },
-      { accessor: 'id', name: 'vote_id_idx_btree', algorithm: 'btree', columns: [
-        'id',
-      ] },
-      { accessor: 'roomId', name: 'vote_room_id_idx_btree', algorithm: 'btree', columns: [
-        'roomId',
-      ] },
-      { accessor: 'stage', name: 'vote_stage_idx_btree', algorithm: 'btree', columns: [
-        'stage',
-      ] },
-      { accessor: 'voterIdentity', name: 'vote_voter_identity_idx_btree', algorithm: 'btree', columns: [
-        'voterIdentity',
-      ] },
     ],
     constraints: [
-      { name: 'vote_id_key', constraint: 'unique', columns: ['id'] },
     ],
-  }, VoteRow),
+  }, RoomStageSessionsRow),
+  room_vote_status: __table({
+    name: 'room_vote_status',
+    indexes: [
+    ],
+    constraints: [
+    ],
+  }, RoomVoteStatusRow),
+  visible_contributions: __table({
+    name: 'visible_contributions',
+    indexes: [
+    ],
+    constraints: [
+    ],
+  }, VisibleContributionsRow),
 });
 
 /** The schema information for all reducers in this module. This is defined the same way as the reducers would have been defined in the server, except the body of the reducer is omitted in code generation. */
