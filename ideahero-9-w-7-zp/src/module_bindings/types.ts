@@ -67,6 +67,7 @@ export type Decision = __Infer<typeof Decision>;
 export const Journey = __t.object("Journey", {
   id: __t.u64(),
   roomId: __t.u64(),
+  publicId: __t.option(__t.string()),
   title: __t.string(),
   summary: __t.string(),
   createdAt: __t.timestamp(),
@@ -119,6 +120,13 @@ export type Room = __Infer<typeof Room>;
 
 export const RoomCardDraws = __t.object("RoomCardDraws", {});
 export type RoomCardDraws = __Infer<typeof RoomCardDraws>;
+
+export const RoomCode = __t.object("RoomCode", {
+  code: __t.string(),
+  roomId: __t.u64(),
+  expiresAt: __t.timestamp(),
+});
+export type RoomCode = __Infer<typeof RoomCode>;
 
 export const RoomContributionStatus = __t.object("RoomContributionStatus", {});
 export type RoomContributionStatus = __Infer<typeof RoomContributionStatus>;

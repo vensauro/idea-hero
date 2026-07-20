@@ -1,4 +1,5 @@
 import { schema, t, table, SenderError } from "spacetimedb/server";
+import { Timestamp } from "spacetimedb";
 import { CARD_CATALOG, cardForRoomStage } from "./cards";
 
 const BOARD_STATES = [
@@ -13,6 +14,7 @@ const BOARD_STATES = [
 ] as const;
 
 const COLLABORATIVE_STAGES = new Set<string>(BOARD_STATES.slice(0, 4));
+const ROOM_CODE_TTL_MICROS = 24n * 60n * 60n * 1_000_000n;
 
 const profile = table(
   { name: "profile" },
@@ -29,7 +31,7 @@ const room = table(
   { name: "room" },
   {
     id: t.u64().primaryKey().autoInc(),
-    code: t.string().unique(),
+    code: t.string(),
     ownerIdentity: t.identity(),
     status: t.string(),
     mode: t.string(),
@@ -38,6 +40,15 @@ const room = table(
     round: t.u32(),
     createdAt: t.timestamp(),
     updatedAt: t.timestamp(),
+  },
+);
+
+const roomCode = table(
+  { name: "room_code" },
+  {
+    code: t.string().primaryKey(),
+    roomId: t.u64().index("btree"),
+    expiresAt: t.timestamp(),
   },
 );
 
@@ -138,6 +149,7 @@ const journey = table(
   {
     id: t.u64().primaryKey().autoInc(),
     roomId: t.u64().unique(),
+    publicId: t.string().optional(),
     title: t.string(),
     summary: t.string(),
     createdAt: t.timestamp(),
@@ -173,6 +185,7 @@ const visibleContribution = t.object("VisibleContribution", {
 const spacetimedb = schema({
   profile,
   room,
+  roomCode,
   player,
   contribution,
   card,
@@ -378,6 +391,18 @@ function normalizeRoomCode(code: string) {
   return normalized;
 }
 
+function roomCodeExpiresAt(timestamp: Timestamp) {
+  return new Timestamp(timestamp.microsSinceUnixEpoch + ROOM_CODE_TTL_MICROS);
+}
+
+function roomCodeIsExpired(expiresAt: Timestamp, timestamp: Timestamp) {
+  return expiresAt.microsSinceUnixEpoch <= timestamp.microsSinceUnixEpoch;
+}
+
+function journeyPublicId(roomId: bigint) {
+  return "journey-" + roomId.toString(36);
+}
+
 function normalizeJourneyTitle(title: string) {
   const normalized = title.trim().replace(/\s+/g, " ");
   if (normalized.length < 3 || normalized.length > 80) {
@@ -420,10 +445,16 @@ export const create_room = spacetimedb.reducer(
     }
 
     const normalizedCode = normalizeRoomCode(code);
-    if (ctx.db.room.code.find(normalizedCode)) {
-      throw new SenderError("Este código de sala já está em uso.");
+    const reservedCode = ctx.db.roomCode.code.find(normalizedCode);
+    if (reservedCode) {
+      if (roomCodeIsExpired(reservedCode.expiresAt, ctx.timestamp)) {
+        ctx.db.roomCode.code.delete(reservedCode.code);
+      } else {
+        throw new SenderError("Este código de sala já está em uso.");
+      }
     }
 
+    const inviteExpiresAt = roomCodeExpiresAt(ctx.timestamp);
     const createdRoom = ctx.db.room.insert({
       id: 0n,
       code: normalizedCode,
@@ -435,6 +466,12 @@ export const create_room = spacetimedb.reducer(
       round: 1,
       createdAt: ctx.timestamp,
       updatedAt: ctx.timestamp,
+    });
+
+    ctx.db.roomCode.insert({
+      code: normalizedCode,
+      roomId: createdRoom.id,
+      expiresAt: inviteExpiresAt,
     });
 
     ctx.db.player.insert({
@@ -460,11 +497,19 @@ export const join_room = spacetimedb.reducer(
       throw new SenderError("Complete seu perfil antes de entrar em uma sala.");
     }
 
-    const existingRoom = ctx.db.room.code.find(normalizeRoomCode(code));
-    if (!existingRoom) throw new SenderError("Sala não encontrada.");
-    if (existingRoom.status === "FINISHED") {
-      throw new SenderError("Esta jornada já foi encerrada.");
+    const normalizedCode = normalizeRoomCode(code);
+    const reservedCode = ctx.db.roomCode.code.find(normalizedCode);
+    if (
+      reservedCode &&
+      roomCodeIsExpired(reservedCode.expiresAt, ctx.timestamp)
+    ) {
+      ctx.db.roomCode.code.delete(reservedCode.code);
+      throw new SenderError("Este convite expirou.");
     }
+    const existingRoom = reservedCode
+      ? ctx.db.room.id.find(reservedCode.roomId)
+      : undefined;
+    if (!existingRoom) throw new SenderError("Convite não encontrado.");
 
     const existingPlayer = [...ctx.db.player.iter()].find(
       (item) =>
@@ -550,7 +595,10 @@ export const start_game = spacetimedb.reducer(
       updatedAt: ctx.timestamp,
     });
 
-    const drawnCard = cardForRoomStage(currentRoom.code, BOARD_STATES[0]);
+    const drawnCard = cardForRoomStage(
+      currentRoom.id.toString(),
+      BOARD_STATES[0],
+    );
     if (!ctx.db.card.id.find(drawnCard.id)) {
       ctx.db.card.insert({
         id: drawnCard.id,
@@ -912,7 +960,8 @@ export const advance_stage = spacetimedb.reducer(
         ctx.db.journey.insert({
           id: 0n,
           roomId,
-          title: `Ideia da sala ${currentRoom.code.toUpperCase()}`,
+          publicId: journeyPublicId(roomId),
+          title: "Ideia da jornada " + journeyPublicId(roomId).toUpperCase(),
           summary:
             solutionDecision?.summary ??
             solutionContribution?.content ??
@@ -920,6 +969,10 @@ export const advance_stage = spacetimedb.reducer(
           createdAt: ctx.timestamp,
           updatedAt: ctx.timestamp,
         });
+      }
+      const activeInvite = ctx.db.roomCode.code.find(currentRoom.code);
+      if (activeInvite?.roomId === roomId) {
+        ctx.db.roomCode.code.delete(activeInvite.code);
       }
       ctx.db.room.id.update({
         ...currentRoom,
@@ -930,7 +983,7 @@ export const advance_stage = spacetimedb.reducer(
     }
 
     const nextStage = BOARD_STATES[nextIndex];
-    const drawnCard = cardForRoomStage(currentRoom.code, nextStage);
+    const drawnCard = cardForRoomStage(currentRoom.id.toString(), nextStage);
     if (!ctx.db.card.id.find(drawnCard.id)) {
       ctx.db.card.insert({
         id: drawnCard.id,
@@ -993,6 +1046,7 @@ export const update_journey = spacetimedb.reducer(
     if (currentJourney) {
       ctx.db.journey.id.update({
         ...currentJourney,
+        publicId: currentJourney.publicId ?? journeyPublicId(roomId),
         title: normalizedTitle,
         summary: normalizedSummary,
         updatedAt: ctx.timestamp,
@@ -1003,6 +1057,7 @@ export const update_journey = spacetimedb.reducer(
     ctx.db.journey.insert({
       id: 0n,
       roomId,
+      publicId: journeyPublicId(roomId),
       title: normalizedTitle,
       summary: normalizedSummary,
       createdAt: ctx.timestamp,

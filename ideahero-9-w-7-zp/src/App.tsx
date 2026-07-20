@@ -30,6 +30,7 @@ import {
   roomCodeFromUrl,
 } from "./room-invite";
 import { createRoomWithAvailableCode } from "./room-code";
+import { latestOpenSession } from "./room-session";
 
 export const BOARD_STATES = [
   "SCENARIO",
@@ -200,19 +201,27 @@ function App() {
     ? profiles.find((item) => sameIdentity(item.identity, identity))
     : undefined;
 
-  const memberships = useMemo(() => {
-    if (!identity) return [];
-    return players
-      .filter((item) => sameIdentity(item.identity, identity))
-      .sort(
-        (a, b) => b.joinedAt.toDate().getTime() - a.joinedAt.toDate().getTime(),
-      );
-  }, [identity, players]);
-
-  const currentPlayer = memberships[0];
-  const currentRoom = currentPlayer
-    ? rooms.find((item) => item.id === currentPlayer.roomId)
-    : undefined;
+  const currentSession = useMemo(() => {
+    if (!identity) return undefined;
+    const sessions: Array<{
+      status: string;
+      joinedAt: number;
+      value: { player: Player; room: Room };
+    }> = [];
+    for (const player of players) {
+      if (!sameIdentity(player.identity, identity)) continue;
+      const memberRoom = rooms.find((item) => item.id === player.roomId);
+      if (!memberRoom) continue;
+      sessions.push({
+        status: memberRoom.status,
+        joinedAt: player.joinedAt.toDate().getTime(),
+        value: { player, room: memberRoom },
+      });
+    }
+    return latestOpenSession(sessions)?.value;
+  }, [identity, players, rooms]);
+  const currentPlayer = currentSession?.player;
+  const currentRoom = currentSession?.room;
   const currentRoomCode = currentRoom?.code;
 
   useEffect(() => {

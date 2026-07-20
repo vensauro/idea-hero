@@ -13,6 +13,7 @@ import {
 export default __t.row({
   id: __t.u64().primaryKey(),
   roomId: __t.u64().name("room_id"),
+  publicId: __t.option(__t.string()).name("public_id"),
   title: __t.string(),
   summary: __t.string(),
   createdAt: __t.timestamp().name("created_at"),
