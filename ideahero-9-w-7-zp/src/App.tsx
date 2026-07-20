@@ -30,6 +30,7 @@ import {
   roomCodeFromUrl,
 } from "./room-invite";
 import { createRoomWithAvailableCode } from "./room-code";
+import { lobbyStartState } from "./lobby-rules";
 
 export const BOARD_STATES = [
   "SCENARIO",
@@ -514,7 +515,7 @@ function Lobby({
   const [error, setError] = useState("");
   const [copied, setCopied] = useState(false);
   const isHost = currentPlayer.role === "HOST";
-  const allReady = players.length > 0 && players.every((item) => item.ready);
+  const startState = lobbyStartState(players);
 
   async function invoke(action: () => Promise<unknown>) {
     setError("");
@@ -621,10 +622,17 @@ function Lobby({
         {isHost && (
           <button
             className="primary-button"
-            disabled={!allReady}
+            disabled={!startState.canStart}
             onClick={() => void invoke(() => startGame({ roomId: room.id }))}
           >
-            {allReady ? "Começar a jornada" : "Esperando o grupo"}
+            {startState.canStart
+              ? "Começar a jornada"
+              : startState.missingParticipants > 0
+                ? "Falta " +
+                  startState.missingParticipants +
+                  " pessoa" +
+                  (startState.missingParticipants === 1 ? "" : "s")
+                : "Esperando o grupo"}
           </button>
         )}
         {error && <p className="error-message">{error}</p>}
