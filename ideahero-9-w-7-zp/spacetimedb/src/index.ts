@@ -13,8 +13,6 @@ const BOARD_STATES = [
 ] as const;
 
 const COLLABORATIVE_STAGES = new Set<string>(BOARD_STATES.slice(0, 4));
-const MIN_PLAYERS = 2;
-const MAX_PLAYERS = 6;
 
 const profile = table(
   { name: "profile" },
@@ -490,9 +488,7 @@ export const join_room = spacetimedb.reducer(
     const roomPlayers = [...ctx.db.player.iter()].filter(
       (item) => item.roomId === existingRoom.id,
     );
-    if (roomPlayers.length >= MAX_PLAYERS) {
-      throw new SenderError("A sala está cheia.");
-    }
+    if (roomPlayers.length >= 6) throw new SenderError("A sala está cheia.");
 
     ctx.db.player.insert({
       id: 0n,
@@ -541,12 +537,7 @@ export const start_game = spacetimedb.reducer(
     const roomPlayers = [...ctx.db.player.iter()].filter(
       (item) => item.roomId === roomId,
     );
-    if (roomPlayers.length < MIN_PLAYERS) {
-      throw new SenderError(
-        "São necessários pelo menos 2 jogadores para começar.",
-      );
-    }
-    if (roomPlayers.some((item) => !item.ready)) {
+    if (roomPlayers.length === 0 || roomPlayers.some((item) => !item.ready)) {
       throw new SenderError("Todos os jogadores precisam estar prontos.");
     }
 
