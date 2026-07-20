@@ -26,6 +26,7 @@ import {
   clearRoomInviteUrl,
   roomCodeFromUrl,
 } from "./room-invite";
+import { createRoomWithAvailableCode } from "./room-code";
 
 export const BOARD_STATES = [
   "SCENARIO",
@@ -127,6 +128,15 @@ const AVATAR_GLYPHS: Record<string, string> = {
   fox: "🦊",
 };
 
+const AVATAR_LABELS: Record<string, string> = {
+  seedling: "Muda",
+  comet: "Cometa",
+  prism: "Prisma",
+  whale: "Baleia",
+  owl: "Coruja",
+  fox: "Raposa",
+};
+
 function shortIdentity(identity: { toHexString: () => string }) {
   return identity.toHexString().slice(0, 8);
 }
@@ -158,7 +168,7 @@ async function copyText(text: string) {
   const copied = document.execCommand("copy");
   textarea.remove();
   if (!copied) {
-    throw new Error("Não foi possível copiar o resumo neste navegador.");
+    throw new Error("Não foi possível copiar o conteúdo neste navegador.");
   }
 }
 
@@ -263,7 +273,7 @@ function App() {
 
 function LoadingScreen({ label }: { label: string }) {
   return (
-    <main className="loading-screen">
+    <main className="loading-screen" role="status" aria-live="polite">
       <BrandLogo />
       <p>{label}</p>
     </main>
@@ -325,6 +335,7 @@ function ProfileSetup() {
                     value={avatar}
                     checked={avatarId === avatar}
                     onChange={() => setAvatarId(avatar)}
+                    aria-label={AVATAR_LABELS[avatar]}
                   />
                   <span>{AVATAR_GLYPHS[avatar]}</span>
                 </label>
@@ -332,8 +343,16 @@ function ProfileSetup() {
             </div>
           </fieldset>
 
-          {error && <p className="error-message">{error}</p>}
-          <button className="primary-button" disabled={saving}>
+          {error && (
+            <p className="error-message" role="alert">
+              {error}
+            </p>
+          )}
+          <button
+            className="primary-button"
+            disabled={saving}
+            aria-busy={saving}
+          >
             {saving ? "Salvando…" : "Continuar"}
           </button>
         </form>
@@ -349,23 +368,18 @@ function RoomEntry({ displayName }: { displayName: string }) {
   const [joinCode, setJoinCode] = useState(invitedCode ?? "");
   const hasInvite = Boolean(invitedCode);
   const [error, setError] = useState("");
-  const [busy, setBusy] = useState(false);
+  const [pendingAction, setPendingAction] = useState<"create" | "join">();
 
-  async function run(action: () => Promise<unknown>) {
-    setBusy(true);
+  async function run(name: "create" | "join", action: () => Promise<unknown>) {
+    setPendingAction(name);
     setError("");
     try {
       await action();
     } catch (caught) {
       setError(errorMessage(caught));
     } finally {
-      setBusy(false);
+      setPendingAction(undefined);
     }
-  }
-
-  function makeRoomCode() {
-    const suffix = crypto.randomUUID().replace(/-/g, "").slice(0, 6);
-    return `ideia-${suffix}`;
   }
 
   return (
@@ -394,11 +408,21 @@ function RoomEntry({ displayName }: { displayName: string }) {
 
         <div className="room-actions">
           <button
+            type="button"
             className={hasInvite ? "secondary-button" : "primary-button"}
-            disabled={busy}
-            onClick={() => run(() => createRoom({ code: makeRoomCode() }))}
+            disabled={Boolean(pendingAction)}
+            aria-busy={pendingAction === "create"}
+            onClick={() =>
+              run("create", () =>
+                createRoomWithAvailableCode((code) => createRoom({ code })),
+              )
+            }
           >
-            {hasInvite ? "Criar outra sala" : "Criar uma sala"}
+            {pendingAction === "create"
+              ? "Criando sala…"
+              : hasInvite
+                ? "Criar outra sala"
+                : "Criar uma sala"}
           </button>
 
           <div className="divider">
@@ -409,7 +433,7 @@ function RoomEntry({ displayName }: { displayName: string }) {
             className="join-form"
             onSubmit={(event) => {
               event.preventDefault();
-              void run(() => joinRoom({ code: joinCode }));
+              void run("join", () => joinRoom({ code: joinCode.trim() }));
             }}
           >
             <label>
@@ -420,20 +444,36 @@ function RoomEntry({ displayName }: { displayName: string }) {
                   setJoinCode(event.target.value.toLowerCase())
                 }
                 placeholder="ideia-abc123"
+                minLength={4}
+                maxLength={24}
+                pattern="[a-z0-9-]{4,24}"
+                title="Use de 4 a 24 letras, números ou hífens"
+                autoComplete="off"
+                autoCapitalize="none"
+                spellCheck={false}
                 required
                 autoFocus={hasInvite}
               />
             </label>
             <button
               className={hasInvite ? "primary-button" : "secondary-button"}
-              disabled={busy}
+              disabled={Boolean(pendingAction)}
+              aria-busy={pendingAction === "join"}
             >
-              {hasInvite ? "Entrar nesta sala" : "Entrar na sala"}
+              {pendingAction === "join"
+                ? "Entrando…"
+                : hasInvite
+                  ? "Entrar nesta sala"
+                  : "Entrar na sala"}
             </button>
           </form>
         </div>
 
-        {error && <p className="error-message">{error}</p>}
+        {error && (
+          <p className="error-message" role="alert">
+            {error}
+          </p>
+        )}
       </section>
     </main>
   );
