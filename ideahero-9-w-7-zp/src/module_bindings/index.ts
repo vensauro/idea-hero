@@ -37,6 +37,7 @@ import {
 import AdvanceStageReducer from "./advance_stage_reducer";
 import CastVoteReducer from "./cast_vote_reducer";
 import CreateRoomReducer from "./create_room_reducer";
+import EndJourneyReducer from "./end_journey_reducer";
 import JoinRoomReducer from "./join_room_reducer";
 import LeaveFinishedRoomReducer from "./leave_finished_room_reducer";
 import OpenVotingReducer from "./open_voting_reducer";
@@ -165,6 +166,7 @@ const reducersSchema = __reducers(
   __reducerSchema("advance_stage", AdvanceStageReducer),
   __reducerSchema("cast_vote", CastVoteReducer),
   __reducerSchema("create_room", CreateRoomReducer),
+  __reducerSchema("end_journey", EndJourneyReducer),
   __reducerSchema("join_room", JoinRoomReducer),
   __reducerSchema("leave_finished_room", LeaveFinishedRoomReducer),
   __reducerSchema("open_voting", OpenVotingReducer),

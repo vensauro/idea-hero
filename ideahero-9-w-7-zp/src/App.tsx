@@ -674,6 +674,7 @@ function GameBoard({
   const openVoting = useReducer(reducers.openVoting);
   const castVote = useReducer(reducers.castVote);
   const resolveStage = useReducer(reducers.resolveStage);
+  const endJourney = useReducer(reducers.endJourney);
   const stage = room.currentStage as BoardState;
   const content = STAGE_CONTENT[stage] ?? STAGE_CONTENT.SCENARIO;
   const guidance = STAGE_GUIDANCE[stage];
@@ -770,6 +771,13 @@ function GameBoard({
     } finally {
       setActionPending(false);
     }
+  }
+  function endJourneyEarly() {
+    const confirmed = window.confirm(
+      "Encerrar agora? A jornada parcial será salva e o convite será liberado.",
+    );
+    if (!confirmed) return;
+    void runStageAction(() => endJourney({ roomId: room.id }));
   }
 
   if (room.status === "FINISHED") {
@@ -1061,6 +1069,16 @@ function GameBoard({
                 : `Confirmar e avançar para ${
                     STAGE_CONTENT[BOARD_STATES[room.stageIndex + 1]].eyebrow
                   }`}
+            </button>
+          )}
+          {isHost && (
+            <button
+              type="button"
+              className="quiet-button"
+              disabled={actionPending}
+              onClick={endJourneyEarly}
+            >
+              Encerrar jornada agora
             </button>
           )}
           {!isHost && phase !== "VOTING" && (

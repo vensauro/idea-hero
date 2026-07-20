@@ -1021,6 +1021,53 @@ export const advance_stage = spacetimedb.reducer(
   },
 );
 
+export const end_journey = spacetimedb.reducer(
+  { roomId: t.u64() },
+  (ctx, { roomId }) => {
+    const currentRoom = ctx.db.room.id.find(roomId);
+    if (!currentRoom || currentRoom.status !== "ACTIVE") {
+      throw new SenderError("A jornada não está ativa.");
+    }
+    if (!currentRoom.ownerIdentity.isEqual(ctx.sender)) {
+      throw new SenderError("Apenas o anfitrião pode encerrar a jornada.");
+    }
+
+    if (!ctx.db.journey.roomId.find(roomId)) {
+      const partialContribution = Array.from(
+        ctx.db.contribution.roomId.filter(roomId),
+      ).find(
+        (item) =>
+          item.stage === currentRoom.currentStage && item.kind === "MAIN",
+      );
+      ctx.db.journey.insert({
+        id: 0n,
+        roomId,
+        publicId: journeyPublicId(roomId),
+        title: "Jornada parcial " + journeyPublicId(roomId).toUpperCase(),
+        summary: partialContribution
+          ? "Jornada encerrada na etapa " +
+            (currentRoom.stageIndex + 1) +
+            ". Última contribuição: " +
+            partialContribution.content
+          : "Jornada encerrada na etapa " +
+            (currentRoom.stageIndex + 1) +
+            " antes de registrar contribuições.",
+        createdAt: ctx.timestamp,
+        updatedAt: ctx.timestamp,
+      });
+    }
+
+    const activeInvite = ctx.db.roomCode.code.find(currentRoom.code);
+    if (activeInvite?.roomId === roomId) {
+      ctx.db.roomCode.code.delete(activeInvite.code);
+    }
+    ctx.db.room.id.update({
+      ...currentRoom,
+      status: "FINISHED",
+      updatedAt: ctx.timestamp,
+    });
+  },
+);
 export const update_journey = spacetimedb.reducer(
   { roomId: t.u64(), title: t.string(), summary: t.string() },
   (ctx, { roomId, title, summary }) => {
