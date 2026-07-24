@@ -20,9 +20,18 @@ describe("recuperação de sala", () => {
 
     expect(current?.value).toBe("nova");
   });
-  it("não recupera nada quando todas as jornadas foram concluídas", () => {
+  it("shows a completed journey so the final result can render", () => {
     expect(
       latestOpenSession([{ status: "FINISHED", joinedAt: 1, value: 1 }]),
-    ).toBeUndefined();
+    ).toMatchObject({ value: 1 });
+  });
+
+  it("prioritizes an ongoing journey over an earlier result", () => {
+    expect(
+      latestOpenSession([
+        { status: "FINISHED", joinedAt: 30, value: "result" },
+        { status: "LOBBY", joinedAt: 10, value: "new" },
+      ]),
+    ).toMatchObject({ value: "new" });
   });
 });

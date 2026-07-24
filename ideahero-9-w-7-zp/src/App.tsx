@@ -54,6 +54,40 @@ export const COLLABORATIVE_PHASES = [
   "REVIEW",
 ] as const;
 const MIN_PLAYERS = 2;
+const PRODUCT_TYPES = [
+  {
+    id: "physical",
+    icon: "O",
+    label: "Produto fisico",
+    hint: "algo que se toca ou leva",
+  },
+  {
+    id: "digital",
+    icon: "~",
+    label: "Produto digital",
+    hint: "app, site ou ferramenta",
+  },
+  {
+    id: "service",
+    icon: "+",
+    label: "Servico",
+    hint: "uma experiencia feita com pessoas",
+  },
+  {
+    id: "process",
+    icon: ">",
+    label: "Processo",
+    hint: "um jeito novo de fazer",
+  },
+  {
+    id: "hybrid",
+    icon: "*",
+    label: "Hibrido",
+    hint: "mistura de formatos",
+  },
+] as const;
+
+type ProductType = (typeof PRODUCT_TYPES)[number]["id"];
 
 const STAGE_CONTENT: Record<
   BoardState,
@@ -158,6 +192,44 @@ function errorMessage(error: unknown) {
   return String(error);
 }
 
+function formatSeconds(seconds: number) {
+  const minutes = Math.floor(seconds / 60);
+  const remainder = seconds % 60;
+  return `${minutes}:${String(remainder).padStart(2, "0")}`;
+}
+
+function roundDuration(
+  stage: BoardState,
+  phase: string,
+  collaborative: boolean,
+) {
+  if (phase === "VOTING") return 35;
+  if (phase === "REVIEW") return 20;
+  if (stage === "PROTOTYPE") return 90;
+  return collaborative ? 75 : 60;
+}
+
+function prototypeSuggestion(productType: ProductType, draft: string) {
+  const focus = draft.trim()
+    ? `Pegue "${draft.trim().slice(0, 96)}" como ponto de partida.`
+    : "Comece com a ideia que o grupo acabou de escolher.";
+
+  const suggestions: Record<ProductType, string> = {
+    physical:
+      "Mostre uma versao de papel, sucata ou embalagem e peca para alguem simular o primeiro uso.",
+    digital:
+      "Desenhe so a primeira tela e simule o toque que leva ao ganho principal.",
+    service:
+      "Encene o primeiro minuto: quem recebe a pessoa, o que acontece e como ela sai diferente.",
+    process:
+      "Transforme o fluxo em tres cartoes: antes, mudanca e depois. Teste se alguem entende sem explicacao extra.",
+    hybrid:
+      "Escolha uma parte fisica e uma digital. Mostre o momento em que elas se encontram para gerar valor.",
+  };
+
+  return `${focus} ${suggestions[productType]}`;
+}
+
 async function copyText(text: string) {
   if (navigator.clipboard?.writeText) {
     await navigator.clipboard.writeText(text);
@@ -201,6 +273,7 @@ function App() {
   const currentProfile = identity
     ? profiles.find((item) => sameIdentity(item.identity, identity))
     : undefined;
+  const [editingProfile, setEditingProfile] = useState(false);
 
   const currentSession = useMemo(() => {
     if (!identity) return undefined;
@@ -255,12 +328,32 @@ function App() {
     return <LoadingScreen label="Sincronizando a jornada…" />;
   }
 
-  if (!currentProfile?.displayName || !currentProfile.avatarId) {
-    return <ProfileSetup />;
+  if (
+    editingProfile ||
+    !currentProfile?.displayName ||
+    !currentProfile.avatarId
+  ) {
+    const hasSavedProfile = Boolean(
+      currentProfile?.displayName && currentProfile.avatarId,
+    );
+    return (
+      <ProfileSetup
+        initialDisplayName={currentProfile?.displayName ?? ""}
+        initialAvatarId={currentProfile?.avatarId ?? AVATARS[0]}
+        onComplete={() => setEditingProfile(false)}
+        onCancel={hasSavedProfile ? () => setEditingProfile(false) : undefined}
+      />
+    );
   }
 
   if (!currentRoom || !currentPlayer) {
-    return <RoomEntry displayName={currentProfile.displayName} />;
+    return (
+      <RoomEntry
+        displayName={currentProfile.displayName}
+        avatarId={currentProfile.avatarId}
+        onEditProfile={() => setEditingProfile(true)}
+      />
+    );
   }
 
   const roomPlayers = players.filter(
@@ -327,10 +420,9 @@ function LeaveRoomButton({
   const [error, setError] = useState("");
 
   async function handleLeave() {
-    const hostNote =
-      currentPlayer.role === "HOST"
-        ? " O controle passará para a pessoa que entrou primeiro."
-        : "";
+    const hostNote = sameIdentity(currentPlayer.identity, room.ownerIdentity)
+      ? " O controle passará para a pessoa que entrou primeiro."
+      : "";
     if (
       !window.confirm(
         `Sair desta jornada? Você voltará ao início e seu histórico será preservado.${hostNote}`,
@@ -372,10 +464,20 @@ function LeaveRoomButton({
   );
 }
 
-function ProfileSetup() {
+function ProfileSetup({
+  initialDisplayName,
+  initialAvatarId,
+  onComplete,
+  onCancel,
+}: {
+  initialDisplayName: string;
+  initialAvatarId: string;
+  onComplete: () => void;
+  onCancel?: () => void;
+}) {
   const setProfile = useReducer(reducers.setProfile);
-  const [displayName, setDisplayName] = useState("");
-  const [avatarId, setAvatarId] = useState<string>(AVATARS[0]);
+  const [displayName, setDisplayName] = useState(initialDisplayName);
+  const [avatarId, setAvatarId] = useState<string>(initialAvatarId);
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
 
@@ -384,7 +486,8 @@ function ProfileSetup() {
     setSaving(true);
     setError("");
     try {
-      await setProfile({ displayName, avatarId });
+      await setProfile({ displayName: displayName.trim(), avatarId });
+      onComplete();
     } catch (caught) {
       setError(errorMessage(caught));
     } finally {
@@ -447,13 +550,31 @@ function ProfileSetup() {
           >
             {saving ? "Salvando…" : "Continuar"}
           </button>
+          {onCancel && (
+            <button
+              type="button"
+              className="secondary-button"
+              disabled={saving}
+              onClick={onCancel}
+            >
+              Voltar
+            </button>
+          )}
         </form>
       </section>
     </main>
   );
 }
 
-function RoomEntry({ displayName }: { displayName: string }) {
+function RoomEntry({
+  displayName,
+  avatarId,
+  onEditProfile,
+}: {
+  displayName: string;
+  avatarId: string;
+  onEditProfile: () => void;
+}) {
   const createRoom = useReducer(reducers.createRoom);
   const joinRoom = useReducer(reducers.joinRoom);
   const invitedCode = roomCodeFromUrl(window.location.href);
@@ -477,13 +598,25 @@ function RoomEntry({ displayName }: { displayName: string }) {
   return (
     <main className="centered-page">
       <section className="welcome-card room-entry-card">
-        <div className="brand-lockup">
+        <div className="room-entry-header">
           <BrandLogo compact />
-          <div>
-            <p className="kicker">Olá, {displayName}</p>
-            <h1>Vamos mudar o mundo?</h1>
-          </div>
+          <button
+            type="button"
+            className="profile-trigger"
+            onClick={onEditProfile}
+          >
+            <span className="profile-trigger-avatar" aria-hidden="true">
+              {AVATAR_GLYPHS[avatarId]}
+            </span>
+            <span className="profile-trigger-copy">
+              <small>Entrando como</small>
+              <strong>{displayName}</strong>
+            </span>
+            <span className="profile-trigger-edit">Editar</span>
+          </button>
         </div>
+        <p className="kicker">Sua próxima aventura</p>
+        <h1>Vamos mudar o mundo?</h1>
         <p className="intro">
           {hasInvite
             ? "Seu grupo já deixou um lugar reservado para você."
@@ -570,7 +703,6 @@ function RoomEntry({ displayName }: { displayName: string }) {
     </main>
   );
 }
-
 function Lobby({
   room,
   players,
@@ -584,7 +716,7 @@ function Lobby({
   const startGame = useReducer(reducers.startGame);
   const [error, setError] = useState("");
   const [copied, setCopied] = useState(false);
-  const isHost = currentPlayer.role === "HOST";
+  const isHost = sameIdentity(currentPlayer.identity, room.ownerIdentity);
   const enoughPlayers = players.length >= MIN_PLAYERS;
   const allReady = enoughPlayers && players.every((item) => item.ready);
   const readyCount = players.filter((item) => item.ready).length;
@@ -706,7 +838,9 @@ function Lobby({
               <div>
                 <strong>{item.displayName}</strong>
                 <small>
-                  {item.role === "HOST" ? "Anfitrião" : "Participante"}
+                  {sameIdentity(item.identity, room.ownerIdentity)
+                    ? "Anfitrião"
+                    : "Participante"}
                 </small>
               </div>
               <span className={`ready-chip ${item.ready ? "is-ready" : ""}`}>
@@ -720,10 +854,12 @@ function Lobby({
       <footer className="lobby-footer">
         <p className="lobby-role-help">
           {isHost
-            ? "Você é o anfitrião: convide o grupo e inicie quando todos estiverem prontos."
+            ? currentPlayer.ready
+              ? "Você é o anfitrião. Quando todo o grupo estiver pronto, inicie a jornada."
+              : "Você é o anfitrião: confirme que está pronto para liberar o início da jornada."
             : "Marque-se como pronto quando puder começar. O anfitrião controla o início e as transições."}
         </p>
-        {!isHost && (
+        {!isHost ? (
           <button
             className={
               currentPlayer.ready ? "secondary-button" : "primary-button"
@@ -735,6 +871,17 @@ function Lobby({
             }
           >
             {currentPlayer.ready ? "Ainda não estou pronto" : "Estou pronto"}
+          </button>
+        ) : currentPlayer.ready ? (
+          <span className="ready-chip is-ready">✓ Você está pronto</span>
+        ) : (
+          <button
+            className="primary-button"
+            onClick={() =>
+              void invoke(() => setReady({ roomId: room.id, ready: true }))
+            }
+          >
+            Estou pronto
           </button>
         )}
         {isHost && (
@@ -855,12 +1002,43 @@ function GameBoard({
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
   const [actionPending, setActionPending] = useState(false);
-  const isHost = currentPlayer.role === "HOST";
+  const isHost = sameIdentity(currentPlayer.identity, room.ownerIdentity);
+  const [productType, setProductType] = useState<ProductType>("digital");
+  const [copilotSuggestion, setCopilotSuggestion] = useState("");
+  useEffect(() => {
+    setRoundStartedAt(stageSession?.updatedAt.toDate().getTime() ?? Date.now());
+    setClock(Date.now());
+    const interval = window.setInterval(() => setClock(Date.now()), 1000);
+    return () => window.clearInterval(interval);
+  }, [stage, phase, stageSession?.updatedAt]);
+
+  useEffect(() => {
+    if (stage === "PROTOTYPE") {
+      setProductType("digital");
+      setCopilotSuggestion("");
+    }
+  }, [stage]);
+  const [suggesting, setSuggesting] = useState(false);
+  const [clock, setClock] = useState(() => Date.now());
+  const [roundStartedAt, setRoundStartedAt] = useState(() => Date.now());
+  const roundSeconds = roundDuration(stage, phase, collaborative);
+  const secondsLeft = Math.max(
+    0,
+    roundSeconds - Math.floor((clock - roundStartedAt) / 1000),
+  );
+  const timeExpired = secondsLeft === 0;
 
   useEffect(() => {
     setDraft(ownContribution?.content ?? "");
   }, [ownContribution?.content, stage]);
 
+  function requestPrototypeSuggestion() {
+    setSuggesting(true);
+    window.setTimeout(() => {
+      setCopilotSuggestion(prototypeSuggestion(productType, draft));
+      setSuggesting(false);
+    }, 450);
+  }
   async function saveContribution(event: FormEvent) {
     event.preventDefault();
     setSaving(true);
@@ -961,6 +1139,20 @@ function GameBoard({
         </article>
 
         <article className="contribution-panel">
+          <section
+            className={`round-timer ${timeExpired ? "is-expired" : ""}`}
+            aria-label="Tempo da rodada"
+          >
+            <div>
+              <span>Tempo da rodada</span>
+              <strong aria-live="polite">{formatSeconds(secondsLeft)}</strong>
+            </div>
+            <p>
+              {timeExpired
+                ? "O tempo acabou. Fechem a ideia em uma frase."
+                : "Um pequeno limite deixa a conversa em movimento."}
+            </p>
+          </section>
           {collaborative && (
             <div className="phase-ribbon" aria-label="Fase da decisão coletiva">
               {COLLABORATIVE_PHASES.map((item, index) => {
@@ -1001,6 +1193,63 @@ function GameBoard({
             </div>
           )}
           <StageMission stage={stage} />
+          {stage === "PROTOTYPE" && phase === "CONTRIBUTING" && (
+            <section
+              className="prototype-direction"
+              aria-labelledby="format-title"
+            >
+              <div className="prototype-direction-heading">
+                <div>
+                  <p className="kicker">Escolha em um toque</p>
+                  <h2 id="format-title">Que tipo de ideia e essa?</h2>
+                </div>
+                <span>Sem formulario extra</span>
+              </div>
+              <div className="product-type-grid">
+                {PRODUCT_TYPES.map((option) => (
+                  <button
+                    type="button"
+                    key={option.id}
+                    className={`product-type ${productType === option.id ? "is-selected" : ""}`}
+                    aria-pressed={productType === option.id}
+                    onClick={() => {
+                      setProductType(option.id);
+                      setCopilotSuggestion("");
+                    }}
+                  >
+                    <b aria-hidden="true">{option.icon}</b>
+                    <strong>{option.label}</strong>
+                    <small>{option.hint}</small>
+                  </button>
+                ))}
+              </div>
+              <div className="copilot-row">
+                <div>
+                  <strong>Copiloto de ideia</strong>
+                  <span>
+                    Uma ideia curta para fazer, testar ou encenar agora.
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  className="copilot-button"
+                  disabled={suggesting}
+                  onClick={requestPrototypeSuggestion}
+                >
+                  {suggesting ? "Pensando..." : "Pedir sugestao"}
+                </button>
+              </div>
+              {copilotSuggestion && (
+                <p className="copilot-suggestion" aria-live="polite">
+                  {copilotSuggestion}
+                </p>
+              )}
+              <small className="copilot-note">
+                Simulacao local do copiloto; pronta para virar uma chamada com
+                AI SDK.
+              </small>
+            </section>
+          )}
           <div className="section-heading">
             <div>
               <p className="kicker">
@@ -1393,7 +1642,7 @@ function JourneyResult({
   const [busyAction, setBusyAction] = useState<string>();
   const [notice, setNotice] = useState("");
   const [error, setError] = useState("");
-  const isHost = currentPlayer.role === "HOST";
+  const isHost = sameIdentity(currentPlayer.identity, room.ownerIdentity);
   const journeyIdentity = {
     title,
     summary,

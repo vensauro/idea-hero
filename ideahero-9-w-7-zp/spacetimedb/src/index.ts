@@ -572,6 +572,9 @@ export const join_room = spacetimedb.reducer(
         ...existingPlayer,
         displayName: currentProfile.displayName,
         avatarId: currentProfile.avatarId,
+        role: existingRoom.ownerIdentity.isEqual(ctx.sender)
+          ? "HOST"
+          : "PLAYER",
         online: true,
         active: true,
       });
@@ -1315,7 +1318,10 @@ export const leave_room = spacetimedb.reducer(
           : 1,
       );
 
-    if (currentPlayer.role === "HOST" && remainingPlayers.length > 0) {
+    if (
+      currentRoom.ownerIdentity.isEqual(ctx.sender) &&
+      remainingPlayers.length > 0
+    ) {
       const nextHost = remainingPlayers[0];
       ctx.db.player.id.update({ ...nextHost, role: "HOST" });
       ctx.db.room.id.update({
