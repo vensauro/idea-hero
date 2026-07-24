@@ -21,4 +21,5 @@ export default __t.row({
   online: __t.bool(),
   points: __t.u32(),
   joinedAt: __t.timestamp().name("joined_at"),
+  active: __t.bool(),
 });

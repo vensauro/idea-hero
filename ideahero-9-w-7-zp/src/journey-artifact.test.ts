@@ -18,6 +18,7 @@ const artifact: JourneyArtifactInput = {
   journey: {
     title: "Cidade que Cuida",
     summary: "Uma rede comunitária que transforma cuidado em ação local.",
+    publicId: "journey-42",
   },
   room: { code: "ideia-teste" },
   players: [
@@ -70,8 +71,8 @@ describe("artefato compartilhável da jornada", () => {
     expect(journeyFilename("  Inovação & Cuidado!  ")).toBe(
       "idea-hero-inovacao-cuidado.md",
     );
-    expect(buildJourneyShareText(artifact.journey, artifact.room.code)).toBe(
-      "Cidade que Cuida\n\nUma rede comunitária que transforma cuidado em ação local.\n\nUma jornada criada na sala ideia-teste com IDEA HERO.",
+    expect(buildJourneyShareText(artifact.journey)).toBe(
+      "Cidade que Cuida\n\nUma rede comunitária que transforma cuidado em ação local.\n\nJornada journey-42 criada com IDEA HERO.",
     );
   });
 });

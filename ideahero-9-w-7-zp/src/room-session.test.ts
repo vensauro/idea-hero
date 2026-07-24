@@ -12,6 +12,14 @@ describe("recuperação de sala", () => {
     expect(current?.value).toBe("jornada-atual");
   });
 
+  it("ignora uma participação que a pessoa encerrou", () => {
+    const current = latestOpenSession([
+      { status: "ACTIVE", joinedAt: 20, active: false, value: "antiga" },
+      { status: "LOBBY", joinedAt: 10, active: true, value: "nova" },
+    ]);
+
+    expect(current?.value).toBe("nova");
+  });
   it("não recupera nada quando todas as jornadas foram concluídas", () => {
     expect(
       latestOpenSession([{ status: "FINISHED", joinedAt: 1, value: 1 }]),

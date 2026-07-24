@@ -14,6 +14,7 @@ const BOARD_STATES = [
 ] as const;
 
 const COLLABORATIVE_STAGES = new Set<string>(BOARD_STATES.slice(0, 4));
+const MIN_PLAYERS = 2;
 const ROOM_CODE_TTL_MICROS = 24n * 60n * 60n * 1_000_000n;
 
 const profile = table(
@@ -65,6 +66,8 @@ const player = table(
     online: t.bool(),
     points: t.u32(),
     joinedAt: t.timestamp(),
+    // Preserve attribution after someone leaves a room.
+    active: t.bool().default(true),
   },
 );
 
@@ -77,6 +80,25 @@ const contribution = table(
     authorIdentity: t.identity().index("btree"),
     kind: t.string(),
     content: t.string(),
+    createdAt: t.timestamp(),
+    updatedAt: t.timestamp(),
+  },
+);
+
+const prototypeSubmission = table(
+  { name: "prototype_submission" },
+  {
+    id: t.u64().primaryKey().autoInc(),
+    roomId: t.u64().index("btree"),
+    authorIdentity: t.identity().index("btree"),
+    showing: t.string(),
+    targetUser: t.string(),
+    storyboardStep1: t.string(),
+    storyboardStep2: t.string(),
+    storyboardStep3: t.string(),
+    hypothesis: t.string(),
+    resources: t.string(),
+    smallestVersion: t.string(),
     createdAt: t.timestamp(),
     updatedAt: t.timestamp(),
   },
@@ -149,11 +171,12 @@ const journey = table(
   {
     id: t.u64().primaryKey().autoInc(),
     roomId: t.u64().unique(),
-    publicId: t.string().optional(),
     title: t.string(),
     summary: t.string(),
     createdAt: t.timestamp(),
     updatedAt: t.timestamp(),
+    // Must remain last with a default so existing Maincloud rows can migrate.
+    publicId: t.string().default(""),
   },
 );
 
@@ -188,6 +211,7 @@ const spacetimedb = schema({
   roomCode,
   player,
   contribution,
+  prototypeSubmission,
   card,
   cardDraw,
   stageSession,
@@ -209,6 +233,7 @@ export const member_rooms = spacetimedb.view(
   (ctx) => {
     const rooms = [];
     for (const membership of ctx.db.player.identity.filter(ctx.sender)) {
+      if (!membership.active) continue;
       const currentRoom = ctx.db.room.id.find(membership.roomId);
       if (currentRoom) rooms.push(currentRoom);
     }
@@ -222,9 +247,24 @@ export const room_players = spacetimedb.view(
   (ctx) => {
     const players = [];
     for (const membership of ctx.db.player.identity.filter(ctx.sender)) {
+      if (!membership.active) continue;
       players.push(...ctx.db.player.roomId.filter(membership.roomId));
     }
     return players;
+  },
+);
+
+export const room_prototypes = spacetimedb.view(
+  { name: "room_prototypes", public: true },
+  t.array(prototypeSubmission.rowType),
+  (ctx) => {
+    const prototypes = [];
+    for (const membership of ctx.db.player.identity.filter(ctx.sender)) {
+      prototypes.push(
+        ...ctx.db.prototypeSubmission.roomId.filter(membership.roomId),
+      );
+    }
+    return prototypes;
   },
 );
 
@@ -234,6 +274,7 @@ export const room_card_draws = spacetimedb.view(
   (ctx) => {
     const draws = [];
     for (const membership of ctx.db.player.identity.filter(ctx.sender)) {
+      if (!membership.active) continue;
       draws.push(...ctx.db.cardDraw.roomId.filter(membership.roomId));
     }
     return draws;
@@ -246,6 +287,7 @@ export const room_stage_sessions = spacetimedb.view(
   (ctx) => {
     const sessions = [];
     for (const membership of ctx.db.player.identity.filter(ctx.sender)) {
+      if (!membership.active) continue;
       sessions.push(...ctx.db.stageSession.roomId.filter(membership.roomId));
     }
     return sessions;
@@ -258,6 +300,7 @@ export const visible_contributions = spacetimedb.view(
   (ctx) => {
     const visible = [];
     for (const membership of ctx.db.player.identity.filter(ctx.sender)) {
+      if (!membership.active) continue;
       const currentRoom = ctx.db.room.id.find(membership.roomId);
       if (!currentRoom) continue;
 
@@ -293,6 +336,7 @@ export const room_contribution_status = spacetimedb.view(
   (ctx) => {
     const statuses = [];
     for (const membership of ctx.db.player.identity.filter(ctx.sender)) {
+      if (!membership.active) continue;
       for (const item of ctx.db.contribution.roomId.filter(membership.roomId)) {
         statuses.push({
           id: item.id,
@@ -311,9 +355,9 @@ export const own_votes = spacetimedb.view(
   t.array(vote.rowType),
   (ctx) => {
     const roomIds = new Set(
-      Array.from(ctx.db.player.identity.filter(ctx.sender)).map(
-        (item) => item.roomId,
-      ),
+      Array.from(ctx.db.player.identity.filter(ctx.sender))
+        .filter((item) => item.active)
+        .map((item) => item.roomId),
     );
     return Array.from(ctx.db.vote.voterIdentity.filter(ctx.sender)).filter(
       (item) => roomIds.has(item.roomId),
@@ -327,6 +371,7 @@ export const room_vote_status = spacetimedb.view(
   (ctx) => {
     const statuses = [];
     for (const membership of ctx.db.player.identity.filter(ctx.sender)) {
+      if (!membership.active) continue;
       for (const item of ctx.db.vote.roomId.filter(membership.roomId)) {
         statuses.push({
           id: item.id,
@@ -346,6 +391,7 @@ export const room_decisions = spacetimedb.view(
   (ctx) => {
     const decisions = [];
     for (const membership of ctx.db.player.identity.filter(ctx.sender)) {
+      if (!membership.active) continue;
       decisions.push(...ctx.db.decision.roomId.filter(membership.roomId));
     }
     return decisions;
@@ -358,6 +404,7 @@ export const room_journeys = spacetimedb.view(
   (ctx) => {
     const journeys = [];
     for (const membership of ctx.db.player.identity.filter(ctx.sender)) {
+      if (!membership.active) continue;
       const currentJourney = ctx.db.journey.roomId.find(membership.roomId);
       if (currentJourney) journeys.push(currentJourney);
     }
@@ -485,6 +532,7 @@ export const create_room = spacetimedb.reducer(
       online: true,
       points: 30_000,
       joinedAt: ctx.timestamp,
+      active: true,
     });
   },
 );
@@ -517,11 +565,15 @@ export const join_room = spacetimedb.reducer(
     );
 
     if (existingPlayer) {
+      if (existingRoom.status !== "LOBBY" && !existingPlayer.active) {
+        throw new SenderError("A partida já começou.");
+      }
       ctx.db.player.id.update({
         ...existingPlayer,
         displayName: currentProfile.displayName,
         avatarId: currentProfile.avatarId,
         online: true,
+        active: true,
       });
       return;
     }
@@ -531,7 +583,7 @@ export const join_room = spacetimedb.reducer(
     }
 
     const roomPlayers = [...ctx.db.player.iter()].filter(
-      (item) => item.roomId === existingRoom.id,
+      (item) => item.roomId === existingRoom.id && item.active,
     );
     if (roomPlayers.length >= 6) throw new SenderError("A sala está cheia.");
 
@@ -546,6 +598,7 @@ export const join_room = spacetimedb.reducer(
       online: true,
       points: 30_000,
       joinedAt: ctx.timestamp,
+      active: true,
     });
   },
 );
@@ -559,7 +612,10 @@ export const set_ready = spacetimedb.reducer(
     }
 
     const currentPlayer = [...ctx.db.player.iter()].find(
-      (item) => item.roomId === roomId && item.identity.isEqual(ctx.sender),
+      (item) =>
+        item.roomId === roomId &&
+        item.active &&
+        item.identity.isEqual(ctx.sender),
     );
     if (!currentPlayer) throw new SenderError("Você não pertence a esta sala.");
 
@@ -580,9 +636,14 @@ export const start_game = spacetimedb.reducer(
     }
 
     const roomPlayers = [...ctx.db.player.iter()].filter(
-      (item) => item.roomId === roomId,
+      (item) => item.roomId === roomId && item.active,
     );
-    if (roomPlayers.length === 0 || roomPlayers.some((item) => !item.ready)) {
+    if (roomPlayers.length < MIN_PLAYERS) {
+      throw new SenderError(
+        `A jornada precisa de pelo menos ${MIN_PLAYERS} participantes.`,
+      );
+    }
+    if (roomPlayers.some((item) => !item.ready)) {
       throw new SenderError("Todos os jogadores precisam estar prontos.");
     }
 
@@ -648,7 +709,10 @@ export const submit_contribution = spacetimedb.reducer(
     }
 
     const currentPlayer = [...ctx.db.player.iter()].find(
-      (item) => item.roomId === roomId && item.identity.isEqual(ctx.sender),
+      (item) =>
+        item.roomId === roomId &&
+        item.active &&
+        item.identity.isEqual(ctx.sender),
     );
     if (!currentPlayer) throw new SenderError("Você não pertence a esta sala.");
 
@@ -686,6 +750,115 @@ export const submit_contribution = spacetimedb.reducer(
       createdAt: ctx.timestamp,
       updatedAt: ctx.timestamp,
     });
+  },
+);
+
+function normalizePrototypeField(label: string, value: string) {
+  const normalized = value.trim().replace(/\s+/g, " ");
+  if (normalized.length < 2 || normalized.length > 280) {
+    throw new SenderError(`${label} deve ter entre 2 e 280 caracteres.`);
+  }
+  return normalized;
+}
+
+export const submit_prototype = spacetimedb.reducer(
+  {
+    roomId: t.u64(),
+    showing: t.string(),
+    targetUser: t.string(),
+    storyboardStep1: t.string(),
+    storyboardStep2: t.string(),
+    storyboardStep3: t.string(),
+    hypothesis: t.string(),
+    resources: t.string(),
+    smallestVersion: t.string(),
+  },
+  (ctx, input) => {
+    const currentRoom = ctx.db.room.id.find(input.roomId);
+    if (
+      !currentRoom ||
+      currentRoom.status !== "ACTIVE" ||
+      currentRoom.currentStage !== "PROTOTYPE"
+    ) {
+      throw new SenderError("A etapa de protótipo não está ativa.");
+    }
+    const currentPlayer = Array.from(
+      ctx.db.player.roomId.filter(input.roomId),
+    ).find((item) => item.active && item.identity.isEqual(ctx.sender));
+    if (!currentPlayer) throw new SenderError("Você não pertence a esta sala.");
+
+    const values = {
+      showing: normalizePrototypeField("O que vamos mostrar", input.showing),
+      targetUser: normalizePrototypeField("Quem vai usar", input.targetUser),
+      storyboardStep1: normalizePrototypeField(
+        "O primeiro passo",
+        input.storyboardStep1,
+      ),
+      storyboardStep2: normalizePrototypeField(
+        "O segundo passo",
+        input.storyboardStep2,
+      ),
+      storyboardStep3: normalizePrototypeField(
+        "O terceiro passo",
+        input.storyboardStep3,
+      ),
+      hypothesis: normalizePrototypeField(
+        "A hipótese central",
+        input.hypothesis,
+      ),
+      resources: normalizePrototypeField("Os recursos", input.resources),
+      smallestVersion: normalizePrototypeField(
+        "A menor versão",
+        input.smallestVersion,
+      ),
+    };
+    const existing = Array.from(
+      ctx.db.prototypeSubmission.roomId.filter(input.roomId),
+    ).find((item) => item.authorIdentity.isEqual(ctx.sender));
+    if (existing) {
+      ctx.db.prototypeSubmission.id.update({
+        ...existing,
+        ...values,
+        updatedAt: ctx.timestamp,
+      });
+    } else {
+      ctx.db.prototypeSubmission.insert({
+        id: 0n,
+        roomId: input.roomId,
+        authorIdentity: ctx.sender,
+        ...values,
+        createdAt: ctx.timestamp,
+        updatedAt: ctx.timestamp,
+      });
+    }
+
+    const summary = `${values.showing} — para ${values.targetUser}. Menor versão: ${values.smallestVersion}`;
+    const existingContribution = Array.from(
+      ctx.db.contribution.roomId.filter(input.roomId),
+    ).find(
+      (item) =>
+        item.stage === "PROTOTYPE" &&
+        item.kind === "MAIN" &&
+        item.authorIdentity.isEqual(ctx.sender),
+    );
+    if (existingContribution) {
+      ctx.db.contribution.id.update({
+        ...existingContribution,
+        content: summary,
+        updatedAt: ctx.timestamp,
+      });
+    } else {
+      ctx.db.contribution.insert({
+        id: 0n,
+        roomId: input.roomId,
+        stage: "PROTOTYPE",
+        authorIdentity: ctx.sender,
+        kind: "MAIN",
+        content: summary,
+        createdAt: ctx.timestamp,
+        updatedAt: ctx.timestamp,
+      });
+    }
   },
 );
 
@@ -760,7 +933,10 @@ export const cast_vote = spacetimedb.reducer(
     }
 
     const currentPlayer = [...ctx.db.player.iter()].find(
-      (item) => item.roomId === roomId && item.identity.isEqual(ctx.sender),
+      (item) =>
+        item.roomId === roomId &&
+        item.active &&
+        item.identity.isEqual(ctx.sender),
     );
     if (!currentPlayer) throw new SenderError("Você não pertence a esta sala.");
 
@@ -1081,7 +1257,10 @@ export const update_journey = spacetimedb.reducer(
       );
     }
     const currentPlayer = [...ctx.db.player.iter()].find(
-      (item) => item.roomId === roomId && item.identity.isEqual(ctx.sender),
+      (item) =>
+        item.roomId === roomId &&
+        item.active &&
+        item.identity.isEqual(ctx.sender),
     );
     if (!currentPlayer) {
       throw new SenderError("Você não pertence a esta sala.");
@@ -1093,7 +1272,7 @@ export const update_journey = spacetimedb.reducer(
     if (currentJourney) {
       ctx.db.journey.id.update({
         ...currentJourney,
-        publicId: currentJourney.publicId ?? journeyPublicId(roomId),
+        publicId: currentJourney.publicId || journeyPublicId(roomId),
         title: normalizedTitle,
         summary: normalizedSummary,
         updatedAt: ctx.timestamp,
@@ -1113,23 +1292,57 @@ export const update_journey = spacetimedb.reducer(
   },
 );
 
-export const leave_finished_room = spacetimedb.reducer(
+export const leave_room = spacetimedb.reducer(
   { roomId: t.u64() },
   (ctx, { roomId }) => {
     const currentRoom = ctx.db.room.id.find(roomId);
-    if (!currentRoom || currentRoom.status !== "FINISHED") {
-      throw new SenderError("Você só pode sair depois de concluir a jornada.");
-    }
+    if (!currentRoom) throw new SenderError("Sala não encontrada.");
     const currentPlayer = [...ctx.db.player.iter()].find(
-      (item) => item.roomId === roomId && item.identity.isEqual(ctx.sender),
+      (item) =>
+        item.roomId === roomId &&
+        item.active &&
+        item.identity.isEqual(ctx.sender),
     );
     if (!currentPlayer) {
       throw new SenderError("Você não pertence a esta sala.");
     }
-    ctx.db.player.delete(currentPlayer);
+
+    const remainingPlayers = [...ctx.db.player.roomId.filter(roomId)]
+      .filter((item) => item.active && item.id !== currentPlayer.id)
+      .sort((left, right) =>
+        left.joinedAt.microsSinceUnixEpoch < right.joinedAt.microsSinceUnixEpoch
+          ? -1
+          : 1,
+      );
+
+    if (currentPlayer.role === "HOST" && remainingPlayers.length > 0) {
+      const nextHost = remainingPlayers[0];
+      ctx.db.player.id.update({ ...nextHost, role: "HOST" });
+      ctx.db.room.id.update({
+        ...currentRoom,
+        ownerIdentity: nextHost.identity,
+        updatedAt: ctx.timestamp,
+      });
+    } else if (remainingPlayers.length === 0) {
+      const activeInvite = ctx.db.roomCode.code.find(currentRoom.code);
+      if (activeInvite?.roomId === roomId) {
+        ctx.db.roomCode.code.delete(activeInvite.code);
+      }
+      ctx.db.room.id.update({
+        ...currentRoom,
+        status: "FINISHED",
+        updatedAt: ctx.timestamp,
+      });
+    }
+
+    ctx.db.player.id.update({
+      ...currentPlayer,
+      active: false,
+      online: false,
+      ready: false,
+    });
   },
 );
-
 export const init = spacetimedb.init((ctx) => {
   for (const catalogCard of CARD_CATALOG) {
     ctx.db.card.insert({
@@ -1165,7 +1378,7 @@ export const onConnect = spacetimedb.clientConnected((ctx) => {
   }
 
   for (const currentPlayer of ctx.db.player.iter()) {
-    if (currentPlayer.identity.isEqual(ctx.sender)) {
+    if (currentPlayer.active && currentPlayer.identity.isEqual(ctx.sender)) {
       ctx.db.player.id.update({ ...currentPlayer, online: true });
     }
   }

@@ -20,7 +20,7 @@ const ARTIFACT_STAGES = [
 ] as const;
 
 export type JourneyArtifactInput = {
-  journey: Pick<Journey, "title" | "summary">;
+  journey: Pick<Journey, "title" | "summary" | "publicId">;
   room: Pick<Room, "code">;
   players: readonly Pick<Player, "identity" | "displayName">[];
   contributions: readonly Pick<
@@ -63,7 +63,7 @@ export function buildJourneyMarkdown(input: JourneyArtifactInput) {
     "",
     cleanText(input.journey.summary),
     "",
-    `**Sala:** ${input.room.code}`,
+    `**Jornada:** ${input.journey.publicId}`,
     `**Heróis:** ${input.players.map((player) => player.displayName).join(", ")}`,
     "",
     "---",
@@ -113,15 +113,14 @@ export function buildJourneyMarkdown(input: JourneyArtifactInput) {
 }
 
 export function buildJourneyShareText(
-  journey: Pick<Journey, "title" | "summary">,
-  roomCode: string,
+  journey: Pick<Journey, "title" | "summary" | "publicId">,
 ) {
   return [
     cleanText(journey.title),
     "",
     cleanText(journey.summary),
     "",
-    `Uma jornada criada na sala ${roomCode} com IDEA HERO.`,
+    `Jornada ${journey.publicId} criada com IDEA HERO.`,
   ].join("\n");
 }
 

@@ -13,9 +13,15 @@ import {
 export default __t.row({
   id: __t.u64().primaryKey(),
   roomId: __t.u64().name("room_id"),
-  title: __t.string(),
-  summary: __t.string(),
+  authorIdentity: __t.identity().name("author_identity"),
+  showing: __t.string(),
+  targetUser: __t.string().name("target_user"),
+  storyboardStep1: __t.string().name("storyboard_step_1"),
+  storyboardStep2: __t.string().name("storyboard_step_2"),
+  storyboardStep3: __t.string().name("storyboard_step_3"),
+  hypothesis: __t.string(),
+  resources: __t.string(),
+  smallestVersion: __t.string().name("smallest_version"),
   createdAt: __t.timestamp().name("created_at"),
   updatedAt: __t.timestamp().name("updated_at"),
-  publicId: __t.string().name("public_id"),
 });

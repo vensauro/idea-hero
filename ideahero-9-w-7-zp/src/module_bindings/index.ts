@@ -39,13 +39,14 @@ import CastVoteReducer from "./cast_vote_reducer";
 import CreateRoomReducer from "./create_room_reducer";
 import EndJourneyReducer from "./end_journey_reducer";
 import JoinRoomReducer from "./join_room_reducer";
-import LeaveFinishedRoomReducer from "./leave_finished_room_reducer";
+import LeaveRoomReducer from "./leave_room_reducer";
 import OpenVotingReducer from "./open_voting_reducer";
 import ResolveStageReducer from "./resolve_stage_reducer";
 import SetProfileReducer from "./set_profile_reducer";
 import SetReadyReducer from "./set_ready_reducer";
 import StartGameReducer from "./start_game_reducer";
 import SubmitContributionReducer from "./submit_contribution_reducer";
+import SubmitPrototypeReducer from "./submit_prototype_reducer";
 import UpdateJourneyReducer from "./update_journey_reducer";
 
 // Import all procedure arg schemas
@@ -60,6 +61,7 @@ import RoomContributionStatusRow from "./room_contribution_status_table";
 import RoomDecisionsRow from "./room_decisions_table";
 import RoomJourneysRow from "./room_journeys_table";
 import RoomPlayersRow from "./room_players_table";
+import RoomPrototypesRow from "./room_prototypes_table";
 import RoomStageSessionsRow from "./room_stage_sessions_table";
 import RoomVoteStatusRow from "./room_vote_status_table";
 import VisibleContributionsRow from "./visible_contributions_table";
@@ -138,6 +140,13 @@ const tablesSchema = __schema({
     constraints: [
     ],
   }, RoomPlayersRow),
+  room_prototypes: __table({
+    name: 'room_prototypes',
+    indexes: [
+    ],
+    constraints: [
+    ],
+  }, RoomPrototypesRow),
   room_stage_sessions: __table({
     name: 'room_stage_sessions',
     indexes: [
@@ -168,13 +177,14 @@ const reducersSchema = __reducers(
   __reducerSchema("create_room", CreateRoomReducer),
   __reducerSchema("end_journey", EndJourneyReducer),
   __reducerSchema("join_room", JoinRoomReducer),
-  __reducerSchema("leave_finished_room", LeaveFinishedRoomReducer),
+  __reducerSchema("leave_room", LeaveRoomReducer),
   __reducerSchema("open_voting", OpenVotingReducer),
   __reducerSchema("resolve_stage", ResolveStageReducer),
   __reducerSchema("set_profile", SetProfileReducer),
   __reducerSchema("set_ready", SetReadyReducer),
   __reducerSchema("start_game", StartGameReducer),
   __reducerSchema("submit_contribution", SubmitContributionReducer),
+  __reducerSchema("submit_prototype", SubmitPrototypeReducer),
   __reducerSchema("update_journey", UpdateJourneyReducer),
 );
 
@@ -234,3 +244,4 @@ export class DbConnection extends __DbConnectionImpl<typeof REMOTE_MODULE> {
     return new SubscriptionBuilder(this);
   };
 }
+

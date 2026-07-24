@@ -10,12 +10,14 @@ import {
   type Infer as __Infer,
 } from "spacetimedb";
 
-export default __t.row({
-  id: __t.u64().primaryKey(),
-  roomId: __t.u64().name("room_id"),
-  title: __t.string(),
-  summary: __t.string(),
-  createdAt: __t.timestamp().name("created_at"),
-  updatedAt: __t.timestamp().name("updated_at"),
-  publicId: __t.string().name("public_id"),
-});
+export default {
+  roomId: __t.u64(),
+  showing: __t.string(),
+  targetUser: __t.string(),
+  storyboardStep1: __t.string(),
+  storyboardStep2: __t.string(),
+  storyboardStep3: __t.string(),
+  hypothesis: __t.string(),
+  resources: __t.string(),
+  smallestVersion: __t.string(),
+};

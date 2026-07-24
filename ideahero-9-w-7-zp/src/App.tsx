@@ -53,6 +53,7 @@ export const COLLABORATIVE_PHASES = [
   "VOTING",
   "REVIEW",
 ] as const;
+const MIN_PLAYERS = 2;
 
 const STAGE_CONTENT: Record<
   BoardState,
@@ -209,7 +210,7 @@ function App() {
       value: { player: Player; room: Room };
     }> = [];
     for (const player of players) {
-      if (!sameIdentity(player.identity, identity)) continue;
+      if (!player.active || !sameIdentity(player.identity, identity)) continue;
       const memberRoom = rooms.find((item) => item.id === player.roomId);
       if (!memberRoom) continue;
       sessions.push({
@@ -262,7 +263,11 @@ function App() {
     return <RoomEntry displayName={currentProfile.displayName} />;
   }
 
-  const roomPlayers = players.filter((item) => item.roomId === currentRoom.id);
+  const roomPlayers = players.filter(
+    (item) =>
+      item.roomId === currentRoom.id &&
+      (currentRoom.status === "FINISHED" || item.active),
+  );
   const roomContributions = contributions.filter(
     (item) => item.roomId === currentRoom.id,
   );
@@ -307,6 +312,63 @@ function LoadingScreen({ label }: { label: string }) {
       <BrandLogo />
       <p>{label}</p>
     </main>
+  );
+}
+
+function LeaveRoomButton({
+  room,
+  currentPlayer,
+}: {
+  room: Room;
+  currentPlayer: Player;
+}) {
+  const leaveRoom = useReducer(reducers.leaveRoom);
+  const [leaving, setLeaving] = useState(false);
+  const [error, setError] = useState("");
+
+  async function handleLeave() {
+    const hostNote =
+      currentPlayer.role === "HOST"
+        ? " O controle passará para a pessoa que entrou primeiro."
+        : "";
+    if (
+      !window.confirm(
+        `Sair desta jornada? Você voltará ao início e seu histórico será preservado.${hostNote}`,
+      )
+    ) {
+      return;
+    }
+
+    setLeaving(true);
+    setError("");
+    try {
+      await leaveRoom({ roomId: room.id });
+      window.history.replaceState(
+        null,
+        "",
+        clearRoomInviteUrl(window.location.href),
+      );
+    } catch (caught) {
+      setError(errorMessage(caught));
+      setLeaving(false);
+    }
+  }
+
+  return (
+    <div className="leave-room-control">
+      <button
+        className="leave-room-button"
+        disabled={leaving}
+        onClick={() => void handleLeave()}
+      >
+        {leaving ? "Saindo…" : "Sair da jornada"}
+      </button>
+      {error && (
+        <span className="leave-room-error" role="alert">
+          {error}
+        </span>
+      )}
+    </div>
   );
 }
 
@@ -523,7 +585,11 @@ function Lobby({
   const [error, setError] = useState("");
   const [copied, setCopied] = useState(false);
   const isHost = currentPlayer.role === "HOST";
-  const allReady = players.length > 0 && players.every((item) => item.ready);
+  const enoughPlayers = players.length >= MIN_PLAYERS;
+  const allReady = enoughPlayers && players.every((item) => item.ready);
+  const readyCount = players.filter((item) => item.ready).length;
+  const waitingForPlayers = Math.max(0, MIN_PLAYERS - players.length);
+  const waitingForReady = players.filter((item) => !item.ready);
 
   async function invoke(action: () => Promise<unknown>) {
     setError("");
@@ -561,34 +627,73 @@ function Lobby({
     <main className="app-shell lobby-page">
       <header className="topbar">
         <BrandLogo compact />
-        <span className="connection-status">● Sincronizado</span>
+        <div className="topbar-actions">
+          <span className="connection-status">● Sincronizado</span>
+          <LeaveRoomButton room={room} currentPlayer={currentPlayer} />
+        </div>
       </header>
 
       <section className="lobby-hero">
         <p className="kicker">Sala de preparação</p>
-        <h1>A aventura começa com o grupo</h1>
-        <p>Compartilhe o convite e espere todo mundo ficar pronto.</p>
+        <h1>
+          {enoughPlayers
+            ? "O grupo está se formando"
+            : "Esperando mais um herói"}
+        </h1>
+        <p>
+          {enoughPlayers
+            ? "Quando todos estiverem prontos, o anfitrião começa a jornada."
+            : `Convide pelo menos mais ${waitingForPlayers} ${
+                waitingForPlayers === 1 ? "pessoa" : "pessoas"
+              } para começar.`}
+        </p>
 
         <button className="room-code" onClick={() => void shareInvite()}>
+          <small className="invite-action">Toque para enviar o convite</small>
           <span>{room.code}</span>
           <small>
-            {copied ? "Convite compartilhado!" : "Compartilhar convite"}
+            {copied
+              ? "✓ Convite compartilhado ou copiado"
+              : "Compartilhar ou copiar link"}
           </small>
         </button>
         <small className="invite-help">
-          O link já leva cada pessoa para esta sala.
+          O link abre diretamente esta sala e expira quando a jornada termina.
         </small>
       </section>
 
       <section className="players-panel" aria-labelledby="players-title">
         <div className="section-heading">
           <div>
-            <p className="kicker">2–6 participantes</p>
+            <p className="kicker">Mínimo 2 · máximo 6</p>
             <h2 id="players-title">Heróis na sala</h2>
           </div>
           <span>
-            {players.filter((item) => item.ready).length}/{players.length}{" "}
-            prontos
+            {readyCount}/{players.length} prontos
+          </span>
+        </div>
+
+        <div
+          className={`lobby-status ${allReady ? "is-ready" : ""}`}
+          role="status"
+        >
+          <strong>
+            {!enoughPlayers
+              ? "Aguardando participantes"
+              : allReady
+                ? "Tudo pronto para começar"
+                : "Aguardando confirmações"}
+          </strong>
+          <span>
+            {!enoughPlayers
+              ? `A jornada é colaborativa e começa com ${MIN_PLAYERS} pessoas.`
+              : allReady
+                ? "O anfitrião já pode abrir a primeira etapa."
+                : `${waitingForReady.map((item) => item.displayName).join(", ")} ${
+                    waitingForReady.length === 1
+                      ? "ainda está se preparando"
+                      : "ainda estão se preparando"
+                  }.`}
           </span>
         </div>
 
@@ -613,6 +718,11 @@ function Lobby({
       </section>
 
       <footer className="lobby-footer">
+        <p className="lobby-role-help">
+          {isHost
+            ? "Você é o anfitrião: convide o grupo e inicie quando todos estiverem prontos."
+            : "Marque-se como pronto quando puder começar. O anfitrião controla o início e as transições."}
+        </p>
         {!isHost && (
           <button
             className={
@@ -633,7 +743,11 @@ function Lobby({
             disabled={!allReady}
             onClick={() => void invoke(() => startGame({ roomId: room.id }))}
           >
-            {allReady ? "Começar a jornada" : "Esperando o grupo"}
+            {!enoughPlayers
+              ? `Falta ${waitingForPlayers} participante`
+              : allReady
+                ? "Começar a jornada"
+                : "Esperando todos ficarem prontos"}
           </button>
         )}
         {error && <p className="error-message">{error}</p>}
@@ -741,7 +855,6 @@ function GameBoard({
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
   const [actionPending, setActionPending] = useState(false);
-  const [journeyOpen, setJourneyOpen] = useState(false);
   const isHost = currentPlayer.role === "HOST";
 
   useEffect(() => {
@@ -799,13 +912,10 @@ function GameBoard({
     <main className="game-shell">
       <header className="game-header">
         <BrandLogo compact />
-        <div className="room-pill">Sala {room.code}</div>
-        <button
-          className="journey-toggle"
-          onClick={() => setJourneyOpen((value) => !value)}
-        >
-          {journeyOpen ? "Fechar jornada" : "Ver jornada"}
-        </button>
+        <div className="topbar-actions">
+          <div className="room-pill">Sala {room.code}</div>
+          <LeaveRoomButton room={room} currentPlayer={currentPlayer} />
+        </div>
       </header>
 
       <nav className="stage-progress" aria-label="Progresso da jornada">
@@ -833,14 +943,12 @@ function GameBoard({
         ))}
       </section>
 
-      {journeyOpen && (
-        <JourneySummary
-          room={room}
-          contributions={contributions}
-          players={players}
-          decisions={decisions}
-        />
-      )}
+      <JourneySummary
+        room={room}
+        contributions={contributions}
+        players={players}
+        decisions={decisions}
+      />
 
       <section className="stage-layout">
         <article className="stage-intro">
@@ -871,6 +979,27 @@ function GameBoard({
               })}
             </div>
           )}
+          {collaborative && (
+            <div
+              className={`phase-callout phase-${phase.toLowerCase()}`}
+              role="status"
+            >
+              <strong>
+                {phase === "CONTRIBUTING"
+                  ? "Crie sem influência"
+                  : phase === "VOTING"
+                    ? "As ideias foram abertas"
+                    : "A escolha agora faz parte da jornada"}
+              </strong>
+              <span>
+                {phase === "CONTRIBUTING"
+                  ? "Cada pessoa escreve em particular. O grupo vê apenas quem já terminou."
+                  : phase === "VOTING"
+                    ? "Leia todas as propostas sem autoria e escolha a que melhor conduz a etapa."
+                    : "Veja a síntese escolhida, reconheça a autoria e prepare-se para avançar."}
+              </span>
+            </div>
+          )}
           <StageMission stage={stage} />
           <div className="section-heading">
             <div>
@@ -896,34 +1025,91 @@ function GameBoard({
             </span>
           </div>
 
+          {collaborative && phase !== "REVIEW" && (
+            <div
+              className="participant-progress"
+              aria-label="Progresso do grupo"
+            >
+              {onlinePlayers.map((player) => {
+                const complete =
+                  phase === "VOTING"
+                    ? activeStageVotes.some((item) =>
+                        sameIdentity(item.voterIdentity, player.identity),
+                      )
+                    : contributingPlayers.some((item) =>
+                        sameIdentity(item.identity, player.identity),
+                      );
+                return (
+                  <span
+                    className={complete ? "is-complete" : ""}
+                    key={player.id.toString()}
+                  >
+                    <b aria-hidden="true">
+                      {AVATAR_GLYPHS[player.avatarId] ?? "✦"}
+                    </b>
+                    {player.displayName}
+                    <small>
+                      {complete
+                        ? phase === "VOTING"
+                          ? "votou"
+                          : "enviou"
+                        : phase === "VOTING"
+                          ? "escolhendo"
+                          : "criando"}
+                    </small>
+                  </span>
+                );
+              })}
+            </div>
+          )}
+
           {phase === "CONTRIBUTING" && (
-            <form onSubmit={saveContribution} className="contribution-form">
-              <label className="sr-only" htmlFor="contribution">
-                Sua contribuição
-              </label>
-              <textarea
-                id="contribution"
-                value={draft}
-                onChange={(event) => setDraft(event.target.value)}
-                placeholder={guidance.placeholder}
-                minLength={2}
-                maxLength={280}
-                required
-              />
-              <div className="form-footer">
-                <div className="contribution-status" aria-live="polite">
-                  <small>{draft.length}/280</small>
-                  {ownContribution && <span>✓ Sua ideia está segura</span>}
+            <>
+              <form onSubmit={saveContribution} className="contribution-form">
+                <label className="sr-only" htmlFor="contribution">
+                  Sua contribuição
+                </label>
+                <textarea
+                  id="contribution"
+                  value={draft}
+                  onChange={(event) => setDraft(event.target.value)}
+                  placeholder={guidance.placeholder}
+                  minLength={2}
+                  maxLength={280}
+                  required
+                />
+                <div className="form-footer">
+                  <div className="contribution-status" aria-live="polite">
+                    <small>{draft.length}/280</small>
+                    {ownContribution && <span>✓ Sua ideia está segura</span>}
+                  </div>
+                  <button className="primary-button" disabled={saving}>
+                    {saving
+                      ? "Salvando…"
+                      : ownContribution
+                        ? "Atualizar contribuição"
+                        : "Compartilhar ideia"}
+                  </button>
                 </div>
-                <button className="primary-button" disabled={saving}>
-                  {saving
-                    ? "Salvando…"
-                    : ownContribution
-                      ? "Atualizar contribuição"
-                      : "Compartilhar ideia"}
-                </button>
-              </div>
-            </form>
+              </form>
+              {ownContribution && (
+                <div className="submission-waiting" aria-live="polite">
+                  <span aria-hidden="true">✓</span>
+                  <div>
+                    <strong>Sua contribuição está guardada em segredo.</strong>
+                    <p>
+                      {groupReady
+                        ? isHost
+                          ? "Todos terminaram. Abra a votação quando o grupo estiver atento."
+                          : "Todos terminaram. O anfitrião vai abrir a votação."
+                        : `Enquanto o grupo termina, você ainda pode revisar seu texto. Faltam ${
+                            onlinePlayers.length - contributingPlayers.length
+                          }.`}
+                    </p>
+                  </div>
+                </div>
+              )}
+            </>
           )}
 
           {phase === "VOTING" && (
@@ -1072,14 +1258,23 @@ function GameBoard({
             </button>
           )}
           {isHost && (
-            <button
-              type="button"
-              className="quiet-button"
-              disabled={actionPending}
-              onClick={endJourneyEarly}
-            >
-              Encerrar jornada agora
-            </button>
+            <aside className="host-end-panel" aria-label="Opções do anfitrião">
+              <div>
+                <strong>Precisa parar a atividade?</strong>
+                <span>
+                  Salva o progresso parcial e encerra esta jornada para todo o
+                  grupo.
+                </span>
+              </div>
+              <button
+                type="button"
+                className="host-end-button"
+                disabled={actionPending}
+                onClick={endJourneyEarly}
+              >
+                Encerrar para todos
+              </button>
+            </aside>
           )}
           {!isHost && phase !== "VOTING" && (
             <p className="waiting-note">
@@ -1125,15 +1320,18 @@ function JourneySummary({
           const stageDecision = decisions.find(
             (item) => item.roomId === room.id && item.stage === stage,
           );
+          const isCurrent = stage === room.currentStage;
           return (
-            <section key={stage}>
+            <section className={isCurrent ? "is-current" : ""} key={stage}>
               <strong>{STAGE_CONTENT[stage].eyebrow}</strong>
               {stageDecision ? (
                 <p className="journey-decision">
                   ★ {stageDecision.summary} <em>— escolha do grupo</em>
                 </p>
               ) : entries.length === 0 ? (
-                <small>Em construção</small>
+                <small>
+                  {isCurrent ? "Estamos construindo agora" : "Em construção"}
+                </small>
               ) : (
                 entries.map((entry) => {
                   const authorIdentity = entry.authorIdentity;
@@ -1178,7 +1376,7 @@ function JourneyResult({
   currentPlayer: Player;
 }) {
   const updateJourney = useReducer(reducers.updateJourney);
-  const leaveFinishedRoom = useReducer(reducers.leaveFinishedRoom);
+  const leaveRoom = useReducer(reducers.leaveRoom);
   const solutionDecision = decisions.find(
     (item) => item.roomId === room.id && item.stage === "SOLUTION",
   );
@@ -1196,7 +1394,11 @@ function JourneyResult({
   const [notice, setNotice] = useState("");
   const [error, setError] = useState("");
   const isHost = currentPlayer.role === "HOST";
-  const manifest = { title, summary };
+  const journeyIdentity = {
+    title,
+    summary,
+    publicId: journey?.publicId || `journey-${room.id.toString(36)}`,
+  };
   const validManifest =
     title.trim().length >= 3 &&
     title.trim().length <= 80 &&
@@ -1244,7 +1446,7 @@ function JourneyResult({
   }
 
   async function shareResult() {
-    const text = buildJourneyShareText(manifest, room.code);
+    const text = buildJourneyShareText(journeyIdentity);
     if (navigator.share) {
       await runFinalAction(
         "share",
@@ -1266,7 +1468,7 @@ function JourneyResult({
       (item): item is Contribution => item.authorIdentity !== undefined,
     );
     const markdown = buildJourneyMarkdown({
-      journey: manifest,
+      journey: journeyIdentity,
       room,
       players,
       contributions: exportableContributions,
@@ -1294,7 +1496,7 @@ function JourneyResult({
     }
     const leftRoom = await runFinalAction(
       "leave",
-      () => leaveFinishedRoom({ roomId: room.id }),
+      () => leaveRoom({ roomId: room.id }),
       "Tudo pronto para uma nova jornada.",
     );
     if (leftRoom) {
@@ -1310,7 +1512,7 @@ function JourneyResult({
     <main className="result-page">
       <header className="result-topbar">
         <BrandLogo compact />
-        <span className="room-pill">Sala {room.code}</span>
+        <span className="room-pill">Jornada {journeyIdentity.publicId}</span>
       </header>
       <section className="result-hero">
         <span className="result-star" aria-hidden="true">
@@ -1322,7 +1524,7 @@ function JourneyResult({
         <p className="result-people">
           {players.length}{" "}
           {players.length === 1 ? "pessoa percorreu" : "pessoas percorreram"} as
-          oito etapas na sala {room.code}.
+          oito etapas. Identificador permanente: {journeyIdentity.publicId}.
         </p>
       </section>
 

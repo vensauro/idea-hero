@@ -67,11 +67,11 @@ export type Decision = __Infer<typeof Decision>;
 export const Journey = __t.object("Journey", {
   id: __t.u64(),
   roomId: __t.u64(),
-  publicId: __t.option(__t.string()),
   title: __t.string(),
   summary: __t.string(),
   createdAt: __t.timestamp(),
   updatedAt: __t.timestamp(),
+  publicId: __t.string(),
 });
 export type Journey = __Infer<typeof Journey>;
 
@@ -92,6 +92,7 @@ export const Player = __t.object("Player", {
   online: __t.bool(),
   points: __t.u32(),
   joinedAt: __t.timestamp(),
+  active: __t.bool(),
 });
 export type Player = __Infer<typeof Player>;
 
@@ -103,6 +104,23 @@ export const Profile = __t.object("Profile", {
   updatedAt: __t.timestamp(),
 });
 export type Profile = __Infer<typeof Profile>;
+
+export const PrototypeSubmission = __t.object("PrototypeSubmission", {
+  id: __t.u64(),
+  roomId: __t.u64(),
+  authorIdentity: __t.identity(),
+  showing: __t.string(),
+  targetUser: __t.string(),
+  storyboardStep1: __t.string(),
+  storyboardStep2: __t.string(),
+  storyboardStep3: __t.string(),
+  hypothesis: __t.string(),
+  resources: __t.string(),
+  smallestVersion: __t.string(),
+  createdAt: __t.timestamp(),
+  updatedAt: __t.timestamp(),
+});
+export type PrototypeSubmission = __Infer<typeof PrototypeSubmission>;
 
 export const Room = __t.object("Room", {
   id: __t.u64(),
@@ -139,6 +157,9 @@ export type RoomJourneys = __Infer<typeof RoomJourneys>;
 
 export const RoomPlayers = __t.object("RoomPlayers", {});
 export type RoomPlayers = __Infer<typeof RoomPlayers>;
+
+export const RoomPrototypes = __t.object("RoomPrototypes", {});
+export type RoomPrototypes = __Infer<typeof RoomPrototypes>;
 
 export const RoomStageSessions = __t.object("RoomStageSessions", {});
 export type RoomStageSessions = __Infer<typeof RoomStageSessions>;
@@ -189,3 +210,4 @@ export const VoteStatus = __t.object("VoteStatus", {
   voterIdentity: __t.identity(),
 });
 export type VoteStatus = __Infer<typeof VoteStatus>;
+
