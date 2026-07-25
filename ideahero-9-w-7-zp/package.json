@@ -4,11 +4,12 @@
   "version": "0.0.1",
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "tsc -b && vite build",
+    "dev": "react-router dev",
+    "build": "react-router build",
     "format": "prettier . --write --ignore-path .prettierignore",
     "lint": "eslint . && prettier . --check --ignore-path .prettierignore",
-    "preview": "vite preview",
+    "start": "react-router-serve build/server/index.js",
+    "preview": "npm run start",
     "test": "vitest run",
     "spacetime:build": "spacetime build --module-path spacetimedb",
     "spacetime:generate": "spacetime generate --yes --lang typescript --out-dir src/module_bindings --module-path spacetimedb && prettier --write src/module_bindings",
@@ -16,15 +17,24 @@
     "spacetime:publish": "spacetime publish ideahero-9w7zp --module-path spacetimedb --server maincloud"
   },
   "dependencies": {
-    "spacetimedb": "2.6.*",
+    "@ai-sdk/google": "^4.0.24",
+    "@react-router/node": "^7.18.1",
+    "@react-router/serve": "^7.18.1",
+    "ai": "^7.0.37",
     "react": "^18.3.1",
-    "react-dom": "^18.3.1"
+    "react-dom": "^18.3.1",
+    "react-router": "^7.18.1",
+    "spacetimedb": "2.6.*",
+    "zod": "^4.4.3",
+    "isbot": "^5"
   },
   "devDependencies": {
     "@eslint/js": "^9.17.0",
+    "@react-router/dev": "^7.18.1",
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/react": "^16.2.0",
     "@testing-library/user-event": "^14.6.1",
+    "@types/node": "^26.1.1",
     "@types/react": "^18.3.18",
     "@types/react-dom": "^18.3.5",
     "@vitejs/plugin-react": "^5.0.2",

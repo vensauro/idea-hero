@@ -1,9 +1,7 @@
 import { StrictMode } from "react";
-import { createRoot } from "react-dom/client";
-import "./index.css";
-import App from "./App.tsx";
 import { Identity } from "spacetimedb";
 import { SpacetimeDBProvider } from "spacetimedb/react";
+import App from "./App.tsx";
 import { DbConnection, ErrorContext } from "./module_bindings/index.ts";
 
 const HOST = import.meta.env.VITE_SPACETIMEDB_HOST ?? "ws://localhost:3000";
@@ -35,10 +33,12 @@ const connectionBuilder = DbConnection.builder()
   .onDisconnect(onDisconnect)
   .onConnectError(onConnectError);
 
-createRoot(document.getElementById("root")!).render(
-  <StrictMode>
-    <SpacetimeDBProvider connectionBuilder={connectionBuilder}>
-      <App />
-    </SpacetimeDBProvider>
-  </StrictMode>,
-);
+export default function ClientApp() {
+  return (
+    <StrictMode>
+      <SpacetimeDBProvider connectionBuilder={connectionBuilder}>
+        <App />
+      </SpacetimeDBProvider>
+    </StrictMode>
+  );
+}

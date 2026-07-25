@@ -8,6 +8,8 @@ export default tseslint.config(
   {
     ignores: [
       "dist",
+      "build",
+      ".react-router",
       "src/module_bindings",
       "spacetimedb/dist",
       "spacetimedb/node_modules",

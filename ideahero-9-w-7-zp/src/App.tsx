@@ -31,6 +31,7 @@ import {
 } from "./room-invite";
 import { createRoomWithAvailableCode } from "./room-code";
 import { latestOpenSession } from "./room-session";
+import { VoiceInputButton, type VoiceInputResult } from "./VoiceInputButton";
 
 export const BOARD_STATES = [
   "SCENARIO",
@@ -1005,6 +1006,7 @@ function GameBoard({
   const isHost = sameIdentity(currentPlayer.identity, room.ownerIdentity);
   const [productType, setProductType] = useState<ProductType>("digital");
   const [copilotSuggestion, setCopilotSuggestion] = useState("");
+  const [voiceSuggestion, setVoiceSuggestion] = useState("");
   useEffect(() => {
     setRoundStartedAt(stageSession?.updatedAt.toDate().getTime() ?? Date.now());
     setClock(Date.now());
@@ -1030,7 +1032,21 @@ function GameBoard({
 
   useEffect(() => {
     setDraft(ownContribution?.content ?? "");
+    setVoiceSuggestion("");
   }, [ownContribution?.content, stage]);
+
+  function applyContributionVoice({ transcript, summary }: VoiceInputResult) {
+    setError("");
+    const nextDraft = [draft.trim(), transcript].filter(Boolean).join(" ");
+    if (nextDraft.length <= 280) {
+      setDraft(nextDraft);
+    } else {
+      setError(
+        "A transcricao completa passou do limite. Use a versao curta ou edite o texto.",
+      );
+    }
+    setVoiceSuggestion(summary);
+  }
 
   function requestPrototypeSuggestion() {
     setSuggesting(true);
@@ -1327,6 +1343,27 @@ function GameBoard({
                   maxLength={280}
                   required
                 />
+                <VoiceInputButton
+                  stage={stage}
+                  target="contribution"
+                  disabled={saving}
+                  onResult={applyContributionVoice}
+                />
+                {voiceSuggestion && (
+                  <div className="voice-suggestion">
+                    <p>Versao curta sugerida: {voiceSuggestion}</p>
+                    <button
+                      type="button"
+                      className="secondary-button"
+                      onClick={() => {
+                        setDraft(voiceSuggestion);
+                        setVoiceSuggestion("");
+                      }}
+                    >
+                      Usar versao curta
+                    </button>
+                  </div>
+                )}
                 <div className="form-footer">
                   <div className="contribution-status" aria-live="polite">
                     <small>{draft.length}/280</small>
@@ -1642,6 +1679,7 @@ function JourneyResult({
   const [busyAction, setBusyAction] = useState<string>();
   const [notice, setNotice] = useState("");
   const [error, setError] = useState("");
+  const [voiceSuggestion, setVoiceSuggestion] = useState("");
   const isHost = sameIdentity(currentPlayer.identity, room.ownerIdentity);
   const journeyIdentity = {
     title,
@@ -1661,7 +1699,24 @@ function JourneyResult({
   useEffect(() => {
     setTitle(journey?.title ?? fallbackTitle);
     setSummary(journey?.summary ?? fallbackSummary);
+    setVoiceSuggestion("");
   }, [fallbackSummary, fallbackTitle, journey?.summary, journey?.title]);
+
+  function applyManifestVoice({
+    transcript,
+    summary: concise,
+  }: VoiceInputResult) {
+    setError("");
+    const nextSummary = [summary.trim(), transcript].filter(Boolean).join(" ");
+    if (nextSummary.length <= 400) {
+      setSummary(nextSummary);
+    } else {
+      setError(
+        "A transcricao completa passou do limite. Use a versao curta ou edite o texto.",
+      );
+    }
+    setVoiceSuggestion(concise);
+  }
 
   async function runFinalAction(
     action: string,
@@ -1809,6 +1864,27 @@ function JourneyResult({
                 required
               />
             </label>
+            <VoiceInputButton
+              stage="JOURNEY"
+              target="journey-summary"
+              disabled={!!busyAction}
+              onResult={applyManifestVoice}
+            />
+            {voiceSuggestion && (
+              <div className="voice-suggestion">
+                <p>Versao curta sugerida: {voiceSuggestion}</p>
+                <button
+                  type="button"
+                  className="secondary-button"
+                  onClick={() => {
+                    setSummary(voiceSuggestion);
+                    setVoiceSuggestion("");
+                  }}
+                >
+                  Usar versao curta
+                </button>
+              </div>
+            )}
             <div className="manifest-footer">
               <small>{summary.length}/400 caracteres</small>
               <button

@@ -1,4 +1,4 @@
-FROM node:22-alpine AS build
+FROM node:22-bookworm-slim AS build
 
 WORKDIR /app
 
@@ -14,10 +14,18 @@ ENV VITE_SPACETIMEDB_DB_NAME=$VITE_SPACETIMEDB_DB_NAME
 
 RUN npm run build
 
-FROM nginx:1.27-alpine AS runtime
+FROM node:22-bookworm-slim AS runtime
 
-COPY --from=build /app/dist /usr/share/nginx/html
+WORKDIR /app
 
-EXPOSE 80
+ENV NODE_ENV=production
+ENV PORT=3000
 
-CMD ["nginx", "-g", "daemon off;"]
+COPY package.json package-lock.json ./
+RUN npm ci --omit=dev
+
+COPY --from=build /app/build ./build
+
+EXPOSE 3000
+
+CMD ["npm", "run", "start"]

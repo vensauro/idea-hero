@@ -1,5 +1,7 @@
 node_modules
 dist
+build
+.react-router
 spacetimedb/dist
 src/module_bindings
 package-lock.json
