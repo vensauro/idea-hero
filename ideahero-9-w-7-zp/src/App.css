@@ -168,7 +168,7 @@ h2 {
   box-shadow: 10px 10px 0 var(--line);
 }
 .welcome-card h1 {
-  max-width: 10ch;
+  max-width: none;
 }
 .brand-lockup {
   display: flex;

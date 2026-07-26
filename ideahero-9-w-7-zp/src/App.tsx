@@ -591,7 +591,6 @@ function ProfileSetup({
     <main className="centered-page">
       <section className="welcome-card">
         <BrandLogo />
-        <p className="kicker">Idea Hero 2.0</p>
         <h1>Quem entra nesta aventura?</h1>
         <p className="intro">
           Escolha como o grupo vai reconhecer você durante a jornada.
