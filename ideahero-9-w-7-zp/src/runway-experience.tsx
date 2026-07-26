@@ -55,10 +55,10 @@ const STAGE_LABELS: Record<string, string> = {
 };
 
 const STAGE_TITLES: Record<string, string> = {
-  PROTOTYPE: "Faça a ideia existir",
-  PILOT: "Reaja ao primeiro teste",
-  MARKETING: "Escolha como chegar ao mercado",
-  SALES: "Revele o resultado",
+  PROTOTYPE: "Vamos criar o protótipo",
+  PILOT: "Vamos testar no piloto",
+  MARKETING: "Vamos planejar o marketing",
+  SALES: "Vamos iniciar as vendas",
 };
 
 const AUDIENCE_LABELS: Record<string, string> = {
