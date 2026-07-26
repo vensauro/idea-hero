@@ -1039,6 +1039,16 @@ function PrototypeStage({
               </span>
             ))}
           </div>
+          {drawingStrokes.length > 0 && !canEdit && (
+            <DrawingBoard
+              strokes={drawingStrokes}
+              players={players}
+              currentPlayer={currentPlayer}
+              editable={false}
+              onSubmitStroke={() => undefined}
+              onClearOwnStrokes={() => undefined}
+            />
+          )}
           {mediaArtifacts.map((artifact) => (
             <figure
               className="prototype-media-artifact"
