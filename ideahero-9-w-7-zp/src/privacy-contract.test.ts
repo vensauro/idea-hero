@@ -21,6 +21,10 @@ describe("contrato de privacidade por sala", () => {
       );
     }
 
+    expect(moduleSource).toContain(
+      '{ name: "published_result", public: true }',
+    );
+
     for (const viewName of [
       "current_profile",
       "member_rooms",

@@ -15,6 +15,7 @@ import FinishPrototypeActivityReducer from "../finish_prototype_activity_reducer
 import JoinRoomReducer from "../join_room_reducer";
 import LeaveRoomReducer from "../leave_room_reducer";
 import OpenVotingReducer from "../open_voting_reducer";
+import PublishJourneyReducer from "../publish_journey_reducer";
 import RefreshRedrawnCardReducer from "../refresh_redrawn_card_reducer";
 import ResolveStageReducer from "../resolve_stage_reducer";
 import SetProfileReducer from "../set_profile_reducer";
@@ -40,6 +41,7 @@ export type FinishPrototypeActivityParams = __Infer<typeof FinishPrototypeActivi
 export type JoinRoomParams = __Infer<typeof JoinRoomReducer>;
 export type LeaveRoomParams = __Infer<typeof LeaveRoomReducer>;
 export type OpenVotingParams = __Infer<typeof OpenVotingReducer>;
+export type PublishJourneyParams = __Infer<typeof PublishJourneyReducer>;
 export type RefreshRedrawnCardParams = __Infer<typeof RefreshRedrawnCardReducer>;
 export type ResolveStageParams = __Infer<typeof ResolveStageReducer>;
 export type SetProfileParams = __Infer<typeof SetProfileReducer>;

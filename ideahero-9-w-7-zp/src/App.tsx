@@ -14,6 +14,7 @@ import type {
   MarketingPlan,
   PilotSimulation,
   Player,
+  PublishedResult,
   ProjectPrototype,
   PrototypeArtifact,
   PrototypeDrawingStroke,
@@ -34,6 +35,12 @@ import {
   buildJourneyShareText,
   journeyFilename,
 } from "./journey-artifact";
+import { createJourneyShareImage } from "./journey-share-image";
+import {
+  buildPublicResultUrl,
+  createPublicResultToken,
+  publicResultTokenFromUrl,
+} from "./public-result-link";
 import {
   buildRoomInviteUrl,
   clearRoomInviteUrl,
@@ -289,6 +296,9 @@ function App() {
   const [voteStatuses, voteStatusesReady] = useTable(tables.room_vote_status);
   const [decisions, decisionsReady] = useTable(tables.room_decisions);
   const [journeys, journeysReady] = useTable(tables.room_journeys);
+  const [publishedResults, publishedResultsReady] = useTable(
+    tables.publishedResult,
+  );
   const [economies, economiesReady] = useTable(tables.room_economies);
   const [stageCosts, stageCostsReady] = useTable(tables.room_stage_costs);
   const [economyTransactions, economyTransactionsReady] = useTable(
@@ -339,6 +349,10 @@ function App() {
   const currentPlayer = currentSession?.player;
   const currentRoom = currentSession?.room;
   const currentRoomCode = currentRoom?.code;
+  const publicResultToken = publicResultTokenFromUrl(window.location.href);
+  const publicResult = publicResultToken
+    ? publishedResults.find((item) => item.token === publicResultToken)
+    : undefined;
 
   useEffect(() => {
     if (!currentRoomCode) return;
@@ -351,6 +365,13 @@ function App() {
 
   if (!connected || !identity) {
     return <LoadingScreen label="Conectando sua identidade criativa…" />;
+  }
+
+  if (publicResultToken) {
+    if (!publishedResultsReady) {
+      return <LoadingScreen label="Abrindo o resultado compartilhado…" />;
+    }
+    return <PublicJourneyResult result={publicResult} />;
   }
 
   if (
@@ -459,6 +480,9 @@ function App() {
     (item) => item.roomId === currentRoom.id,
   );
   const roomSales = salesResults.find((item) => item.roomId === currentRoom.id);
+  const roomPublishedResult = publishedResults.find(
+    (item) => item.roomId === currentRoom.id,
+  );
 
   if (!roomEconomy) {
     return <LoadingScreen label="Preparando a economia da jornada…" />;
@@ -488,6 +512,7 @@ function App() {
       pilotSimulation={roomPilot}
       marketingPlan={roomMarketing}
       salesResult={roomSales}
+      publishedResult={roomPublishedResult}
     />
   );
 }
@@ -1016,6 +1041,7 @@ function GameBoard({
   pilotSimulation,
   marketingPlan,
   salesResult,
+  publishedResult,
 }: {
   room: Room;
   players: Player[];
@@ -1039,6 +1065,7 @@ function GameBoard({
   pilotSimulation?: PilotSimulation;
   marketingPlan?: MarketingPlan;
   salesResult?: SalesResult;
+  publishedResult?: PublishedResult;
 }) {
   const submitContribution = useReducer(reducers.submitContribution);
   const advanceStage = useReducer(reducers.advanceStage);
@@ -1219,6 +1246,7 @@ function GameBoard({
         transactions={economyTransactions}
         pilotSimulation={pilotSimulation}
         salesResult={salesResult}
+        publishedResult={publishedResult}
       />
     );
   }
@@ -1780,6 +1808,7 @@ function JourneyResult({
   transactions,
   pilotSimulation,
   salesResult,
+  publishedResult,
 }: {
   room: Room;
   players: Player[];
@@ -1793,9 +1822,11 @@ function JourneyResult({
   transactions: readonly EconomyTransaction[];
   pilotSimulation?: PilotSimulation;
   salesResult?: SalesResult;
+  publishedResult?: PublishedResult;
 }) {
   const updateJourney = useReducer(reducers.updateJourney);
   const leaveRoom = useReducer(reducers.leaveRoom);
+  const publishJourney = useReducer(reducers.publishJourney);
   const solutionDecision = decisions.find(
     (item) => item.roomId === room.id && item.stage === "SOLUTION",
   );
@@ -1820,6 +1851,9 @@ function JourneyResult({
     summary,
     publicId: journey?.publicId || `journey-${room.id.toString(36)}`,
   };
+  const publishedUrl = publishedResult
+    ? buildPublicResultUrl(publishedResult.token, window.location.href)
+    : undefined;
   const manifestChanged =
     title !== (journey?.title ?? fallbackTitle) ||
     summary !== (journey?.summary ?? fallbackSummary) ||
@@ -1903,20 +1937,60 @@ function JourneyResult({
     );
   }
 
+  async function copyPublicResultLink() {
+    if (!publishedUrl) return;
+    await runFinalAction(
+      "copy-link",
+      () => copyText(publishedUrl),
+      "Link publico copiado.",
+    );
+  }
+
   async function shareResult() {
-    const text = buildJourneyShareText(journeyIdentity);
-    if (navigator.share) {
-      await runFinalAction(
-        "share",
-        () => navigator.share({ title: title.trim(), text }),
-        "Resultado compartilhado.",
-      );
-      return;
-    }
+    const token = publishedResult?.token ?? createPublicResultToken();
+    const publicUrl = buildPublicResultUrl(token, window.location.href);
+
     await runFinalAction(
       "share",
-      () => copyText(text),
-      "Resumo copiado. Agora é só colar onde quiser.",
+      async () => {
+        if (!publishedResult) {
+          await publishJourney({ roomId: room.id, token });
+        }
+
+        const image = await createJourneyShareImage({
+          title,
+          summary,
+          publicId: journeyIdentity.publicId,
+          peopleCount: players.length,
+          finalRunway: salesResult
+            ? `${formatCredits(salesResult.finalRunway)} creditos`
+            : undefined,
+        });
+        const shareData = {
+          title: title.trim() || fallbackTitle,
+          text: [
+            buildJourneyShareText(journeyIdentity),
+            `Veja o resultado: ${publicUrl}`,
+          ].join("\n\n"),
+          files: [image],
+        };
+
+        if (
+          navigator.share &&
+          (!navigator.canShare || navigator.canShare(shareData))
+        ) {
+          await navigator.share(shareData);
+          return;
+        }
+
+        const url = URL.createObjectURL(image);
+        const anchor = document.createElement("a");
+        anchor.href = url;
+        anchor.download = image.name;
+        anchor.click();
+        window.setTimeout(() => URL.revokeObjectURL(url), 0);
+      },
+      "Resultado compartilhado com card e link publico.",
     );
   }
 
@@ -2071,12 +2145,19 @@ function JourneyResult({
             />
           </label>
           {isHost && (
-            <VoiceInputButton
-              stage="JOURNEY"
-              target="journey-summary"
-              disabled={!!busyAction}
-              onResult={applyManifestVoice}
-            />
+            <div className="manifest-voice-control">
+              <p>
+                <strong>Prefere falar?</strong> O ditado adiciona sua voz ao
+                manifesto; revise e salve quando terminar.
+              </p>
+              <VoiceInputButton
+                stage="JOURNEY"
+                target="journey-summary"
+                disabled={!!busyAction}
+                idleLabel="Ditar manifesto"
+                onResult={applyManifestVoice}
+              />
+            </div>
           )}
           {isHost && voiceSuggestion && (
             <div className="voice-suggestion">
@@ -2104,7 +2185,7 @@ function JourneyResult({
                 className="primary-button"
                 disabled={!manifestChanged || !!busyAction}
               >
-                {busyAction === "save" ? "Salvando…" : "Salvar agora"}
+                {busyAction === "save" ? "Salvando…" : "Salvar manifesto"}
               </button>
             )}
           </div>
@@ -2184,6 +2265,17 @@ function JourneyResult({
           Compartilhe o manifesto, baixe o registro completo ou imprima para
           continuar criando fora do jogo.
         </p>
+        <div
+          className="share-card-note"
+          aria-label="Formato do compartilhamento"
+        >
+          <span aria-hidden="true">✦</span>
+          <p>
+            <strong>Card pronto para compartilhar</strong>
+            <br />
+            Imagem PNG vertical com o manifesto, a jornada e o resultado.
+          </p>
+        </div>
         <div className="result-actions">
           <button
             className="primary-button"
@@ -2191,9 +2283,29 @@ function JourneyResult({
             onClick={() => void shareResult()}
           >
             {busyAction === "share"
-              ? "Compartilhando…"
+              ? "Preparando para compartilhar…"
               : "Compartilhar resultado"}
           </button>
+          {isHost && !publishedResult && (
+            <button
+              className="secondary-button"
+              disabled={!!busyAction}
+              onClick={() => void publishResult()}
+            >
+              {busyAction === "publish"
+                ? "Publicando…"
+                : "Publicar e gerar link"}
+            </button>
+          )}
+          {publishedUrl && (
+            <button
+              className="secondary-button"
+              disabled={!!busyAction}
+              onClick={() => void copyPublicResultLink()}
+            >
+              {busyAction === "copy-link" ? "Copiando…" : "Copiar link publico"}
+            </button>
+          )}
           <button
             className="secondary-button"
             disabled={!!busyAction}
@@ -2209,17 +2321,105 @@ function JourneyResult({
             Imprimir jornada
           </button>
           <button
-            className="quiet-button"
+            className="secondary-button start-new-journey"
             disabled={!!busyAction}
             onClick={() => void startAnotherJourney()}
           >
             {busyAction === "leave" ? "Preparando…" : "Começar nova jornada"}
           </button>
         </div>
+        <details className="result-more-actions">
+          <summary>Mais opcoes</summary>
+          <div>
+            {publishedUrl && (
+              <button
+                className="secondary-button"
+                disabled={!!busyAction}
+                onClick={() => void copyPublicResultLink()}
+              >
+                {busyAction === "copy-link"
+                  ? "Copiando..."
+                  : "Copiar link publico"}
+              </button>
+            )}
+            <button
+              className="secondary-button"
+              disabled={!!busyAction}
+              onClick={downloadResult}
+            >
+              Baixar jornada (.md)
+            </button>
+            <button
+              className="secondary-button"
+              disabled={!!busyAction}
+              onClick={() => window.print()}
+            >
+              Imprimir jornada
+            </button>
+          </div>
+        </details>
         <div className="result-feedback" aria-live="polite">
           {notice && <p className="success-message">✓ {notice}</p>}
           {error && <p className="error-message">{error}</p>}
         </div>
+      </footer>
+    </main>
+  );
+}
+
+function PublicJourneyResult({ result }: { result?: PublishedResult }) {
+  if (!result) {
+    return (
+      <main className="public-result-page public-result-missing">
+        <BrandLogo />
+        <p className="kicker">Link indisponivel</p>
+        <h1>Este resultado nao esta mais disponivel.</h1>
+        <a className="primary-button" href="/">
+          Conhecer o IDEA HERO
+        </a>
+      </main>
+    );
+  }
+
+  const publishedOn = result.publishedAt.toDate().toLocaleDateString("pt-BR");
+  return (
+    <main className="public-result-page">
+      <header className="result-topbar">
+        <BrandLogo compact />
+        <span className="room-pill">Resultado publicado</span>
+      </header>
+      <section className="public-result-card">
+        <p className="kicker">Uma ideia criada em grupo</p>
+        <h1>{result.title}</h1>
+        <p className="public-result-summary">{result.summary}</p>
+        <div className="public-result-stats">
+          <span>
+            <small>Criada por</small>
+            <b>
+              {result.participantCount}{" "}
+              {result.participantCount === 1 ? "heroi" : "herois"}
+            </b>
+          </span>
+          <span>
+            <small>Jornada</small>
+            <b>{result.publicId}</b>
+          </span>
+          {result.hasSalesResult && (
+            <span className="is-highlight">
+              <small>Runway final</small>
+              <b>{formatCredits(result.finalRunway)}</b>
+            </span>
+          )}
+        </div>
+        <p className="public-result-date">Publicado em {publishedOn}.</p>
+      </section>
+      <footer className="public-result-footer">
+        <p>
+          IDEA HERO transforma conversas em ideias que podem ganhar o mundo.
+        </p>
+        <a className="secondary-button" href="/">
+          Criar uma jornada
+        </a>
       </footer>
     </main>
   );

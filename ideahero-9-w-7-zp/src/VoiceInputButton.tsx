@@ -14,6 +14,7 @@ type VoiceInputButtonProps = {
   target: VoiceTarget;
   onResult: (result: VoiceInputResult) => void;
   disabled?: boolean;
+  idleLabel?: string;
 };
 
 const MAX_RECORDING_MS = 45_000;
@@ -34,6 +35,7 @@ export function VoiceInputButton({
   target,
   onResult,
   disabled = false,
+  idleLabel = "Falar minha ideia",
 }: VoiceInputButtonProps) {
   const [status, setStatus] = useState<VoiceStatus>("idle");
   const [message, setMessage] = useState("");
@@ -195,7 +197,7 @@ export function VoiceInputButton({
           ? "Parar gravacao"
           : transcribing
             ? "Transcrevendo..."
-            : "Falar minha ideia"}
+            : idleLabel}
       </button>
       {message && (
         <small className={status === "error" ? "is-error" : ""}>

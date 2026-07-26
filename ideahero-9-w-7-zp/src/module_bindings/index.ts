@@ -43,6 +43,7 @@ import FinishPrototypeActivityReducer from "./finish_prototype_activity_reducer"
 import JoinRoomReducer from "./join_room_reducer";
 import LeaveRoomReducer from "./leave_room_reducer";
 import OpenVotingReducer from "./open_voting_reducer";
+import PublishJourneyReducer from "./publish_journey_reducer";
 import RefreshRedrawnCardReducer from "./refresh_redrawn_card_reducer";
 import ResolveStageReducer from "./resolve_stage_reducer";
 import SetProfileReducer from "./set_profile_reducer";
@@ -71,6 +72,7 @@ import PilotSimulationsRow from "./pilot_simulations_table";
 import ProjectPrototypesRow from "./project_prototypes_table";
 import PrototypeArtifactsRow from "./prototype_artifacts_table";
 import PrototypeDrawingStrokesRow from "./prototype_drawing_strokes_table";
+import PublishedResultRow from "./published_result_table";
 import RoomCardDrawsRow from "./room_card_draws_table";
 import RoomContributionStatusRow from "./room_contribution_status_table";
 import RoomDecisionsRow from "./room_decisions_table";
@@ -103,6 +105,21 @@ const tablesSchema = __schema({
       { name: 'card_id_key', constraint: 'unique', columns: ['id'] },
     ],
   }, CardRow),
+  publishedResult: __table({
+    name: 'published_result',
+    indexes: [
+      { accessor: 'roomId', name: 'published_result_room_id_idx_btree', algorithm: 'btree', columns: [
+        'roomId',
+      ] },
+      { accessor: 'token', name: 'published_result_token_idx_btree', algorithm: 'btree', columns: [
+        'token',
+      ] },
+    ],
+    constraints: [
+      { name: 'published_result_room_id_key', constraint: 'unique', columns: ['roomId'] },
+      { name: 'published_result_token_key', constraint: 'unique', columns: ['token'] },
+    ],
+  }, PublishedResultRow),
   current_profile: __table({
     name: 'current_profile',
     indexes: [
@@ -263,6 +280,7 @@ const reducersSchema = __reducers(
   __reducerSchema("join_room", JoinRoomReducer),
   __reducerSchema("leave_room", LeaveRoomReducer),
   __reducerSchema("open_voting", OpenVotingReducer),
+  __reducerSchema("publish_journey", PublishJourneyReducer),
   __reducerSchema("refresh_redrawn_card", RefreshRedrawnCardReducer),
   __reducerSchema("resolve_stage", ResolveStageReducer),
   __reducerSchema("set_profile", SetProfileReducer),

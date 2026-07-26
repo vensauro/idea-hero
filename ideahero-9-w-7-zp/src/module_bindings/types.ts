@@ -227,6 +227,20 @@ export type PrototypeDrawingStroke = __Infer<typeof PrototypeDrawingStroke>;
 export const PrototypeDrawingStrokes = __t.object("PrototypeDrawingStrokes", {});
 export type PrototypeDrawingStrokes = __Infer<typeof PrototypeDrawingStrokes>;
 
+export const PublishedResult = __t.object("PublishedResult", {
+  token: __t.string(),
+  roomId: __t.u64(),
+  publicId: __t.string(),
+  title: __t.string(),
+  summary: __t.string(),
+  participantCount: __t.u32(),
+  hasSalesResult: __t.bool(),
+  finalRunway: __t.u32(),
+  publishedAt: __t.timestamp(),
+  updatedAt: __t.timestamp(),
+});
+export type PublishedResult = __Infer<typeof PublishedResult>;
+
 export const Room = __t.object("Room", {
   id: __t.u64(),
   code: __t.string(),

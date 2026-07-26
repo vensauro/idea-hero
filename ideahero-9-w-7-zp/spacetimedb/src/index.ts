@@ -358,6 +358,24 @@ const journey = table(
   },
 );
 
+// This is a deliberately small public snapshot. The private journey, players,
+// contributions, and decisions never become public just because a result is shared.
+const publishedResult = table(
+  { name: "published_result", public: true },
+  {
+    token: t.string().primaryKey(),
+    roomId: t.u64().unique(),
+    publicId: t.string(),
+    title: t.string(),
+    summary: t.string(),
+    participantCount: t.u32(),
+    hasSalesResult: t.bool(),
+    finalRunway: t.u32(),
+    publishedAt: t.timestamp(),
+    updatedAt: t.timestamp(),
+  },
+);
+
 const contributionStatus = t.object("ContributionStatus", {
   id: t.u64(),
   roomId: t.u64(),
@@ -405,6 +423,7 @@ const spacetimedb = schema({
   vote,
   decision,
   journey,
+  publishedResult,
 });
 export default spacetimedb;
 
@@ -2675,6 +2694,16 @@ export const update_journey = spacetimedb.reducer(
         summary: normalizedSummary,
         updatedAt: ctx.timestamp,
       });
+      const published = ctx.db.publishedResult.roomId.find(roomId);
+      if (published) {
+        ctx.db.publishedResult.token.update({
+          ...published,
+          publicId: currentJourney.publicId || journeyPublicId(roomId),
+          title: normalizedTitle,
+          summary: normalizedSummary,
+          updatedAt: ctx.timestamp,
+        });
+      }
       return;
     }
 
@@ -2686,6 +2715,50 @@ export const update_journey = spacetimedb.reducer(
       summary: normalizedSummary,
       createdAt: ctx.timestamp,
       updatedAt: ctx.timestamp,
+    });
+  },
+);
+
+export const publish_journey = spacetimedb.reducer(
+  { roomId: t.u64(), token: t.string() },
+  (ctx, { roomId, token }) => {
+    const currentRoom = ctx.db.room.id.find(roomId);
+    if (!currentRoom || currentRoom.status !== "FINISHED") {
+      throw new SenderError("A jornada ainda nao foi concluida.");
+    }
+    if (!currentRoom.ownerIdentity.isEqual(ctx.sender)) {
+      throw new SenderError("Apenas o anfitriao pode publicar o resultado.");
+    }
+    const currentJourney = ctx.db.journey.roomId.find(roomId);
+    if (!currentJourney) {
+      throw new SenderError("O resultado da jornada nao foi encontrado.");
+    }
+    if (!/^[a-z0-9]{24,48}$/.test(token)) {
+      throw new SenderError("Token de compartilhamento invalido.");
+    }
+
+    const sales = ctx.db.salesResult.roomId.find(roomId);
+    const existing = ctx.db.publishedResult.roomId.find(roomId);
+    const snapshot = {
+      roomId,
+      publicId: currentJourney.publicId || journeyPublicId(roomId),
+      title: currentJourney.title,
+      summary: currentJourney.summary,
+      participantCount: Array.from(ctx.db.player.roomId.filter(roomId)).length,
+      hasSalesResult: Boolean(sales),
+      finalRunway: sales?.finalRunway ?? 0,
+      updatedAt: ctx.timestamp,
+    };
+
+    if (existing) {
+      ctx.db.publishedResult.token.update({ ...existing, ...snapshot });
+      return;
+    }
+
+    ctx.db.publishedResult.insert({
+      token,
+      ...snapshot,
+      publishedAt: ctx.timestamp,
     });
   },
 );
