@@ -495,6 +495,10 @@ export function RunwayFinalStage(props: RunwayFinalStageProps) {
     (stage === "PILOT" &&
       topicVotes(groupVotes, "PILOT_RESPONSE", players).length > 0);
 
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }, [room.stageIndex]);
+
   async function run(action: () => Promise<unknown>) {
     setPending(true);
     setError("");

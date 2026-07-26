@@ -1097,6 +1097,10 @@ function GameBoard({
   const [copilotSuggestion, setCopilotSuggestion] = useState("");
   const [voiceSuggestion, setVoiceSuggestion] = useState("");
   useEffect(() => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }, [room.stageIndex]);
+
+  useEffect(() => {
     setRoundStartedAt(stageSession?.updatedAt.toDate().getTime() ?? Date.now());
     setClock(Date.now());
     const interval = window.setInterval(() => setClock(Date.now()), 1000);
