@@ -1,6 +1,23 @@
 import { schema, t, table, SenderError } from "spacetimedb/server";
 import { Timestamp } from "spacetimedb";
 import { CARD_CATALOG, cardForRoomStage } from "./cards";
+import {
+  CARD_REDRAW_COST,
+  INITIAL_RUNWAY,
+  MARKETING_AUDIENCES,
+  MARKETING_CHANNELS,
+  PROTOTYPE_FIDELITIES,
+  calculateSalesResult,
+  createFundingOpportunity,
+  createStageCosts,
+  effectiveMarketMultiplier,
+  marketResponseForSeed,
+  pilotReadinessBonus,
+  resolvePilotOutcome,
+  type MarketingAudience,
+  type MarketingChannel,
+  type PrototypeFidelity,
+} from "./economy";
 
 const BOARD_STATES = [
   "SCENARIO",
@@ -64,7 +81,6 @@ const player = table(
     role: t.string(),
     ready: t.bool(),
     online: t.bool(),
-    points: t.u32(),
     joinedAt: t.timestamp(),
     // Preserve attribution after someone leaves a room.
     active: t.bool().default(true),
@@ -85,22 +101,130 @@ const contribution = table(
   },
 );
 
-const prototypeSubmission = table(
-  { name: "prototype_submission" },
+const roomEconomy = table(
+  { name: "room_economy" },
+  {
+    roomId: t.u64().primaryKey(),
+    initialBalance: t.u32(),
+    balance: t.u32(),
+    reservedBalance: t.u32(),
+    seed: t.u32(),
+    nextSequence: t.u32(),
+    fundingStage: t.string(),
+    fundingValue: t.u32(),
+    fundingTitle: t.string(),
+    fundingDescription: t.string(),
+    fundingRevealed: t.bool(),
+    createdAt: t.timestamp(),
+    updatedAt: t.timestamp(),
+  },
+);
+
+const stageCost = table(
+  { name: "stage_cost" },
   {
     id: t.u64().primaryKey().autoInc(),
     roomId: t.u64().index("btree"),
-    authorIdentity: t.identity().index("btree"),
-    showing: t.string(),
-    targetUser: t.string(),
-    storyboardStep1: t.string(),
-    storyboardStep2: t.string(),
-    storyboardStep3: t.string(),
-    hypothesis: t.string(),
-    resources: t.string(),
-    smallestVersion: t.string(),
+    stage: t.string().index("btree"),
+    amount: t.u32(),
+    label: t.string(),
+    applied: t.bool(),
     createdAt: t.timestamp(),
     updatedAt: t.timestamp(),
+  },
+);
+
+const economyTransaction = table(
+  { name: "economy_transaction" },
+  {
+    id: t.u64().primaryKey().autoInc(),
+    roomId: t.u64().index("btree"),
+    stage: t.string().index("btree"),
+    delta: t.i32(),
+    balanceAfter: t.u32(),
+    sequence: t.u32(),
+    reason: t.string(),
+    eventKey: t.string().unique(),
+    label: t.string(),
+    createdAt: t.timestamp(),
+  },
+);
+
+const projectPrototype = table(
+  { name: "project_prototype" },
+  {
+    roomId: t.u64().primaryKey(),
+    personSituation: t.string(),
+    firstAction: t.string(),
+    keyInteraction: t.string(),
+    evidence: t.string(),
+    fidelity: t.string(),
+    investment: t.u32(),
+    committed: t.bool(),
+    createdAt: t.timestamp(),
+    updatedAt: t.timestamp(),
+  },
+);
+
+const prototypeReaction = table(
+  { name: "prototype_reaction" },
+  {
+    id: t.u64().primaryKey().autoInc(),
+    roomId: t.u64().index("btree"),
+    playerIdentity: t.identity().index("btree"),
+    reaction: t.string(),
+    updatedAt: t.timestamp(),
+  },
+);
+
+const pilotSimulation = table(
+  { name: "pilot_simulation" },
+  {
+    roomId: t.u64().primaryKey(),
+    successSignal: t.string(),
+    outcome: t.string(),
+    readinessBonus: t.u32(),
+    decision: t.string(),
+    revision: t.string(),
+    resolved: t.bool(),
+    completed: t.bool(),
+    createdAt: t.timestamp(),
+    updatedAt: t.timestamp(),
+  },
+);
+
+const marketingPlan = table(
+  { name: "marketing_plan" },
+  {
+    roomId: t.u64().primaryKey(),
+    audience: t.string(),
+    valuePromise: t.string(),
+    channel: t.string(),
+    callToAction: t.string(),
+    investment: t.u32(),
+    responseTitle: t.string(),
+    responseDescription: t.string(),
+    baseMultiplier: t.u32(),
+    matched: t.bool(),
+    effectiveMultiplier: t.u32(),
+    committed: t.bool(),
+    createdAt: t.timestamp(),
+    updatedAt: t.timestamp(),
+  },
+);
+
+const salesResult = table(
+  { name: "sales_result" },
+  {
+    roomId: t.u64().primaryKey(),
+    remainingCredits: t.u32(),
+    marketingInvestment: t.u32(),
+    readinessBonus: t.u32(),
+    multiplier: t.u32(),
+    simulatedSales: t.u32(),
+    finalRunway: t.u32(),
+    tier: t.string(),
+    createdAt: t.timestamp(),
   },
 );
 
@@ -125,6 +249,9 @@ const cardDraw = table(
     stage: t.string().index("btree"),
     cardId: t.string().index("btree"),
     drawnAt: t.timestamp(),
+    drawIndex: t.u8().default(0),
+    active: t.bool().default(true),
+    reason: t.string().default("INITIAL"),
   },
 );
 
@@ -211,7 +338,14 @@ const spacetimedb = schema({
   roomCode,
   player,
   contribution,
-  prototypeSubmission,
+  roomEconomy,
+  stageCost,
+  economyTransaction,
+  projectPrototype,
+  prototypeReaction,
+  pilotSimulation,
+  marketingPlan,
+  salesResult,
   card,
   cardDraw,
   stageSession,
@@ -254,17 +388,112 @@ export const room_players = spacetimedb.view(
   },
 );
 
-export const room_prototypes = spacetimedb.view(
-  { name: "room_prototypes", public: true },
-  t.array(prototypeSubmission.rowType),
+export const room_economies = spacetimedb.view(
+  { name: "room_economies", public: true },
+  t.array(roomEconomy.rowType),
   (ctx) => {
-    const prototypes = [];
+    const rows = [];
     for (const membership of ctx.db.player.identity.filter(ctx.sender)) {
-      prototypes.push(
-        ...ctx.db.prototypeSubmission.roomId.filter(membership.roomId),
-      );
+      if (!membership.active) continue;
+      const economy = ctx.db.roomEconomy.roomId.find(membership.roomId);
+      if (economy) rows.push(economy);
     }
-    return prototypes;
+    return rows;
+  },
+);
+
+export const room_stage_costs = spacetimedb.view(
+  { name: "room_stage_costs", public: true },
+  t.array(stageCost.rowType),
+  (ctx) => {
+    const rows = [];
+    for (const membership of ctx.db.player.identity.filter(ctx.sender)) {
+      if (!membership.active) continue;
+      rows.push(...ctx.db.stageCost.roomId.filter(membership.roomId));
+    }
+    return rows;
+  },
+);
+
+export const room_economy_transactions = spacetimedb.view(
+  { name: "room_economy_transactions", public: true },
+  t.array(economyTransaction.rowType),
+  (ctx) => {
+    const rows = [];
+    for (const membership of ctx.db.player.identity.filter(ctx.sender)) {
+      if (!membership.active) continue;
+      rows.push(...ctx.db.economyTransaction.roomId.filter(membership.roomId));
+    }
+    return rows;
+  },
+);
+
+export const project_prototypes = spacetimedb.view(
+  { name: "project_prototypes", public: true },
+  t.array(projectPrototype.rowType),
+  (ctx) => {
+    const rows = [];
+    for (const membership of ctx.db.player.identity.filter(ctx.sender)) {
+      if (!membership.active) continue;
+      const prototype = ctx.db.projectPrototype.roomId.find(membership.roomId);
+      if (prototype) rows.push(prototype);
+    }
+    return rows;
+  },
+);
+
+export const prototype_reactions = spacetimedb.view(
+  { name: "prototype_reactions", public: true },
+  t.array(prototypeReaction.rowType),
+  (ctx) => {
+    const rows = [];
+    for (const membership of ctx.db.player.identity.filter(ctx.sender)) {
+      if (!membership.active) continue;
+      rows.push(...ctx.db.prototypeReaction.roomId.filter(membership.roomId));
+    }
+    return rows;
+  },
+);
+
+export const pilot_simulations = spacetimedb.view(
+  { name: "pilot_simulations", public: true },
+  t.array(pilotSimulation.rowType),
+  (ctx) => {
+    const rows = [];
+    for (const membership of ctx.db.player.identity.filter(ctx.sender)) {
+      if (!membership.active) continue;
+      const pilot = ctx.db.pilotSimulation.roomId.find(membership.roomId);
+      if (pilot) rows.push(pilot);
+    }
+    return rows;
+  },
+);
+
+export const marketing_plans = spacetimedb.view(
+  { name: "marketing_plans", public: true },
+  t.array(marketingPlan.rowType),
+  (ctx) => {
+    const rows = [];
+    for (const membership of ctx.db.player.identity.filter(ctx.sender)) {
+      if (!membership.active) continue;
+      const plan = ctx.db.marketingPlan.roomId.find(membership.roomId);
+      if (plan) rows.push(plan);
+    }
+    return rows;
+  },
+);
+
+export const sales_results = spacetimedb.view(
+  { name: "sales_results", public: true },
+  t.array(salesResult.rowType),
+  (ctx) => {
+    const rows = [];
+    for (const membership of ctx.db.player.identity.filter(ctx.sender)) {
+      if (!membership.active) continue;
+      const result = ctx.db.salesResult.roomId.find(membership.roomId);
+      if (result) rows.push(result);
+    }
+    return rows;
   },
 );
 
@@ -466,6 +695,14 @@ function normalizeJourneySummary(summary: string) {
   return normalized;
 }
 
+function normalizeStageField(label: string, value: string, max = 180) {
+  const normalized = value.trim().replace(/\s+/g, " ");
+  if (normalized.length < 2 || normalized.length > max) {
+    throw new SenderError(`${label} deve ter entre 2 e ${max} caracteres.`);
+  }
+  return normalized;
+}
+
 export const set_profile = spacetimedb.reducer(
   { displayName: t.string(), avatarId: t.string() },
   (ctx, { displayName, avatarId }) => {
@@ -530,7 +767,6 @@ export const create_room = spacetimedb.reducer(
       role: "HOST",
       ready: true,
       online: true,
-      points: 30_000,
       joinedAt: ctx.timestamp,
       active: true,
     });
@@ -599,7 +835,6 @@ export const join_room = spacetimedb.reducer(
       role: "PLAYER",
       ready: false,
       online: true,
-      points: 30_000,
       joinedAt: ctx.timestamp,
       active: true,
     });
@@ -650,6 +885,84 @@ export const start_game = spacetimedb.reducer(
       throw new SenderError("Todos os jogadores precisam estar prontos.");
     }
 
+    const seed = ctx.random.integerInRange(1, 2_147_483_647);
+    const funding = createFundingOpportunity(seed);
+    const costs = createStageCosts(seed);
+    const scenarioCost = costs.find((item) => item.stage === "SCENARIO");
+    if (!scenarioCost) throw new SenderError("Custo inicial indisponível.");
+
+    const economy = ctx.db.roomEconomy.insert({
+      roomId,
+      initialBalance: INITIAL_RUNWAY,
+      balance: INITIAL_RUNWAY,
+      reservedBalance: 0,
+      seed,
+      nextSequence: 1,
+      fundingStage: funding.stage,
+      fundingValue: funding.value,
+      fundingTitle: funding.title,
+      fundingDescription: funding.description,
+      fundingRevealed: false,
+      createdAt: ctx.timestamp,
+      updatedAt: ctx.timestamp,
+    });
+    ctx.db.economyTransaction.insert({
+      id: 0n,
+      roomId,
+      stage: "SCENARIO",
+      delta: INITIAL_RUNWAY,
+      balanceAfter: INITIAL_RUNWAY,
+      sequence: 0,
+      reason: "INITIAL_CAPITAL",
+      eventKey: `initial:${roomId}`,
+      label: "Capital inicial do projeto",
+      createdAt: ctx.timestamp,
+    });
+    for (const cost of costs) {
+      ctx.db.stageCost.insert({
+        id: 0n,
+        roomId,
+        stage: cost.stage,
+        amount: cost.amount,
+        label: cost.label,
+        applied: false,
+        createdAt: ctx.timestamp,
+        updatedAt: ctx.timestamp,
+      });
+    }
+
+    const charged = Math.min(economy.balance, scenarioCost.amount);
+    const balanceAfterCost = economy.balance - charged;
+    const storedScenarioCost = Array.from(
+      ctx.db.stageCost.roomId.filter(roomId),
+    ).find((item) => item.stage === "SCENARIO");
+    if (!storedScenarioCost) {
+      throw new SenderError("Custo de pesquisa não foi preparado.");
+    }
+    ctx.db.stageCost.id.update({
+      ...storedScenarioCost,
+      applied: true,
+      updatedAt: ctx.timestamp,
+    });
+    ctx.db.roomEconomy.roomId.update({
+      ...economy,
+      balance: balanceAfterCost,
+      nextSequence: 2,
+      updatedAt: ctx.timestamp,
+    });
+    ctx.db.economyTransaction.insert({
+      id: 0n,
+      roomId,
+      stage: "SCENARIO",
+      delta: -charged,
+      balanceAfter: balanceAfterCost,
+      sequence: 1,
+      reason: "STAGE_COST",
+      eventKey: `stage-cost:${roomId}:SCENARIO`,
+      label: scenarioCost.label,
+      createdAt: ctx.timestamp,
+    });
+
     ctx.db.room.id.update({
       ...currentRoom,
       status: "ACTIVE",
@@ -680,6 +993,9 @@ export const start_game = spacetimedb.reducer(
       stage: BOARD_STATES[0],
       cardId: drawnCard.id,
       drawnAt: ctx.timestamp,
+      drawIndex: 0,
+      active: true,
+      reason: "INITIAL",
     });
 
     ctx.db.stageSession.insert({
@@ -699,6 +1015,16 @@ export const submit_contribution = spacetimedb.reducer(
     const currentRoom = ctx.db.room.id.find(roomId);
     if (!currentRoom || currentRoom.status !== "ACTIVE") {
       throw new SenderError("Esta jornada não está ativa.");
+    }
+
+    const economy = ctx.db.roomEconomy.roomId.find(roomId);
+    if (!economy) {
+      throw new SenderError("A economia compartilhada da sala não existe.");
+    }
+    if (!COLLABORATIVE_STAGES.has(currentRoom.currentStage)) {
+      throw new SenderError(
+        "Esta etapa usa uma experiência de projeto compartilhada.",
+      );
     }
 
     const currentSession = [...ctx.db.stageSession.iter()].find(
@@ -756,97 +1082,202 @@ export const submit_contribution = spacetimedb.reducer(
   },
 );
 
-function normalizePrototypeField(label: string, value: string) {
-  const normalized = value.trim().replace(/\s+/g, " ");
-  if (normalized.length < 2 || normalized.length > 280) {
-    throw new SenderError(`${label} deve ter entre 2 e 280 caracteres.`);
-  }
-  return normalized;
-}
-
-export const submit_prototype = spacetimedb.reducer(
-  {
-    roomId: t.u64(),
-    showing: t.string(),
-    targetUser: t.string(),
-    storyboardStep1: t.string(),
-    storyboardStep2: t.string(),
-    storyboardStep3: t.string(),
-    hypothesis: t.string(),
-    resources: t.string(),
-    smallestVersion: t.string(),
-  },
-  (ctx, input) => {
-    const currentRoom = ctx.db.room.id.find(input.roomId);
+export const redraw_card = spacetimedb.reducer(
+  { roomId: t.u64() },
+  (ctx, { roomId }) => {
+    const currentRoom = ctx.db.room.id.find(roomId);
+    const economy = ctx.db.roomEconomy.roomId.find(roomId);
     if (
       !currentRoom ||
       currentRoom.status !== "ACTIVE" ||
-      currentRoom.currentStage !== "PROTOTYPE"
+      !economy ||
+      currentRoom.stageIndex > 5
+    ) {
+      throw new SenderError("A carta não pode ser trocada nesta etapa.");
+    }
+    if (!currentRoom.ownerIdentity.isEqual(ctx.sender)) {
+      throw new SenderError("Apenas o anfitrião pode confirmar esta despesa.");
+    }
+    if (economy.balance < CARD_REDRAW_COST) {
+      throw new SenderError("O projeto não possui 500 créditos disponíveis.");
+    }
+
+    const hasContribution = Array.from(
+      ctx.db.contribution.roomId.filter(roomId),
+    ).some((item) => item.stage === currentRoom.currentStage);
+    const prototypeCommitted =
+      currentRoom.currentStage === "PROTOTYPE" &&
+      Boolean(ctx.db.projectPrototype.roomId.find(roomId)?.committed);
+    const pilotStarted =
+      currentRoom.currentStage === "PILOT" &&
+      Boolean(ctx.db.pilotSimulation.roomId.find(roomId)?.resolved);
+    if (hasContribution || prototypeCommitted || pilotStarted) {
+      throw new SenderError(
+        "A carta foi bloqueada porque a equipe já começou esta etapa.",
+      );
+    }
+
+    const activeDraw = Array.from(ctx.db.cardDraw.roomId.filter(roomId)).find(
+      (item) => item.stage === currentRoom.currentStage && item.active,
+    );
+    if (!activeDraw || activeDraw.drawIndex > 0) {
+      throw new SenderError("A troca de carta desta etapa já foi utilizada.");
+    }
+
+    const drawIndex = activeDraw.drawIndex + 1;
+    const replacement = cardForRoomStage(
+      roomId.toString(),
+      currentRoom.currentStage,
+      drawIndex,
+    );
+    if (!ctx.db.card.id.find(replacement.id)) {
+      ctx.db.card.insert({
+        id: replacement.id,
+        stage: replacement.stage,
+        title: replacement.title,
+        lens: replacement.lens,
+        imagePath: replacement.imagePath,
+        altText: replacement.altText,
+        provocation: replacement.provocation,
+      });
+    }
+
+    ctx.db.cardDraw.id.update({ ...activeDraw, active: false });
+    ctx.db.cardDraw.insert({
+      id: 0n,
+      roomId,
+      stage: currentRoom.currentStage,
+      cardId: replacement.id,
+      drawnAt: ctx.timestamp,
+      drawIndex,
+      active: true,
+      reason: "REDRAW",
+    });
+
+    const balanceAfter = economy.balance - CARD_REDRAW_COST;
+    ctx.db.roomEconomy.roomId.update({
+      ...economy,
+      balance: balanceAfter,
+      nextSequence: economy.nextSequence + 1,
+      updatedAt: ctx.timestamp,
+    });
+    ctx.db.economyTransaction.insert({
+      id: 0n,
+      roomId,
+      stage: currentRoom.currentStage,
+      delta: -CARD_REDRAW_COST,
+      balanceAfter,
+      sequence: economy.nextSequence,
+      reason: "CARD_REDRAW",
+      eventKey: `redraw:${roomId}:${currentRoom.currentStage}`,
+      label: "Troca de carta",
+      createdAt: ctx.timestamp,
+    });
+  },
+);
+
+export const commit_project_prototype = spacetimedb.reducer(
+  {
+    roomId: t.u64(),
+    personSituation: t.string(),
+    firstAction: t.string(),
+    keyInteraction: t.string(),
+    evidence: t.string(),
+    fidelity: t.string(),
+  },
+  (ctx, input) => {
+    const currentRoom = ctx.db.room.id.find(input.roomId);
+    const economy = ctx.db.roomEconomy.roomId.find(input.roomId);
+    if (
+      !currentRoom ||
+      currentRoom.status !== "ACTIVE" ||
+      currentRoom.currentStage !== "PROTOTYPE" ||
+      !economy
     ) {
       throw new SenderError("A etapa de protótipo não está ativa.");
     }
-    const currentPlayer = Array.from(
-      ctx.db.player.roomId.filter(input.roomId),
-    ).find((item) => item.active && item.identity.isEqual(ctx.sender));
-    if (!currentPlayer) throw new SenderError("Você não pertence a esta sala.");
-
+    if (!currentRoom.ownerIdentity.isEqual(ctx.sender)) {
+      throw new SenderError("O anfitrião é o escriba deste protótipo.");
+    }
+    if (!(input.fidelity in PROTOTYPE_FIDELITIES)) {
+      throw new SenderError("Escolha uma fidelidade válida.");
+    }
+    const fidelity = input.fidelity as PrototypeFidelity;
+    const fidelityDefinition = PROTOTYPE_FIDELITIES[fidelity];
     const values = {
-      showing: normalizePrototypeField("O que vamos mostrar", input.showing),
-      targetUser: normalizePrototypeField("Quem vai usar", input.targetUser),
-      storyboardStep1: normalizePrototypeField(
-        "O primeiro passo",
-        input.storyboardStep1,
+      personSituation: normalizeStageField(
+        "Pessoa e situação",
+        input.personSituation,
       ),
-      storyboardStep2: normalizePrototypeField(
-        "O segundo passo",
-        input.storyboardStep2,
+      firstAction: normalizeStageField("Primeira ação", input.firstAction),
+      keyInteraction: normalizeStageField(
+        "Interação principal",
+        input.keyInteraction,
       ),
-      storyboardStep3: normalizePrototypeField(
-        "O terceiro passo",
-        input.storyboardStep3,
-      ),
-      hypothesis: normalizePrototypeField(
-        "A hipótese central",
-        input.hypothesis,
-      ),
-      resources: normalizePrototypeField("Os recursos", input.resources),
-      smallestVersion: normalizePrototypeField(
-        "A menor versão",
-        input.smallestVersion,
-      ),
+      evidence: normalizeStageField("Evidência observável", input.evidence),
     };
-    const existing = Array.from(
-      ctx.db.prototypeSubmission.roomId.filter(input.roomId),
-    ).find((item) => item.authorIdentity.isEqual(ctx.sender));
+    const existing = ctx.db.projectPrototype.roomId.find(input.roomId);
+    if (existing?.committed && existing.fidelity !== fidelity) {
+      throw new SenderError(
+        "A fidelidade não pode mudar depois do investimento.",
+      );
+    }
+
+    if (!existing?.committed) {
+      if (economy.balance < fidelityDefinition.cost) {
+        throw new SenderError(
+          "O projeto não possui créditos para esta fidelidade.",
+        );
+      }
+      const balanceAfter = economy.balance - fidelityDefinition.cost;
+      ctx.db.roomEconomy.roomId.update({
+        ...economy,
+        balance: balanceAfter,
+        nextSequence: economy.nextSequence + 1,
+        updatedAt: ctx.timestamp,
+      });
+      ctx.db.economyTransaction.insert({
+        id: 0n,
+        roomId: input.roomId,
+        stage: "PROTOTYPE",
+        delta: -fidelityDefinition.cost,
+        balanceAfter,
+        sequence: economy.nextSequence,
+        reason: "PROTOTYPE_INVESTMENT",
+        eventKey: `prototype:${input.roomId}`,
+        label: `Protótipo ${fidelityDefinition.label}`,
+        createdAt: ctx.timestamp,
+      });
+    }
+
     if (existing) {
-      ctx.db.prototypeSubmission.id.update({
+      ctx.db.projectPrototype.roomId.update({
         ...existing,
         ...values,
+        fidelity,
+        investment: fidelityDefinition.cost,
+        committed: true,
         updatedAt: ctx.timestamp,
       });
     } else {
-      ctx.db.prototypeSubmission.insert({
-        id: 0n,
+      ctx.db.projectPrototype.insert({
         roomId: input.roomId,
-        authorIdentity: ctx.sender,
         ...values,
+        fidelity,
+        investment: fidelityDefinition.cost,
+        committed: true,
         createdAt: ctx.timestamp,
         updatedAt: ctx.timestamp,
       });
     }
 
-    const summary = `${values.showing} — para ${values.targetUser}. Menor versão: ${values.smallestVersion}`;
-    const existingContribution = Array.from(
+    const summary = `${values.personSituation}. ${values.firstAction}; ${values.keyInteraction}. Evidência: ${values.evidence}.`;
+    const contributionRow = Array.from(
       ctx.db.contribution.roomId.filter(input.roomId),
-    ).find(
-      (item) =>
-        item.stage === "PROTOTYPE" &&
-        item.kind === "MAIN" &&
-        item.authorIdentity.isEqual(ctx.sender),
-    );
-    if (existingContribution) {
+    ).find((item) => item.stage === "PROTOTYPE" && item.kind === "MAIN");
+    if (contributionRow) {
       ctx.db.contribution.id.update({
-        ...existingContribution,
+        ...contributionRow,
         content: summary,
         updatedAt: ctx.timestamp,
       });
@@ -859,6 +1290,289 @@ export const submit_prototype = spacetimedb.reducer(
         kind: "MAIN",
         content: summary,
         createdAt: ctx.timestamp,
+        updatedAt: ctx.timestamp,
+      });
+    }
+    const session = Array.from(
+      ctx.db.stageSession.roomId.filter(input.roomId),
+    ).find((item) => item.stage === "PROTOTYPE");
+    if (session) {
+      ctx.db.stageSession.id.update({
+        ...session,
+        phase: "READY",
+        updatedAt: ctx.timestamp,
+      });
+    }
+  },
+);
+
+export const react_to_prototype = spacetimedb.reducer(
+  { roomId: t.u64(), reaction: t.string() },
+  (ctx, { roomId, reaction }) => {
+    const currentRoom = ctx.db.room.id.find(roomId);
+    if (
+      !currentRoom ||
+      currentRoom.status !== "ACTIVE" ||
+      currentRoom.currentStage !== "PROTOTYPE"
+    ) {
+      throw new SenderError("A etapa de protótipo não está ativa.");
+    }
+    if (!["CLEAR", "RISKY", "MISSING"].includes(reaction)) {
+      throw new SenderError("Escolha uma reação válida.");
+    }
+    const membership = Array.from(ctx.db.player.roomId.filter(roomId)).find(
+      (item) => item.active && item.identity.isEqual(ctx.sender),
+    );
+    if (!membership) throw new SenderError("Você não pertence a esta sala.");
+    const existing = Array.from(
+      ctx.db.prototypeReaction.roomId.filter(roomId),
+    ).find((item) => item.playerIdentity.isEqual(ctx.sender));
+    if (existing) {
+      ctx.db.prototypeReaction.id.update({
+        ...existing,
+        reaction,
+        updatedAt: ctx.timestamp,
+      });
+    } else {
+      ctx.db.prototypeReaction.insert({
+        id: 0n,
+        roomId,
+        playerIdentity: ctx.sender,
+        reaction,
+        updatedAt: ctx.timestamp,
+      });
+    }
+  },
+);
+
+export const resolve_pilot = spacetimedb.reducer(
+  { roomId: t.u64(), successSignal: t.string() },
+  (ctx, { roomId, successSignal }) => {
+    const currentRoom = ctx.db.room.id.find(roomId);
+    const economy = ctx.db.roomEconomy.roomId.find(roomId);
+    const prototype = ctx.db.projectPrototype.roomId.find(roomId);
+    if (
+      !currentRoom ||
+      currentRoom.status !== "ACTIVE" ||
+      currentRoom.currentStage !== "PILOT" ||
+      !economy ||
+      !prototype?.committed
+    ) {
+      throw new SenderError("O piloto ainda não pode ser resolvido.");
+    }
+    if (!currentRoom.ownerIdentity.isEqual(ctx.sender)) {
+      throw new SenderError("Apenas o anfitrião pode iniciar o teste.");
+    }
+    const existing = ctx.db.pilotSimulation.roomId.find(roomId);
+    if (existing?.resolved) return;
+    const fidelity = prototype.fidelity as PrototypeFidelity;
+    const outcome = resolvePilotOutcome(economy.seed, fidelity);
+    const readinessBonus = pilotReadinessBonus(outcome);
+    ctx.db.pilotSimulation.insert({
+      roomId,
+      successSignal: normalizeStageField("Sinal observável", successSignal),
+      outcome,
+      readinessBonus,
+      decision: "",
+      revision: "",
+      resolved: true,
+      completed: false,
+      createdAt: ctx.timestamp,
+      updatedAt: ctx.timestamp,
+    });
+    const session = Array.from(ctx.db.stageSession.roomId.filter(roomId)).find(
+      (item) => item.stage === "PILOT",
+    );
+    if (session) {
+      ctx.db.stageSession.id.update({
+        ...session,
+        phase: "RESULT",
+        updatedAt: ctx.timestamp,
+      });
+    }
+  },
+);
+
+export const commit_pilot_decision = spacetimedb.reducer(
+  { roomId: t.u64(), decision: t.string(), revision: t.string() },
+  (ctx, { roomId, decision, revision }) => {
+    const currentRoom = ctx.db.room.id.find(roomId);
+    const pilot = ctx.db.pilotSimulation.roomId.find(roomId);
+    if (
+      !currentRoom ||
+      currentRoom.currentStage !== "PILOT" ||
+      !pilot?.resolved
+    ) {
+      throw new SenderError("Revele o resultado do piloto primeiro.");
+    }
+    if (!currentRoom.ownerIdentity.isEqual(ctx.sender)) {
+      throw new SenderError("Apenas o anfitrião registra a decisão do grupo.");
+    }
+    if (!["KEEP", "ADAPT", "REBUILD"].includes(decision)) {
+      throw new SenderError("Escolha manter, adaptar ou refazer.");
+    }
+    const normalizedRevision =
+      decision === "KEEP"
+        ? revision.trim().replace(/\s+/g, " ").slice(0, 180)
+        : normalizeStageField("Revisão", revision);
+    ctx.db.pilotSimulation.roomId.update({
+      ...pilot,
+      decision,
+      revision: normalizedRevision,
+      completed: true,
+      updatedAt: ctx.timestamp,
+    });
+
+    const summary = `${pilot.successSignal}. Resultado: ${pilot.outcome}. Decisão: ${decision}${normalizedRevision ? ` — ${normalizedRevision}` : ""}.`;
+    const contributionRow = Array.from(
+      ctx.db.contribution.roomId.filter(roomId),
+    ).find((item) => item.stage === "PILOT" && item.kind === "MAIN");
+    if (contributionRow) {
+      ctx.db.contribution.id.update({
+        ...contributionRow,
+        content: summary,
+        updatedAt: ctx.timestamp,
+      });
+    } else {
+      ctx.db.contribution.insert({
+        id: 0n,
+        roomId,
+        stage: "PILOT",
+        authorIdentity: ctx.sender,
+        kind: "MAIN",
+        content: summary,
+        createdAt: ctx.timestamp,
+        updatedAt: ctx.timestamp,
+      });
+    }
+    const session = Array.from(ctx.db.stageSession.roomId.filter(roomId)).find(
+      (item) => item.stage === "PILOT",
+    );
+    if (session) {
+      ctx.db.stageSession.id.update({
+        ...session,
+        phase: "READY",
+        updatedAt: ctx.timestamp,
+      });
+    }
+  },
+);
+
+export const commit_marketing_plan = spacetimedb.reducer(
+  {
+    roomId: t.u64(),
+    audience: t.string(),
+    valuePromise: t.string(),
+    channel: t.string(),
+    callToAction: t.string(),
+    investment: t.u32(),
+  },
+  (ctx, input) => {
+    const currentRoom = ctx.db.room.id.find(input.roomId);
+    const economy = ctx.db.roomEconomy.roomId.find(input.roomId);
+    if (
+      !currentRoom ||
+      currentRoom.status !== "ACTIVE" ||
+      currentRoom.currentStage !== "MARKETING" ||
+      !economy
+    ) {
+      throw new SenderError("A etapa de marketing não está ativa.");
+    }
+    if (!currentRoom.ownerIdentity.isEqual(ctx.sender)) {
+      throw new SenderError("Apenas o anfitrião confirma o plano.");
+    }
+    if (
+      !MARKETING_AUDIENCES.includes(input.audience as MarketingAudience) ||
+      !MARKETING_CHANNELS.includes(input.channel as MarketingChannel)
+    ) {
+      throw new SenderError("Escolha público e canal válidos.");
+    }
+    if (input.investment % 500 !== 0) {
+      throw new SenderError("O investimento deve usar incrementos de 500.");
+    }
+    const available = Math.max(0, economy.balance - economy.reservedBalance);
+    if (input.investment > available) {
+      throw new SenderError(
+        "Preserve a reserva necessária para a operação de vendas.",
+      );
+    }
+    const existing = ctx.db.marketingPlan.roomId.find(input.roomId);
+    if (existing?.committed) return;
+
+    const audience = input.audience as MarketingAudience;
+    const channel = input.channel as MarketingChannel;
+    const response = marketResponseForSeed(economy.seed);
+    const responseResult = effectiveMarketMultiplier(
+      response,
+      audience,
+      channel,
+    );
+    const balanceAfter = economy.balance - input.investment;
+    const nextSequence = economy.nextSequence + (input.investment > 0 ? 1 : 0);
+    ctx.db.roomEconomy.roomId.update({
+      ...economy,
+      balance: balanceAfter,
+      nextSequence,
+      updatedAt: ctx.timestamp,
+    });
+    if (input.investment > 0) {
+      ctx.db.economyTransaction.insert({
+        id: 0n,
+        roomId: input.roomId,
+        stage: "MARKETING",
+        delta: -input.investment,
+        balanceAfter,
+        sequence: economy.nextSequence,
+        reason: "MARKETING_INVESTMENT",
+        eventKey: `marketing:${input.roomId}`,
+        label: "Investimento de marketing",
+        createdAt: ctx.timestamp,
+      });
+    }
+    const values = {
+      audience,
+      valuePromise: normalizeStageField(
+        "Promessa de valor",
+        input.valuePromise,
+      ),
+      channel,
+      callToAction: normalizeStageField(
+        "Chamada para ação",
+        input.callToAction,
+      ),
+      investment: input.investment,
+      responseTitle: response.title,
+      responseDescription: response.description,
+      baseMultiplier: response.baseMultiplier,
+      matched: responseResult.matched,
+      effectiveMultiplier: responseResult.multiplier,
+      committed: true,
+    };
+    ctx.db.marketingPlan.insert({
+      roomId: input.roomId,
+      ...values,
+      createdAt: ctx.timestamp,
+      updatedAt: ctx.timestamp,
+    });
+
+    const summary = `${values.valuePromise} Público: ${values.audience}; canal: ${values.channel}; ação: ${values.callToAction}.`;
+    ctx.db.contribution.insert({
+      id: 0n,
+      roomId: input.roomId,
+      stage: "MARKETING",
+      authorIdentity: ctx.sender,
+      kind: "MAIN",
+      content: summary,
+      createdAt: ctx.timestamp,
+      updatedAt: ctx.timestamp,
+    });
+    const session = Array.from(
+      ctx.db.stageSession.roomId.filter(input.roomId),
+    ).find((item) => item.stage === "MARKETING");
+    if (session) {
+      ctx.db.stageSession.id.update({
+        ...session,
+        phase: "READY",
         updatedAt: ctx.timestamp,
       });
     }
@@ -1077,6 +1791,7 @@ export const advance_stage = spacetimedb.reducer(
   { roomId: t.u64() },
   (ctx, { roomId }) => {
     const currentRoom = ctx.db.room.id.find(roomId);
+    const economy = ctx.db.roomEconomy.roomId.find(roomId);
     if (!currentRoom) throw new SenderError("Sala não encontrada.");
     if (!currentRoom.ownerIdentity.isEqual(ctx.sender)) {
       throw new SenderError("Apenas o anfitrião pode avançar a etapa.");
@@ -1084,16 +1799,17 @@ export const advance_stage = spacetimedb.reducer(
     if (currentRoom.status !== "ACTIVE") {
       throw new SenderError("A jornada não está ativa.");
     }
+    if (!economy) {
+      throw new SenderError("A economia compartilhada da sala não existe.");
+    }
 
     if (COLLABORATIVE_STAGES.has(currentRoom.currentStage)) {
-      const currentSession = [...ctx.db.stageSession.iter()].find(
-        (item) =>
-          item.roomId === roomId && item.stage === currentRoom.currentStage,
-      );
-      const currentDecision = [...ctx.db.decision.iter()].find(
-        (item) =>
-          item.roomId === roomId && item.stage === currentRoom.currentStage,
-      );
+      const currentSession = Array.from(
+        ctx.db.stageSession.roomId.filter(roomId),
+      ).find((item) => item.stage === currentRoom.currentStage);
+      const currentDecision = Array.from(
+        ctx.db.decision.roomId.filter(roomId),
+      ).find((item) => item.stage === currentRoom.currentStage);
       if (
         !currentSession ||
         currentSession.phase !== "REVIEW" ||
@@ -1105,37 +1821,37 @@ export const advance_stage = spacetimedb.reducer(
       }
     }
 
-    const stageContributions = [...ctx.db.contribution.iter()].filter(
-      (item) =>
-        item.roomId === roomId && item.stage === currentRoom.currentStage,
-    );
-    const onlinePlayers = [...ctx.db.player.iter()].filter(
-      (item) => item.roomId === roomId && item.online,
-    );
-    const waitingPlayer = onlinePlayers.find(
-      (currentPlayer) =>
-        !stageContributions.some((item) =>
-          item.authorIdentity.isEqual(currentPlayer.identity),
-        ),
-    );
-    if (waitingPlayer) {
-      throw new SenderError(
-        `${waitingPlayer.displayName} ainda precisa contribuir.`,
-      );
+    if (currentRoom.currentStage === "PROTOTYPE") {
+      if (!ctx.db.projectPrototype.roomId.find(roomId)?.committed) {
+        throw new SenderError("Conclua o protótipo compartilhado.");
+      }
+    } else if (currentRoom.currentStage === "PILOT") {
+      if (!ctx.db.pilotSimulation.roomId.find(roomId)?.completed) {
+        throw new SenderError("Registre a decisão após o resultado do piloto.");
+      }
+    } else if (currentRoom.currentStage === "MARKETING") {
+      if (!ctx.db.marketingPlan.roomId.find(roomId)?.committed) {
+        throw new SenderError(
+          "Confirme o plano e o investimento de marketing.",
+        );
+      }
+    } else if (currentRoom.currentStage === "SALES") {
+      if (!ctx.db.salesResult.roomId.find(roomId)) {
+        throw new SenderError(
+          "O resultado de vendas ainda está sendo calculado.",
+        );
+      }
     }
 
     const nextIndex = currentRoom.stageIndex + 1;
     if (nextIndex >= BOARD_STATES.length) {
       if (!ctx.db.journey.roomId.find(roomId)) {
-        const solutionDecision = [...ctx.db.decision.iter()].find(
-          (item) => item.roomId === roomId && item.stage === "SOLUTION",
-        );
-        const solutionContribution = [...ctx.db.contribution.iter()].find(
-          (item) =>
-            item.roomId === roomId &&
-            item.stage === "SOLUTION" &&
-            item.kind === "MAIN",
-        );
+        const solutionDecision = Array.from(
+          ctx.db.decision.roomId.filter(roomId),
+        ).find((item) => item.roomId === roomId && item.stage === "SOLUTION");
+        const solutionContribution = Array.from(
+          ctx.db.contribution.roomId.filter(roomId),
+        ).find((item) => item.stage === "SOLUTION" && item.kind === "MAIN");
         ctx.db.journey.insert({
           id: 0n,
           roomId,
@@ -1162,7 +1878,7 @@ export const advance_stage = spacetimedb.reducer(
     }
 
     const nextStage = BOARD_STATES[nextIndex];
-    const drawnCard = cardForRoomStage(currentRoom.id.toString(), nextStage);
+    const drawnCard = cardForRoomStage(roomId.toString(), nextStage);
     if (!ctx.db.card.id.find(drawnCard.id)) {
       ctx.db.card.insert({
         id: drawnCard.id,
@@ -1180,13 +1896,144 @@ export const advance_stage = spacetimedb.reducer(
       stage: nextStage,
       cardId: drawnCard.id,
       drawnAt: ctx.timestamp,
+      drawIndex: 0,
+      active: true,
+      reason: "INITIAL",
     });
+
+    const phase =
+      nextStage === "PROTOTYPE"
+        ? "BUILD"
+        : nextStage === "PILOT"
+          ? "TEST"
+          : nextStage === "MARKETING"
+            ? "PLAN"
+            : nextStage === "SALES"
+              ? "RESULT"
+              : "CONTRIBUTING";
     ctx.db.stageSession.insert({
       id: 0n,
       roomId,
       stage: nextStage,
-      phase: "CONTRIBUTING",
+      phase,
       createdAt: ctx.timestamp,
+      updatedAt: ctx.timestamp,
+    });
+
+    let balance = economy.balance;
+    let sequence = economy.nextSequence;
+    let fundingRevealed = economy.fundingRevealed;
+    let reservedBalance = economy.reservedBalance;
+    const cost = Array.from(ctx.db.stageCost.roomId.filter(roomId)).find(
+      (item) => item.stage === nextStage,
+    );
+    if (!cost) throw new SenderError("Custo da etapa indisponível.");
+
+    if (!cost.applied) {
+      const charged = Math.min(balance, cost.amount);
+      balance -= charged;
+      ctx.db.stageCost.id.update({
+        ...cost,
+        applied: true,
+        updatedAt: ctx.timestamp,
+      });
+      ctx.db.economyTransaction.insert({
+        id: 0n,
+        roomId,
+        stage: nextStage,
+        delta: -charged,
+        balanceAfter: balance,
+        sequence,
+        reason: "STAGE_COST",
+        eventKey: `stage-cost:${roomId}:${nextStage}`,
+        label: cost.label,
+        createdAt: ctx.timestamp,
+      });
+      sequence += 1;
+    }
+
+    if (!fundingRevealed && economy.fundingStage === nextStage) {
+      balance += economy.fundingValue;
+      fundingRevealed = true;
+      ctx.db.economyTransaction.insert({
+        id: 0n,
+        roomId,
+        stage: nextStage,
+        delta: economy.fundingValue,
+        balanceAfter: balance,
+        sequence,
+        reason: "FUNDING_OPPORTUNITY",
+        eventKey: `funding:${roomId}`,
+        label: economy.fundingTitle,
+        createdAt: ctx.timestamp,
+      });
+      sequence += 1;
+    }
+
+    if (nextStage === "MARKETING") {
+      const salesCost = Array.from(ctx.db.stageCost.roomId.filter(roomId)).find(
+        (item) => item.stage === "SALES",
+      );
+      reservedBalance = salesCost?.amount ?? 0;
+    }
+
+    if (nextStage === "SALES") {
+      reservedBalance = 0;
+      const marketing = ctx.db.marketingPlan.roomId.find(roomId);
+      const pilot = ctx.db.pilotSimulation.roomId.find(roomId);
+      if (!marketing?.committed) {
+        throw new SenderError("O plano de marketing não foi confirmado.");
+      }
+      const remainingCredits = balance;
+      const calculation = calculateSalesResult({
+        remainingCredits,
+        marketingInvestment: marketing.investment,
+        readinessBonus: pilot?.readinessBonus ?? 0,
+        multiplier: marketing.effectiveMultiplier,
+      });
+      ctx.db.salesResult.insert({
+        roomId,
+        remainingCredits,
+        marketingInvestment: marketing.investment,
+        readinessBonus: pilot?.readinessBonus ?? 0,
+        multiplier: marketing.effectiveMultiplier,
+        simulatedSales: calculation.simulatedSales,
+        finalRunway: calculation.finalRunway,
+        tier: calculation.tier,
+        createdAt: ctx.timestamp,
+      });
+      balance = calculation.finalRunway;
+      ctx.db.economyTransaction.insert({
+        id: 0n,
+        roomId,
+        stage: "SALES",
+        delta: calculation.simulatedSales,
+        balanceAfter: balance,
+        sequence,
+        reason: "SIMULATED_SALES",
+        eventKey: `sales:${roomId}`,
+        label: "Vendas simuladas",
+        createdAt: ctx.timestamp,
+      });
+      sequence += 1;
+      ctx.db.contribution.insert({
+        id: 0n,
+        roomId,
+        stage: "SALES",
+        authorIdentity: ctx.sender,
+        kind: "MAIN",
+        content: `Vendas simuladas: ${calculation.simulatedSales} créditos. Runway final: ${calculation.finalRunway} créditos.`,
+        createdAt: ctx.timestamp,
+        updatedAt: ctx.timestamp,
+      });
+    }
+
+    ctx.db.roomEconomy.roomId.update({
+      ...economy,
+      balance,
+      reservedBalance,
+      fundingRevealed,
+      nextSequence: sequence,
       updatedAt: ctx.timestamp,
     });
 

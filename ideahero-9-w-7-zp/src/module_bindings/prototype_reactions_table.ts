@@ -13,10 +13,7 @@ import {
 export default __t.row({
   id: __t.u64().primaryKey(),
   roomId: __t.u64().name("room_id"),
-  stage: __t.string(),
-  cardId: __t.string().name("card_id"),
-  drawnAt: __t.timestamp().name("drawn_at"),
-  drawIndex: __t.u8().name("draw_index"),
-  active: __t.bool(),
-  reason: __t.string(),
+  playerIdentity: __t.identity().name("player_identity"),
+  reaction: __t.string(),
+  updatedAt: __t.timestamp().name("updated_at"),
 });

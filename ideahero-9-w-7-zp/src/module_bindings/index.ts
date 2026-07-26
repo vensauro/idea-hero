@@ -36,17 +36,22 @@ import {
 // Import all reducer arg schemas
 import AdvanceStageReducer from "./advance_stage_reducer";
 import CastVoteReducer from "./cast_vote_reducer";
+import CommitMarketingPlanReducer from "./commit_marketing_plan_reducer";
+import CommitPilotDecisionReducer from "./commit_pilot_decision_reducer";
+import CommitProjectPrototypeReducer from "./commit_project_prototype_reducer";
 import CreateRoomReducer from "./create_room_reducer";
 import EndJourneyReducer from "./end_journey_reducer";
 import JoinRoomReducer from "./join_room_reducer";
 import LeaveRoomReducer from "./leave_room_reducer";
 import OpenVotingReducer from "./open_voting_reducer";
+import ReactToPrototypeReducer from "./react_to_prototype_reducer";
+import RedrawCardReducer from "./redraw_card_reducer";
+import ResolvePilotReducer from "./resolve_pilot_reducer";
 import ResolveStageReducer from "./resolve_stage_reducer";
 import SetProfileReducer from "./set_profile_reducer";
 import SetReadyReducer from "./set_ready_reducer";
 import StartGameReducer from "./start_game_reducer";
 import SubmitContributionReducer from "./submit_contribution_reducer";
-import SubmitPrototypeReducer from "./submit_prototype_reducer";
 import UpdateJourneyReducer from "./update_journey_reducer";
 
 // Import all procedure arg schemas
@@ -54,16 +59,23 @@ import UpdateJourneyReducer from "./update_journey_reducer";
 // Import all table schema definitions
 import CardRow from "./card_table";
 import CurrentProfileRow from "./current_profile_table";
+import MarketingPlansRow from "./marketing_plans_table";
 import MemberRoomsRow from "./member_rooms_table";
 import OwnVotesRow from "./own_votes_table";
+import PilotSimulationsRow from "./pilot_simulations_table";
+import ProjectPrototypesRow from "./project_prototypes_table";
+import PrototypeReactionsRow from "./prototype_reactions_table";
 import RoomCardDrawsRow from "./room_card_draws_table";
 import RoomContributionStatusRow from "./room_contribution_status_table";
 import RoomDecisionsRow from "./room_decisions_table";
+import RoomEconomiesRow from "./room_economies_table";
+import RoomEconomyTransactionsRow from "./room_economy_transactions_table";
 import RoomJourneysRow from "./room_journeys_table";
 import RoomPlayersRow from "./room_players_table";
-import RoomPrototypesRow from "./room_prototypes_table";
+import RoomStageCostsRow from "./room_stage_costs_table";
 import RoomStageSessionsRow from "./room_stage_sessions_table";
 import RoomVoteStatusRow from "./room_vote_status_table";
+import SalesResultsRow from "./sales_results_table";
 import VisibleContributionsRow from "./visible_contributions_table";
 
 /** Type-only namespace exports for generated type groups. */
@@ -91,6 +103,13 @@ const tablesSchema = __schema({
     constraints: [
     ],
   }, CurrentProfileRow),
+  marketing_plans: __table({
+    name: 'marketing_plans',
+    indexes: [
+    ],
+    constraints: [
+    ],
+  }, MarketingPlansRow),
   member_rooms: __table({
     name: 'member_rooms',
     indexes: [
@@ -105,6 +124,27 @@ const tablesSchema = __schema({
     constraints: [
     ],
   }, OwnVotesRow),
+  pilot_simulations: __table({
+    name: 'pilot_simulations',
+    indexes: [
+    ],
+    constraints: [
+    ],
+  }, PilotSimulationsRow),
+  project_prototypes: __table({
+    name: 'project_prototypes',
+    indexes: [
+    ],
+    constraints: [
+    ],
+  }, ProjectPrototypesRow),
+  prototype_reactions: __table({
+    name: 'prototype_reactions',
+    indexes: [
+    ],
+    constraints: [
+    ],
+  }, PrototypeReactionsRow),
   room_card_draws: __table({
     name: 'room_card_draws',
     indexes: [
@@ -126,6 +166,20 @@ const tablesSchema = __schema({
     constraints: [
     ],
   }, RoomDecisionsRow),
+  room_economies: __table({
+    name: 'room_economies',
+    indexes: [
+    ],
+    constraints: [
+    ],
+  }, RoomEconomiesRow),
+  room_economy_transactions: __table({
+    name: 'room_economy_transactions',
+    indexes: [
+    ],
+    constraints: [
+    ],
+  }, RoomEconomyTransactionsRow),
   room_journeys: __table({
     name: 'room_journeys',
     indexes: [
@@ -140,13 +194,13 @@ const tablesSchema = __schema({
     constraints: [
     ],
   }, RoomPlayersRow),
-  room_prototypes: __table({
-    name: 'room_prototypes',
+  room_stage_costs: __table({
+    name: 'room_stage_costs',
     indexes: [
     ],
     constraints: [
     ],
-  }, RoomPrototypesRow),
+  }, RoomStageCostsRow),
   room_stage_sessions: __table({
     name: 'room_stage_sessions',
     indexes: [
@@ -161,6 +215,13 @@ const tablesSchema = __schema({
     constraints: [
     ],
   }, RoomVoteStatusRow),
+  sales_results: __table({
+    name: 'sales_results',
+    indexes: [
+    ],
+    constraints: [
+    ],
+  }, SalesResultsRow),
   visible_contributions: __table({
     name: 'visible_contributions',
     indexes: [
@@ -174,17 +235,22 @@ const tablesSchema = __schema({
 const reducersSchema = __reducers(
   __reducerSchema("advance_stage", AdvanceStageReducer),
   __reducerSchema("cast_vote", CastVoteReducer),
+  __reducerSchema("commit_marketing_plan", CommitMarketingPlanReducer),
+  __reducerSchema("commit_pilot_decision", CommitPilotDecisionReducer),
+  __reducerSchema("commit_project_prototype", CommitProjectPrototypeReducer),
   __reducerSchema("create_room", CreateRoomReducer),
   __reducerSchema("end_journey", EndJourneyReducer),
   __reducerSchema("join_room", JoinRoomReducer),
   __reducerSchema("leave_room", LeaveRoomReducer),
   __reducerSchema("open_voting", OpenVotingReducer),
+  __reducerSchema("react_to_prototype", ReactToPrototypeReducer),
+  __reducerSchema("redraw_card", RedrawCardReducer),
+  __reducerSchema("resolve_pilot", ResolvePilotReducer),
   __reducerSchema("resolve_stage", ResolveStageReducer),
   __reducerSchema("set_profile", SetProfileReducer),
   __reducerSchema("set_ready", SetReadyReducer),
   __reducerSchema("start_game", StartGameReducer),
   __reducerSchema("submit_contribution", SubmitContributionReducer),
-  __reducerSchema("submit_prototype", SubmitPrototypeReducer),
   __reducerSchema("update_journey", UpdateJourneyReducer),
 );
 

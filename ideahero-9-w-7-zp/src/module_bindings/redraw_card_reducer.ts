@@ -12,12 +12,4 @@ import {
 
 export default {
   roomId: __t.u64(),
-  showing: __t.string(),
-  targetUser: __t.string(),
-  storyboardStep1: __t.string(),
-  storyboardStep2: __t.string(),
-  storyboardStep3: __t.string(),
-  hypothesis: __t.string(),
-  resources: __t.string(),
-  smallestVersion: __t.string(),
 };

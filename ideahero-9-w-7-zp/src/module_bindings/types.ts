@@ -27,6 +27,9 @@ export const CardDraw = __t.object("CardDraw", {
   stage: __t.string(),
   cardId: __t.string(),
   drawnAt: __t.timestamp(),
+  drawIndex: __t.u8(),
+  active: __t.bool(),
+  reason: __t.string(),
 });
 export type CardDraw = __Infer<typeof CardDraw>;
 
@@ -64,6 +67,20 @@ export const Decision = __t.object("Decision", {
 });
 export type Decision = __Infer<typeof Decision>;
 
+export const EconomyTransaction = __t.object("EconomyTransaction", {
+  id: __t.u64(),
+  roomId: __t.u64(),
+  stage: __t.string(),
+  delta: __t.i32(),
+  balanceAfter: __t.u32(),
+  sequence: __t.u32(),
+  reason: __t.string(),
+  eventKey: __t.string(),
+  label: __t.string(),
+  createdAt: __t.timestamp(),
+});
+export type EconomyTransaction = __Infer<typeof EconomyTransaction>;
+
 export const Journey = __t.object("Journey", {
   id: __t.u64(),
   roomId: __t.u64(),
@@ -75,11 +92,49 @@ export const Journey = __t.object("Journey", {
 });
 export type Journey = __Infer<typeof Journey>;
 
+export const MarketingPlan = __t.object("MarketingPlan", {
+  roomId: __t.u64(),
+  audience: __t.string(),
+  valuePromise: __t.string(),
+  channel: __t.string(),
+  callToAction: __t.string(),
+  investment: __t.u32(),
+  responseTitle: __t.string(),
+  responseDescription: __t.string(),
+  baseMultiplier: __t.u32(),
+  matched: __t.bool(),
+  effectiveMultiplier: __t.u32(),
+  committed: __t.bool(),
+  createdAt: __t.timestamp(),
+  updatedAt: __t.timestamp(),
+});
+export type MarketingPlan = __Infer<typeof MarketingPlan>;
+
+export const MarketingPlans = __t.object("MarketingPlans", {});
+export type MarketingPlans = __Infer<typeof MarketingPlans>;
+
 export const MemberRooms = __t.object("MemberRooms", {});
 export type MemberRooms = __Infer<typeof MemberRooms>;
 
 export const OwnVotes = __t.object("OwnVotes", {});
 export type OwnVotes = __Infer<typeof OwnVotes>;
+
+export const PilotSimulation = __t.object("PilotSimulation", {
+  roomId: __t.u64(),
+  successSignal: __t.string(),
+  outcome: __t.string(),
+  readinessBonus: __t.u32(),
+  decision: __t.string(),
+  revision: __t.string(),
+  resolved: __t.bool(),
+  completed: __t.bool(),
+  createdAt: __t.timestamp(),
+  updatedAt: __t.timestamp(),
+});
+export type PilotSimulation = __Infer<typeof PilotSimulation>;
+
+export const PilotSimulations = __t.object("PilotSimulations", {});
+export type PilotSimulations = __Infer<typeof PilotSimulations>;
 
 export const Player = __t.object("Player", {
   id: __t.u64(),
@@ -90,7 +145,6 @@ export const Player = __t.object("Player", {
   role: __t.string(),
   ready: __t.bool(),
   online: __t.bool(),
-  points: __t.u32(),
   joinedAt: __t.timestamp(),
   active: __t.bool(),
 });
@@ -105,22 +159,34 @@ export const Profile = __t.object("Profile", {
 });
 export type Profile = __Infer<typeof Profile>;
 
-export const PrototypeSubmission = __t.object("PrototypeSubmission", {
-  id: __t.u64(),
+export const ProjectPrototype = __t.object("ProjectPrototype", {
   roomId: __t.u64(),
-  authorIdentity: __t.identity(),
-  showing: __t.string(),
-  targetUser: __t.string(),
-  storyboardStep1: __t.string(),
-  storyboardStep2: __t.string(),
-  storyboardStep3: __t.string(),
-  hypothesis: __t.string(),
-  resources: __t.string(),
-  smallestVersion: __t.string(),
+  personSituation: __t.string(),
+  firstAction: __t.string(),
+  keyInteraction: __t.string(),
+  evidence: __t.string(),
+  fidelity: __t.string(),
+  investment: __t.u32(),
+  committed: __t.bool(),
   createdAt: __t.timestamp(),
   updatedAt: __t.timestamp(),
 });
-export type PrototypeSubmission = __Infer<typeof PrototypeSubmission>;
+export type ProjectPrototype = __Infer<typeof ProjectPrototype>;
+
+export const ProjectPrototypes = __t.object("ProjectPrototypes", {});
+export type ProjectPrototypes = __Infer<typeof ProjectPrototypes>;
+
+export const PrototypeReaction = __t.object("PrototypeReaction", {
+  id: __t.u64(),
+  roomId: __t.u64(),
+  playerIdentity: __t.identity(),
+  reaction: __t.string(),
+  updatedAt: __t.timestamp(),
+});
+export type PrototypeReaction = __Infer<typeof PrototypeReaction>;
+
+export const PrototypeReactions = __t.object("PrototypeReactions", {});
+export type PrototypeReactions = __Infer<typeof PrototypeReactions>;
 
 export const Room = __t.object("Room", {
   id: __t.u64(),
@@ -152,20 +218,71 @@ export type RoomContributionStatus = __Infer<typeof RoomContributionStatus>;
 export const RoomDecisions = __t.object("RoomDecisions", {});
 export type RoomDecisions = __Infer<typeof RoomDecisions>;
 
+export const RoomEconomies = __t.object("RoomEconomies", {});
+export type RoomEconomies = __Infer<typeof RoomEconomies>;
+
+export const RoomEconomy = __t.object("RoomEconomy", {
+  roomId: __t.u64(),
+  initialBalance: __t.u32(),
+  balance: __t.u32(),
+  reservedBalance: __t.u32(),
+  seed: __t.u32(),
+  nextSequence: __t.u32(),
+  fundingStage: __t.string(),
+  fundingValue: __t.u32(),
+  fundingTitle: __t.string(),
+  fundingDescription: __t.string(),
+  fundingRevealed: __t.bool(),
+  createdAt: __t.timestamp(),
+  updatedAt: __t.timestamp(),
+});
+export type RoomEconomy = __Infer<typeof RoomEconomy>;
+
+export const RoomEconomyTransactions = __t.object("RoomEconomyTransactions", {});
+export type RoomEconomyTransactions = __Infer<typeof RoomEconomyTransactions>;
+
 export const RoomJourneys = __t.object("RoomJourneys", {});
 export type RoomJourneys = __Infer<typeof RoomJourneys>;
 
 export const RoomPlayers = __t.object("RoomPlayers", {});
 export type RoomPlayers = __Infer<typeof RoomPlayers>;
 
-export const RoomPrototypes = __t.object("RoomPrototypes", {});
-export type RoomPrototypes = __Infer<typeof RoomPrototypes>;
+export const RoomStageCosts = __t.object("RoomStageCosts", {});
+export type RoomStageCosts = __Infer<typeof RoomStageCosts>;
 
 export const RoomStageSessions = __t.object("RoomStageSessions", {});
 export type RoomStageSessions = __Infer<typeof RoomStageSessions>;
 
 export const RoomVoteStatus = __t.object("RoomVoteStatus", {});
 export type RoomVoteStatus = __Infer<typeof RoomVoteStatus>;
+
+export const SalesResult = __t.object("SalesResult", {
+  roomId: __t.u64(),
+  remainingCredits: __t.u32(),
+  marketingInvestment: __t.u32(),
+  readinessBonus: __t.u32(),
+  multiplier: __t.u32(),
+  simulatedSales: __t.u32(),
+  finalRunway: __t.u32(),
+  tier: __t.string(),
+  createdAt: __t.timestamp(),
+});
+export type SalesResult = __Infer<typeof SalesResult>;
+
+export const SalesResults = __t.object("SalesResults", {});
+export type SalesResults = __Infer<typeof SalesResults>;
+
+export const StageCost = __t.object("StageCost", {
+  id: __t.u64(),
+  roomId: __t.u64(),
+  stage: __t.string(),
+  amount: __t.u32(),
+  label: __t.string(),
+  applied: __t.bool(),
+  createdAt: __t.timestamp(),
+  updatedAt: __t.timestamp(),
+});
+export type StageCost = __Infer<typeof StageCost>;
 
 export const StageSession = __t.object("StageSession", {
   id: __t.u64(),

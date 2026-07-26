@@ -8,9 +8,17 @@ import type {
   Contribution,
   ContributionStatus,
   Decision,
+  EconomyTransaction,
   Journey,
+  MarketingPlan,
+  PilotSimulation,
   Player,
+  ProjectPrototype,
+  PrototypeReaction,
   Room,
+  RoomEconomy,
+  SalesResult,
+  StageCost,
   StageSession,
   VisibleContribution,
   Vote,
@@ -32,6 +40,13 @@ import {
 import { createRoomWithAvailableCode } from "./room-code";
 import { latestOpenSession } from "./room-session";
 import { VoiceInputButton, type VoiceInputResult } from "./VoiceInputButton";
+import {
+  CardChangeButton,
+  EconomyEventOverlay,
+  RunwayFinalStage,
+  RunwayWallet,
+} from "./runway-experience";
+import { formatCredits } from "./runway-format";
 
 export const BOARD_STATES = [
   "SCENARIO",
@@ -270,6 +285,24 @@ function App() {
   const [voteStatuses, voteStatusesReady] = useTable(tables.room_vote_status);
   const [decisions, decisionsReady] = useTable(tables.room_decisions);
   const [journeys, journeysReady] = useTable(tables.room_journeys);
+  const [economies, economiesReady] = useTable(tables.room_economies);
+  const [stageCosts, stageCostsReady] = useTable(tables.room_stage_costs);
+  const [economyTransactions, economyTransactionsReady] = useTable(
+    tables.room_economy_transactions,
+  );
+  const [projectPrototypes, projectPrototypesReady] = useTable(
+    tables.project_prototypes,
+  );
+  const [prototypeReactions, prototypeReactionsReady] = useTable(
+    tables.prototype_reactions,
+  );
+  const [pilotSimulations, pilotSimulationsReady] = useTable(
+    tables.pilot_simulations,
+  );
+  const [marketingPlans, marketingPlansReady] = useTable(
+    tables.marketing_plans,
+  );
+  const [salesResults, salesResultsReady] = useTable(tables.sales_results);
 
   const currentProfile = identity
     ? profiles.find((item) => sameIdentity(item.identity, identity))
@@ -324,7 +357,15 @@ function App() {
     !votesReady ||
     !voteStatusesReady ||
     !decisionsReady ||
-    !journeysReady
+    !journeysReady ||
+    !economiesReady ||
+    !stageCostsReady ||
+    !economyTransactionsReady ||
+    !projectPrototypesReady ||
+    !prototypeReactionsReady ||
+    !pilotSimulationsReady ||
+    !marketingPlansReady ||
+    !salesResultsReady
   ) {
     return <LoadingScreen label="Sincronizando a jornada…" />;
   }
@@ -382,6 +423,31 @@ function App() {
     );
   }
 
+  const roomEconomy = economies.find((item) => item.roomId === currentRoom.id);
+  const roomStageCosts = stageCosts.filter(
+    (item) => item.roomId === currentRoom.id,
+  );
+  const roomTransactions = economyTransactions.filter(
+    (item) => item.roomId === currentRoom.id,
+  );
+  const roomPrototype = projectPrototypes.find(
+    (item) => item.roomId === currentRoom.id,
+  );
+  const roomPrototypeReactions = prototypeReactions.filter(
+    (item) => item.roomId === currentRoom.id,
+  );
+  const roomPilot = pilotSimulations.find(
+    (item) => item.roomId === currentRoom.id,
+  );
+  const roomMarketing = marketingPlans.find(
+    (item) => item.roomId === currentRoom.id,
+  );
+  const roomSales = salesResults.find((item) => item.roomId === currentRoom.id);
+
+  if (!roomEconomy) {
+    return <LoadingScreen label="Preparando a economia da jornada…" />;
+  }
+
   return (
     <GameBoard
       room={currentRoom}
@@ -396,6 +462,14 @@ function App() {
       decisions={decisions}
       journeys={journeys}
       currentPlayer={currentPlayer}
+      economy={roomEconomy}
+      stageCosts={roomStageCosts}
+      economyTransactions={roomTransactions}
+      projectPrototype={roomPrototype}
+      prototypeReactions={roomPrototypeReactions}
+      pilotSimulation={roomPilot}
+      marketingPlan={roomMarketing}
+      salesResult={roomSales}
     />
   );
 }
@@ -917,6 +991,14 @@ function GameBoard({
   decisions,
   journeys,
   currentPlayer,
+  economy,
+  stageCosts,
+  economyTransactions,
+  projectPrototype,
+  prototypeReactions,
+  pilotSimulation,
+  marketingPlan,
+  salesResult,
 }: {
   room: Room;
   players: Player[];
@@ -930,6 +1012,14 @@ function GameBoard({
   decisions: readonly Decision[];
   journeys: readonly Journey[];
   currentPlayer: Player;
+  economy: RoomEconomy;
+  stageCosts: readonly StageCost[];
+  economyTransactions: readonly EconomyTransaction[];
+  projectPrototype?: ProjectPrototype;
+  prototypeReactions: readonly PrototypeReaction[];
+  pilotSimulation?: PilotSimulation;
+  marketingPlan?: MarketingPlan;
+  salesResult?: SalesResult;
 }) {
   const submitContribution = useReducer(reducers.submitContribution);
   const advanceStage = useReducer(reducers.advanceStage);
@@ -941,7 +1031,7 @@ function GameBoard({
   const content = STAGE_CONTENT[stage] ?? STAGE_CONTENT.SCENARIO;
   const guidance = STAGE_GUIDANCE[stage];
   const stageDraw = cardDraws.find(
-    (item) => item.roomId === room.id && item.stage === stage,
+    (item) => item.roomId === room.id && item.stage === stage && item.active,
   );
   const stageCard = stageDraw
     ? cards.find((item) => item.id === stageDraw.cardId)
@@ -1098,12 +1188,44 @@ function GameBoard({
         decisions={decisions}
         journey={journeys.find((item) => item.roomId === room.id)}
         currentPlayer={currentPlayer}
+        economy={economy}
+        transactions={economyTransactions}
+        salesResult={salesResult}
+      />
+    );
+  }
+
+  if (room.stageIndex >= 4) {
+    return (
+      <RunwayFinalStage
+        room={room}
+        players={players}
+        contributions={contributions}
+        decisions={decisions}
+        currentPlayer={currentPlayer}
+        card={stageCard}
+        draw={stageDraw}
+        economy={economy}
+        stageCosts={stageCosts}
+        transactions={economyTransactions}
+        prototype={projectPrototype}
+        reactions={prototypeReactions}
+        pilot={pilotSimulation}
+        marketing={marketingPlan}
+        sales={salesResult}
+        leaveControl={
+          <LeaveRoomButton room={room} currentPlayer={currentPlayer} />
+        }
       />
     );
   }
 
   return (
     <main className="game-shell">
+      <EconomyEventOverlay
+        roomId={room.id}
+        transactions={economyTransactions}
+      />
       <header className="game-header">
         <BrandLogo compact />
         <div className="topbar-actions">
@@ -1137,6 +1259,11 @@ function GameBoard({
         ))}
       </section>
 
+      <RunwayWallet
+        economy={economy}
+        stageCost={stageCosts.find((item) => item.stage === stage)}
+      />
+
       <JourneySummary
         room={room}
         contributions={contributions}
@@ -1152,6 +1279,14 @@ function GameBoard({
           <h1>{content.title}</h1>
           <p>{content.objective}</p>
           <InspirationCard card={stageCard} stageLabel={content.eyebrow} />
+          {isHost && (
+            <CardChangeButton
+              room={room}
+              draw={stageDraw}
+              economy={economy}
+              locked={stageContributions.length > 0 || phase !== "CONTRIBUTING"}
+            />
+          )}
         </article>
 
         <article className="contribution-panel">
@@ -1651,6 +1786,9 @@ function JourneyResult({
   decisions,
   journey,
   currentPlayer,
+  economy,
+  transactions,
+  salesResult,
 }: {
   room: Room;
   players: Player[];
@@ -1660,6 +1798,9 @@ function JourneyResult({
   decisions: readonly Decision[];
   journey?: Journey;
   currentPlayer: Player;
+  economy: RoomEconomy;
+  transactions: readonly EconomyTransaction[];
+  salesResult?: SalesResult;
 }) {
   const updateJourney = useReducer(reducers.updateJourney);
   const leaveRoom = useReducer(reducers.leaveRoom);
@@ -1832,6 +1973,61 @@ function JourneyResult({
         </p>
       </section>
 
+      {salesResult && (
+        <section
+          className="final-runway-summary"
+          aria-labelledby="runway-result-title"
+        >
+          <div>
+            <p className="kicker">Resultado da simulação</p>
+            <h2 id="runway-result-title">
+              Runway final: {formatCredits(salesResult.finalRunway)} créditos
+            </h2>
+            <p>
+              Vendas simuladas de {formatCredits(salesResult.simulatedSales)}{" "}
+              com multiplicador {(salesResult.multiplier / 100).toFixed(1)}×.
+            </p>
+          </div>
+          <div className="final-runway-grid">
+            <span>
+              <small>Capital inicial</small>
+              <b>{formatCredits(economy.initialBalance)}</b>
+            </span>
+            <span>
+              <small>Financiamento</small>
+              <b>
+                +
+                {formatCredits(
+                  transactions
+                    .filter((item) => item.reason === "FUNDING_OPPORTUNITY")
+                    .reduce((total, item) => total + item.delta, 0),
+                )}
+              </b>
+            </span>
+            <span>
+              <small>Prontidão</small>
+              <b>+{formatCredits(salesResult.readinessBonus)}</b>
+            </span>
+            <span>
+              <small>Marketing</small>
+              <b>−{formatCredits(salesResult.marketingInvestment)}</b>
+            </span>
+            <span className="is-highlight">
+              <small>Vendas simuladas</small>
+              <b>+{formatCredits(salesResult.simulatedSales)}</b>
+            </span>
+            <span className="is-highlight">
+              <small>Saldo final</small>
+              <b>{formatCredits(salesResult.finalRunway)}</b>
+            </span>
+          </div>
+          <p className="simulation-disclaimer">
+            Este valor é uma simulação educativa do jogo, não uma previsão
+            financeira.
+          </p>
+        </section>
+      )}
+
       {isHost && (
         <section className="manifest-editor" aria-labelledby="manifest-title">
           <div className="manifest-heading">
@@ -1909,7 +2105,8 @@ function JourneyResult({
         {BOARD_STATES.map((stage) => {
           const entries = contributions.filter((item) => item.stage === stage);
           const draw = cardDraws.find(
-            (item) => item.roomId === room.id && item.stage === stage,
+            (item) =>
+              item.roomId === room.id && item.stage === stage && item.active,
           );
           const stageCard = draw
             ? cards.find((item) => item.id === draw.cardId)

@@ -1,4 +1,4 @@
-export const CARD_CATALOG = [
+const BASE_CARD_CATALOG = [
   {
     id: "00a3fd49-a67d-4438-92e8-2dc61ef93b98",
     stage: "SCENARIO",
@@ -166,6 +166,157 @@ export const CARD_CATALOG = [
   },
 ] as const;
 
+const CARD_VARIANTS: Record<
+  string,
+  readonly [
+    { suffix: string; title: string; lens: string; provocation: string },
+    { suffix: string; title: string; lens: string; provocation: string },
+  ]
+> = {
+  SCENARIO: [
+    {
+      suffix: "future",
+      title: "Um futuro escondido",
+      lens: "Tempo",
+      provocation:
+        "O que teria mudado neste mundo cinco anos antes desta imagem?",
+    },
+    {
+      suffix: "voices",
+      title: "Vozes do lugar",
+      lens: "Comunidade",
+      provocation:
+        "Quem vive aqui, o que deseja e que história ainda não foi contada?",
+    },
+  ],
+  PROBLEM: [
+    {
+      suffix: "friction",
+      title: "Fricção cotidiana",
+      lens: "Barreira",
+      provocation:
+        "Em que pequeno momento a experiência deixa de funcionar para alguém?",
+    },
+    {
+      suffix: "excluded",
+      title: "À margem",
+      lens: "Acesso",
+      provocation:
+        "Quem fica de fora quando este sistema funciona exatamente como foi planejado?",
+    },
+  ],
+  INSIGHT: [
+    {
+      suffix: "cause",
+      title: "Por baixo da superfície",
+      lens: "Causa",
+      provocation:
+        "Que causa silenciosa explicaria vários sintomas ao mesmo tempo?",
+    },
+    {
+      suffix: "resource",
+      title: "Recurso esquecido",
+      lens: "Oportunidade",
+      provocation:
+        "Que capacidade já existe neste cenário, mas ainda não está sendo usada?",
+    },
+  ],
+  SOLUTION: [
+    {
+      suffix: "reverse",
+      title: "Caminho inverso",
+      lens: "Inversão",
+      provocation:
+        "Como seria a solução se começasse pelo resultado e voltasse até o primeiro passo?",
+    },
+    {
+      suffix: "bridge",
+      title: "Ponte improvável",
+      lens: "Conexão",
+      provocation:
+        "Que duas capacidades existentes podem ser conectadas de uma maneira nova?",
+    },
+  ],
+  PROTOTYPE: [
+    {
+      suffix: "paper",
+      title: "Protótipo de papel",
+      lens: "Baixa fidelidade",
+      provocation:
+        "Mostre o fluxo com papel, cartões e objetos antes de construir tecnologia.",
+    },
+    {
+      suffix: "roleplay",
+      title: "Ensaio de serviço",
+      lens: "Encenação",
+      provocation:
+        "Represente os primeiros sessenta segundos da experiência com pessoas e falas.",
+    },
+  ],
+  PILOT: [
+    {
+      suffix: "access",
+      title: "Acesso limitado",
+      lens: "Realidade",
+      provocation:
+        "Teste como a solução se comporta com conexão, tempo ou recursos limitados.",
+    },
+    {
+      suffix: "skeptic",
+      title: "Pessoa cética",
+      lens: "Confiança",
+      provocation:
+        "O primeiro participante não acredita na promessa. Que evidência poderia convencê-lo?",
+    },
+  ],
+  MARKETING: [
+    {
+      suffix: "community",
+      title: "Confiança em rede",
+      lens: "Comunidade",
+      provocation:
+        "Como a mensagem pode circular entre pessoas que já confiam umas nas outras?",
+    },
+    {
+      suffix: "direct",
+      title: "Convite direto",
+      lens: "Relacionamento",
+      provocation:
+        "Que convite pessoal faria o público certo experimentar a proposta agora?",
+    },
+  ],
+  SALES: [
+    {
+      suffix: "signal",
+      title: "Primeiro sinal",
+      lens: "Validação",
+      provocation:
+        "Qual comportamento concreto indicaria que o mercado percebeu valor?",
+    },
+    {
+      suffix: "runway",
+      title: "Próxima pista",
+      lens: "Runway",
+      provocation:
+        "Que próximo experimento merece receber o capital que ainda resta?",
+    },
+  ],
+};
+
+export const CARD_CATALOG = BASE_CARD_CATALOG.flatMap((card) => {
+  const variants = CARD_VARIANTS[card.stage];
+  return [
+    card,
+    ...variants.map((variant) => ({
+      ...card,
+      id: `${card.id}-${variant.suffix}`,
+      title: variant.title,
+      lens: variant.lens,
+      provocation: variant.provocation,
+    })),
+  ];
+});
+
 function stableHash(value: string) {
   let hash = 2_166_136_261;
   for (let index = 0; index < value.length; index += 1) {
@@ -175,12 +326,16 @@ function stableHash(value: string) {
   return hash >>> 0;
 }
 
-export function cardForRoomStage(roomCode: string, stage: string) {
+export function cardForRoomStage(
+  roomCode: string,
+  stage: string,
+  drawIndex = 0,
+) {
   const stageCards = CARD_CATALOG.filter((card) => card.stage === stage);
   if (stageCards.length === 0) {
     throw new Error(`Nenhuma carta configurada para a etapa ${stage}.`);
   }
-  return stageCards[
-    stableHash(`${roomCode}:${stage}:deck-v1`) % stageCards.length
-  ];
+  const firstIndex =
+    stableHash(`${roomCode}:${stage}:deck-v2`) % stageCards.length;
+  return stageCards[(firstIndex + drawIndex) % stageCards.length];
 }

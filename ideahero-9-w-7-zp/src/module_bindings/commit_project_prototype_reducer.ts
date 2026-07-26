@@ -10,13 +10,11 @@ import {
   type Infer as __Infer,
 } from "spacetimedb";
 
-export default __t.row({
-  id: __t.u64().primaryKey(),
-  roomId: __t.u64().name("room_id"),
-  stage: __t.string(),
-  cardId: __t.string().name("card_id"),
-  drawnAt: __t.timestamp().name("drawn_at"),
-  drawIndex: __t.u8().name("draw_index"),
-  active: __t.bool(),
-  reason: __t.string(),
-});
+export default {
+  roomId: __t.u64(),
+  personSituation: __t.string(),
+  firstAction: __t.string(),
+  keyInteraction: __t.string(),
+  evidence: __t.string(),
+  fidelity: __t.string(),
+};

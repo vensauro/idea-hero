@@ -17,10 +17,10 @@ describe("experiência canônica do Idea Hero", () => {
     ]);
   });
 
-  it("oferece duas cartas curadas e acessíveis para cada etapa", () => {
+  it("oferece seis cartas curadas e acessíveis para cada etapa", () => {
     for (const stage of BOARD_STATES) {
       const stageCards = CARD_CATALOG.filter((card) => card.stage === stage);
-      expect(stageCards).toHaveLength(2);
+      expect(stageCards).toHaveLength(6);
       for (const card of stageCards) {
         expect(card.imagePath).toMatch(/^\/cards\/.+\.webp$/);
         expect(card.altText.length).toBeGreaterThan(30);
@@ -35,6 +35,14 @@ describe("experiência canônica do Idea Hero", () => {
       const replay = cardForRoomStage("ideia-teste", stage);
       expect(replay.id).toBe(first.id);
       expect(first.stage).toBe(stage);
+    }
+  });
+
+  it("nunca devolve a carta descartada na primeira troca", () => {
+    for (const stage of BOARD_STATES.slice(0, 6)) {
+      const first = cardForRoomStage("troca-segura", stage, 0);
+      const replacement = cardForRoomStage("troca-segura", stage, 1);
+      expect(replacement.id).not.toBe(first.id);
     }
   });
 
