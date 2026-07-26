@@ -67,6 +67,22 @@ describe("experiência canônica do Idea Hero", () => {
     }
   });
 
+  it("permite trocar a carta repetidamente, sempre mudando a arte atual", () => {
+    for (const stage of BOARD_STATES.slice(0, 6)) {
+      let current = cardForRoomStage("trocas-repetidas", stage);
+      for (let drawIndex = 1; drawIndex <= 5; drawIndex += 1) {
+        const replacement = replacementCardForRoomStage(
+          "trocas-repetidas",
+          stage,
+          current.imagePath,
+          drawIndex,
+        );
+        expect(replacement.imagePath).not.toBe(current.imagePath);
+        current = replacement;
+      }
+    }
+  });
+
   it("explica ação, escrita e próximo acontecimento em todas as etapas", () => {
     for (const stage of BOARD_STATES) {
       const guidance = STAGE_GUIDANCE[stage];

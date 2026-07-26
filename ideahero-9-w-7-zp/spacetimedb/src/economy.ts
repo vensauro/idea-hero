@@ -143,10 +143,10 @@ export const STAGE_COST_LABELS: Record<EconomyStage, string> = {
 };
 
 const COST_PAIRS = [
-  [250, 500],
   [500, 750],
   [750, 1_000],
-  [500, 750],
+  [1_000, 1_500],
+  [750, 1_000],
 ] as const;
 
 export type StageCostDefinition = {

@@ -411,8 +411,6 @@ export function CardChangeButton({
   groupVotes: readonly GroupVote[];
 }) {
   const voteCardChange = useReducer(reducers.voteCardChange);
-  const refreshRedrawnCard = useReducer(reducers.refreshRedrawnCard);
-  const refreshedDrawRef = useRef<string | undefined>(undefined);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState("");
   const currentStageVotes = (groupVotes ?? []).filter(
@@ -424,16 +422,8 @@ export function CardChangeButton({
   const unavailable =
     locked ||
     !draw ||
-    draw.drawIndex > 0 ||
     room.stageIndex > 5 ||
     economy.balance < CARD_REDRAW_COST;
-
-  useEffect(() => {
-    if (!draw || draw.drawIndex === 0) return;
-    if (refreshedDrawRef.current === draw.cardId) return;
-    refreshedDrawRef.current = draw.cardId;
-    void refreshRedrawnCard({ roomId: room.id }).catch(() => undefined);
-  }, [draw, refreshRedrawnCard, room.id]);
 
   async function toggleVote() {
     setPending(true);
@@ -456,16 +446,12 @@ export function CardChangeButton({
         aria-pressed={Boolean(ownVote)}
         onClick={() => void toggleVote()}
       >
-        {draw && draw.drawIndex > 0
-          ? "Carta trocada pela equipe"
-          : ownVote
-            ? "Retirar voto de troca"
-            : "Votar para trocar · −500"}
+        {ownVote ? "Retirar voto de troca" : "Votar para trocar · −500"}
       </button>
       {!unavailable && (
         <VoteProgress votes={votes} required={required} players={players} />
       )}
-      {locked && draw?.drawIndex === 0 && (
+      {locked && (
         <small>A votação fechou quando a equipe começou esta etapa.</small>
       )}
       {error && <small className="error-message">{error}</small>}
@@ -705,6 +691,250 @@ function artifactSource(data: string) {
     : data;
 }
 
+type VisualConcept = {
+  title: string;
+  description: string;
+  prompt: string;
+  tags: string[];
+};
+
+type ImageStudioResult = {
+  error?: string;
+  extractedContent?: string;
+  concepts?: VisualConcept[];
+  referenceKey?: string;
+  key?: string;
+  caption?: string;
+};
+
+async function requestImageStudio(formData: FormData) {
+  const response = await fetch("/api/image-studio", {
+    method: "POST",
+    body: formData,
+  });
+  const result = (await response.json()) as ImageStudioResult;
+  if (!response.ok) {
+    throw new Error(
+      result.error || "Não foi possível usar o estúdio de imagens.",
+    );
+  }
+  return result;
+}
+
+function IdeaImageStudio({
+  room,
+  defaultIdea,
+  disabled,
+  onChooseImage,
+}: {
+  room: Room;
+  defaultIdea: string;
+  disabled: boolean;
+  onChooseImage: (
+    key: string,
+    caption: string,
+    kind: "IMAGE" | "AI_IMAGE",
+  ) => Promise<void>;
+}) {
+  const [idea, setIdea] = useState(defaultIdea);
+  const [concepts, setConcepts] = useState<VisualConcept[]>([]);
+  const [extractedContent, setExtractedContent] = useState("");
+  const [referenceKey, setReferenceKey] = useState("");
+  const [working, setWorking] = useState<
+    "" | "directions" | "upload" | "generate"
+  >("");
+  const [error, setError] = useState("");
+  const [generatedKey, setGeneratedKey] = useState("");
+
+  useEffect(() => {
+    if (!idea) setIdea(defaultIdea);
+  }, [defaultIdea, idea]);
+
+  async function getDirections() {
+    setWorking("directions");
+    setError("");
+    try {
+      const formData = new FormData();
+      formData.set("operation", "directions");
+      formData.set("roomId", room.id.toString());
+      formData.set("idea", idea);
+      const result = await requestImageStudio(formData);
+      setConcepts(result.concepts ?? []);
+      setExtractedContent(result.extractedContent ?? "");
+      setReferenceKey("");
+    } catch (caught) {
+      setError(errorMessage(caught));
+    } finally {
+      setWorking("");
+    }
+  }
+
+  async function analyzeReference(file: File) {
+    setWorking("upload");
+    setError("");
+    try {
+      const formData = new FormData();
+      formData.set("operation", "analyze");
+      formData.set("roomId", room.id.toString());
+      formData.set("idea", idea);
+      formData.set("image", file);
+      const result = await requestImageStudio(formData);
+      setConcepts(result.concepts ?? []);
+      setExtractedContent(result.extractedContent ?? "");
+      setReferenceKey(result.referenceKey ?? "");
+      setGeneratedKey("");
+    } catch (caught) {
+      setError(errorMessage(caught));
+    } finally {
+      setWorking("");
+    }
+  }
+
+  async function generateConcept(concept: VisualConcept) {
+    setWorking("generate");
+    setError("");
+    try {
+      const formData = new FormData();
+      formData.set("operation", "generate");
+      formData.set("roomId", room.id.toString());
+      formData.set("prompt", concept.prompt);
+      formData.set("title", concept.title);
+      const result = await requestImageStudio(formData);
+      if (!result.key) throw new Error("A imagem criada não foi encontrada.");
+      setGeneratedKey(result.key);
+      await onChooseImage(
+        result.key,
+        result.caption || concept.title,
+        "AI_IMAGE",
+      );
+    } catch (caught) {
+      setError(errorMessage(caught));
+    } finally {
+      setWorking("");
+    }
+  }
+
+  return (
+    <section className="idea-image-studio" aria-labelledby="image-studio-title">
+      <div className="image-studio-heading">
+        <div>
+          <p className="kicker">Estúdio visual com IA</p>
+          <h3 id="image-studio-title">
+            Transformem a ideia em imagens de carta
+          </h3>
+        </div>
+        <span>6 direções por vez</span>
+      </div>
+      <p>
+        Escrevam o que a imagem deve fazer a pessoa sentir. A IA propõe caminhos
+        visuais; escolham um para gerar e ele entra direto no protótipo da
+        equipe.
+      </p>
+      <label className="image-studio-idea">
+        Ideia para a imagem
+        <textarea
+          value={idea}
+          maxLength={500}
+          disabled={disabled || Boolean(working)}
+          onChange={(event) => setIdea(event.target.value)}
+          placeholder="Ex.: Uma forma simples de pessoas do bairro trocarem ferramentas"
+        />
+      </label>
+      <div className="image-studio-actions">
+        <button
+          type="button"
+          className="secondary-button"
+          disabled={disabled || Boolean(working) || idea.trim().length < 2}
+          onClick={() => void getDirections()}
+        >
+          {working === "directions"
+            ? "Criando caminhos..."
+            : "Criar 6 caminhos"}
+        </button>
+        <label className="image-reference-upload">
+          <span>
+            {working === "upload"
+              ? "Lendo imagem..."
+              : "Usar uma imagem de referência"}
+          </span>
+          <input
+            type="file"
+            accept="image/jpeg,image/png,image/webp,image/gif"
+            disabled={disabled || Boolean(working) || idea.trim().length < 2}
+            onChange={(event) => {
+              const file = event.target.files?.[0];
+              if (file) void analyzeReference(file);
+              event.target.value = "";
+            }}
+          />
+        </label>
+      </div>
+      {referenceKey && (
+        <div className="image-reference-result">
+          <img
+            src={artifactSource(referenceKey)}
+            alt="Imagem de referência enviada"
+          />
+          <div>
+            <strong>Referência salva na galeria da equipe</strong>
+            <p>
+              {extractedContent ||
+                "A IA está usando os elementos desta imagem."}
+            </p>
+            <button
+              type="button"
+              className="secondary-button"
+              disabled={disabled || Boolean(working)}
+              onClick={() =>
+                void onChooseImage(
+                  referenceKey,
+                  "Imagem de referência da equipe",
+                  "IMAGE",
+                )
+              }
+            >
+              Usar esta imagem agora
+            </button>
+          </div>
+        </div>
+      )}
+      {concepts.length > 0 && (
+        <div className="visual-concept-grid" aria-live="polite">
+          {concepts.map((concept) => (
+            <article className="visual-concept" key={concept.prompt}>
+              <div>
+                <h4>{concept.title}</h4>
+                <p>{concept.description}</p>
+              </div>
+              <div className="visual-concept-tags">
+                {concept.tags.map((tag) => (
+                  <span key={tag}>{tag}</span>
+                ))}
+              </div>
+              <button
+                type="button"
+                className="primary-button"
+                disabled={disabled || Boolean(working)}
+                onClick={() => void generateConcept(concept)}
+              >
+                {working === "generate"
+                  ? "Gerando imagem..."
+                  : "Gerar esta imagem"}
+              </button>
+            </article>
+          ))}
+        </div>
+      )}
+      {generatedKey && (
+        <p className="image-studio-success">
+          Imagem criada e escolhida para aparecer no protótipo da equipe.
+        </p>
+      )}
+      {error && <p className="error-message">{error}</p>}
+    </section>
+  );
+}
+
 type DrawingPoint = { x: number; y: number };
 
 const DRAWING_COLORS = [
@@ -931,7 +1161,9 @@ function PrototypeStage({
   const voteReady = useReducer(reducers.votePrototypeReady);
   const voteExtension = useReducer(reducers.votePrototypeExtension);
   const finishActivity = useReducer(reducers.finishPrototypeActivity);
-  const [mode, setMode] = useState<"DRAWING" | "IMAGE" | "AUDIO">("DRAWING");
+  const [mode, setMode] = useState<"DRAWING" | "IMAGE" | "AUDIO" | "AI">(
+    "DRAWING",
+  );
   const [caption, setCaption] = useState("");
   const [pending, setPending] = useState(false);
   const [error, setError] = useState("");
@@ -954,7 +1186,9 @@ function PrototypeStage({
   const usedKinds = new Set(artifacts.map((artifact) => artifact.artifactKind));
   const mediaArtifacts = artifacts.filter(
     (artifact) =>
-      artifact.artifactKind === "IMAGE" || artifact.artifactKind === "AUDIO",
+      artifact.artifactKind === "IMAGE" ||
+      artifact.artifactKind === "AI_IMAGE" ||
+      artifact.artifactKind === "AUDIO",
   );
   const drawingSnapshot = artifacts.find(
     (artifact) => artifact.artifactKind === "DRAWING" && artifact.artifactData,
@@ -1086,25 +1320,29 @@ function PrototypeStage({
               <p className="kicker">Protótipo da equipe</p>
               <h3>Três formas de tornar a ideia real</h3>
             </div>
-            <span>{usedKinds.size}/3 linguagens criativas</span>
+            <span>{usedKinds.size}/4 linguagens criativas</span>
           </div>
           <div
             className="creative-bonus-progress"
             aria-label="Bônus por linguagens criativas"
           >
-            {(["DRAWING", "IMAGE", "AUDIO"] as const).map((kind) => (
-              <span
-                className={usedKinds.has(kind) ? "is-earned" : ""}
-                key={kind}
-              >
-                {kind === "DRAWING"
-                  ? "Desenho"
-                  : kind === "IMAGE"
-                    ? "Foto"
-                    : "Som"}
-                <b>+{PROTOTYPE_CREATIVE_BONUS}</b>
-              </span>
-            ))}
+            {(["DRAWING", "IMAGE", "AI_IMAGE", "AUDIO"] as const).map(
+              (kind) => (
+                <span
+                  className={usedKinds.has(kind) ? "is-earned" : ""}
+                  key={kind}
+                >
+                  {kind === "DRAWING"
+                    ? "Desenho"
+                    : kind === "IMAGE"
+                      ? "Foto"
+                      : kind === "AI_IMAGE"
+                        ? "Imagem com IA"
+                        : "Som"}
+                  <b>+{PROTOTYPE_CREATIVE_BONUS}</b>
+                </span>
+              ),
+            )}
           </div>
           {drawingStrokes.length > 0 && !canEdit && (
             <DrawingBoard
@@ -1146,12 +1384,17 @@ function PrototypeStage({
 
       {canEdit && (
         <>
-          <div className="artifact-mode-tabs" role="tablist">
-            {(["DRAWING", "IMAGE", "AUDIO"] as const).map((value) => (
+          <div
+            className="artifact-mode-tabs"
+            role="tablist"
+            aria-label="Forma de criar o protótipo"
+          >
+            {(["DRAWING", "IMAGE", "AUDIO", "AI"] as const).map((value) => (
               <button
                 type="button"
                 role="tab"
                 aria-selected={mode === value}
+                aria-controls={`prototype-tool-${value.toLowerCase()}`}
                 key={value}
                 onClick={() => setMode(value)}
               >
@@ -1159,53 +1402,73 @@ function PrototypeStage({
                   ? "Desenhar"
                   : value === "IMAGE"
                     ? "Foto"
-                    : "Som"}
+                    : value === "AUDIO"
+                      ? "Som"
+                      : "Criar com IA"}
               </button>
             ))}
           </div>
-          <label className="artifact-caption">
-            Uma legenda curta, se ajudar
-            <input
-              value={caption}
-              maxLength={120}
-              onChange={(event) => setCaption(event.target.value)}
-              placeholder="O que estamos mostrando?"
-            />
-          </label>
-          {mode === "DRAWING" ? (
-            <DrawingBoard
-              strokes={drawingStrokes}
-              players={players}
-              currentPlayer={currentPlayer}
-              editable={canEdit}
-              onSubmitStroke={saveDrawingStroke}
-              onClearOwnStrokes={() =>
-                void run(() => clearOwnDrawing({ roomId: room.id }))
-              }
-            />
-          ) : (
-            <label className="artifact-upload-card">
-              <span aria-hidden="true">{mode === "IMAGE" ? "▣" : "♪"}</span>
-              <strong>
-                {mode === "IMAGE"
-                  ? "Tirar ou escolher uma foto"
-                  : "Gravar ou escolher um áudio"}
-              </strong>
-              <small>Até 25 MB · aparece para toda a sala</small>
+          {mode !== "AI" && (
+            <label className="artifact-caption">
+              Uma legenda curta, se ajudar
               <input
-                type="file"
-                accept={mode === "IMAGE" ? "image/*" : "audio/*"}
-                capture={mode === "IMAGE" ? "environment" : true}
-                onChange={(event) => {
-                  const file = event.target.files?.[0];
-                  if (!file) return;
-                  void uploadPrototypeFile(room.id, mode, file)
-                    .then((key) => saveArtifact(mode, key))
-                    .catch((caught) => setError(errorMessage(caught)));
-                }}
+                value={caption}
+                maxLength={120}
+                onChange={(event) => setCaption(event.target.value)}
+                placeholder="O que estamos mostrando?"
               />
             </label>
           )}
+          {mode === "AI" && (
+            <div id="prototype-tool-ai" role="tabpanel">
+              <IdeaImageStudio
+                room={room}
+                defaultIdea={caption || prototype.challengeDescription}
+                disabled={!canEdit || pending}
+                onChooseImage={(key, imageCaption, kind) =>
+                  saveArtifact(kind, key, imageCaption)
+                }
+              />
+            </div>
+          )}
+          {mode === "DRAWING" ? (
+            <div id="prototype-tool-drawing" role="tabpanel">
+              <DrawingBoard
+                strokes={drawingStrokes}
+                players={players}
+                currentPlayer={currentPlayer}
+                editable={canEdit}
+                onSubmitStroke={saveDrawingStroke}
+                onClearOwnStrokes={() =>
+                  void run(() => clearOwnDrawing({ roomId: room.id }))
+                }
+              />
+            </div>
+          ) : mode !== "AI" ? (
+            <div id={`prototype-tool-${mode.toLowerCase()}`} role="tabpanel">
+              <label className="artifact-upload-card">
+                <span aria-hidden="true">{mode === "IMAGE" ? "▣" : "♪"}</span>
+                <strong>
+                  {mode === "IMAGE"
+                    ? "Tirar ou escolher uma foto"
+                    : "Gravar ou escolher um áudio"}
+                </strong>
+                <small>Até 25 MB · aparece para toda a sala</small>
+                <input
+                  type="file"
+                  accept={mode === "IMAGE" ? "image/*" : "audio/*"}
+                  capture={mode === "IMAGE" ? "environment" : true}
+                  onChange={(event) => {
+                    const file = event.target.files?.[0];
+                    if (!file) return;
+                    void uploadPrototypeFile(room.id, mode, file)
+                      .then((key) => saveArtifact(mode, key))
+                      .catch((caught) => setError(errorMessage(caught)));
+                  }}
+                />
+              </label>
+            </div>
+          ) : null}
 
           {hasArtifact && (
             <div className="prototype-group-actions">

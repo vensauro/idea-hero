@@ -981,7 +981,7 @@ export const start_game = spacetimedb.reducer(
     const funding = createFundingOpportunity(seed);
     const costs = createStageCosts(seed);
 
-    const economy = ctx.db.roomEconomy.insert({
+    ctx.db.roomEconomy.insert({
       roomId,
       initialBalance: INITIAL_RUNWAY,
       balance: INITIAL_RUNWAY,
@@ -1183,8 +1183,8 @@ export const vote_card_change = spacetimedb.reducer(
     const activeDraw = Array.from(ctx.db.cardDraw.roomId.filter(roomId)).find(
       (item) => item.stage === currentRoom.currentStage && item.active,
     );
-    if (!activeDraw || activeDraw.drawIndex > 0) {
-      throw new SenderError("A troca de carta desta etapa já foi utilizada.");
+    if (!activeDraw) {
+      throw new SenderError("A carta atual não foi encontrada.");
     }
 
     const existingVote = Array.from(
@@ -1265,6 +1265,15 @@ export const vote_card_change = spacetimedb.reducer(
       reason: "REDRAW",
     });
 
+    for (const vote of Array.from(ctx.db.groupVote.roomId.filter(roomId))) {
+      if (
+        vote.stage === currentRoom.currentStage &&
+        vote.topic === "CARD_CHANGE"
+      ) {
+        ctx.db.groupVote.id.delete(vote.id);
+      }
+    }
+
     const balanceAfter = economy.balance - CARD_REDRAW_COST;
     ctx.db.roomEconomy.roomId.update({
       ...economy,
@@ -1280,7 +1289,7 @@ export const vote_card_change = spacetimedb.reducer(
       balanceAfter,
       sequence: economy.nextSequence,
       reason: "CARD_REDRAW",
-      eventKey: `redraw:${roomId}:${currentRoom.currentStage}`,
+      eventKey: `redraw:${roomId}:${currentRoom.currentStage}:${drawIndex}`,
       label: "Troca de carta",
       createdAt: ctx.timestamp,
     });
@@ -1289,51 +1298,9 @@ export const vote_card_change = spacetimedb.reducer(
 
 export const refresh_redrawn_card = spacetimedb.reducer(
   { roomId: t.u64() },
-  (ctx, { roomId }) => {
-    const currentRoom = ctx.db.room.id.find(roomId);
-    if (!currentRoom || currentRoom.status !== "ACTIVE") return;
-    const member = Array.from(ctx.db.player.roomId.filter(roomId)).some(
-      (item) => item.active && item.identity.isEqual(ctx.sender),
-    );
-    if (!member) {
-      throw new SenderError("Você não participa desta sala.");
-    }
-    const activeDraw = Array.from(ctx.db.cardDraw.roomId.filter(roomId)).find(
-      (item) => item.stage === currentRoom.currentStage && item.active,
-    );
-    if (!activeDraw || activeDraw.drawIndex === 0) return;
-    const originalDraw = Array.from(ctx.db.cardDraw.roomId.filter(roomId)).find(
-      (item) => item.stage === currentRoom.currentStage && item.drawIndex === 0,
-    );
-    const originalCard = originalDraw
-      ? ctx.db.card.id.find(originalDraw.cardId)
-      : undefined;
-    const discardedCard =
-      originalCard ?? ctx.db.card.id.find(activeDraw.cardId);
-    if (!discardedCard) return;
-    const replacement = replacementCardForRoomStage(
-      roomId.toString(),
-      currentRoom.currentStage,
-      discardedCard.imagePath,
-      activeDraw.drawIndex,
-    );
-    if (activeDraw.cardId === replacement.id) return;
-    if (!ctx.db.card.id.find(replacement.id)) {
-      ctx.db.card.insert({
-        id: replacement.id,
-        stage: replacement.stage,
-        title: replacement.title,
-        lens: replacement.lens,
-        imagePath: replacement.imagePath,
-        altText: replacement.altText,
-        provocation: replacement.provocation,
-      });
-    }
-    ctx.db.cardDraw.id.update({
-      ...activeDraw,
-      cardId: replacement.id,
-      reason: "REDRAW",
-    });
+  () => {
+    // Kept as a no-op for clients that still call this retired reducer.
+    // Redraws are now finalized atomically by vote_card_change.
   },
 );
 
@@ -1423,8 +1390,10 @@ export const submit_prototype_artifact = spacetimedb.reducer(
       ctx.db.player.roomId.filter(input.roomId),
     ).find((item) => item.active && item.identity.isEqual(ctx.sender));
     if (!membership) throw new SenderError("Você não pertence a esta sala.");
-    if (!["DRAWING", "IMAGE", "AUDIO"].includes(input.artifactKind)) {
-      throw new SenderError("Escolha desenho, imagem ou áudio.");
+    if (
+      !["DRAWING", "IMAGE", "AUDIO", "AI_IMAGE"].includes(input.artifactKind)
+    ) {
+      throw new SenderError("Escolha desenho, imagem, imagem com IA ou áudio.");
     }
     const previousArtifact = Array.from(
       ctx.db.prototypeArtifact.roomId.filter(input.roomId),
