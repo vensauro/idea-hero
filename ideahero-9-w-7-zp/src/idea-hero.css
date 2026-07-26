@@ -3095,6 +3095,12 @@ h1 {
   box-shadow: 2px 2px 0 var(--line);
 }
 
+.prototype-extension-vote > p {
+  flex: 1 0 100%;
+  margin: 0;
+  font-weight: 750;
+}
+
 .prototype-extension-vote button[aria-pressed="true"] {
   color: #fff;
   background: var(--pink);

@@ -1767,11 +1767,6 @@ export const vote_prototype_extension = spacetimedb.reducer(
       currentRoom.currentStage !== "PROTOTYPE" ||
       !prototype ||
       prototype.committed ||
-      prototypeTimeHasEnded(
-        prototype.startedAt,
-        prototype.durationSeconds,
-        ctx.timestamp,
-      ) ||
       !economy
     ) {
       throw new SenderError("Não é possível aumentar o tempo agora.");
@@ -1824,9 +1819,17 @@ export const vote_prototype_extension = spacetimedb.reducer(
     ).length;
     if (votes < Math.floor(eligiblePlayers.length / 2) + 1) return;
     const balanceAfter = economy.balance - PROTOTYPE_EXTENSION_COST;
+    const timeHasEnded = prototypeTimeHasEnded(
+      prototype.startedAt,
+      prototype.durationSeconds,
+      ctx.timestamp,
+    );
     ctx.db.projectPrototype.roomId.update({
       ...prototype,
-      durationSeconds: prototype.durationSeconds + PROTOTYPE_EXTENSION_SECONDS,
+      startedAt: timeHasEnded ? ctx.timestamp : prototype.startedAt,
+      durationSeconds: timeHasEnded
+        ? PROTOTYPE_EXTENSION_SECONDS
+        : prototype.durationSeconds + PROTOTYPE_EXTENSION_SECONDS,
       investment: prototype.investment + PROTOTYPE_EXTENSION_COST,
       updatedAt: ctx.timestamp,
     });

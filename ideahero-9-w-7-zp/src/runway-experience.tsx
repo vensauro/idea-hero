@@ -1219,34 +1219,40 @@ function PrototypeStage({
               )}
             </div>
           )}
-
-          {prototype.investment === 0 &&
-            economy.balance >= PROTOTYPE_EXTENSION_COST && (
-              <div className="prototype-extension-vote">
-                <button
-                  type="button"
-                  aria-pressed={Boolean(ownExtension)}
-                  disabled={pending}
-                  onClick={() =>
-                    void run(() =>
-                      voteExtension({
-                        roomId: room.id,
-                        support: !ownExtension,
-                      }),
-                    )
-                  }
-                >
-                  +30 segundos · −500
-                </button>
-                <VoteProgress
-                  votes={extensionVotes}
-                  required={required}
-                  players={players}
-                />
-              </div>
-            )}
         </>
       )}
+
+      {!prototype.committed &&
+        prototype.investment === 0 &&
+        economy.balance >= PROTOTYPE_EXTENSION_COST && (
+          <div className="prototype-extension-vote">
+            {!canEdit && (
+              <p>
+                A maioria pode comprar mais 30 segundos e reabrir o protótipo.
+              </p>
+            )}
+            <button
+              type="button"
+              aria-pressed={Boolean(ownExtension)}
+              disabled={pending}
+              onClick={() =>
+                void run(() =>
+                  voteExtension({
+                    roomId: room.id,
+                    support: !ownExtension,
+                  }),
+                )
+              }
+            >
+              +30 segundos · −500
+            </button>
+            <VoteProgress
+              votes={extensionVotes}
+              required={required}
+              players={players}
+            />
+          </div>
+        )}
 
       {!canEdit && !prototype.committed && (
         <>
