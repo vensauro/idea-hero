@@ -3,6 +3,7 @@ export const CARD_REDRAW_COST = 500;
 export const PROTOTYPE_BASE_SECONDS = 120;
 export const PROTOTYPE_EXTENSION_SECONDS = 30;
 export const PROTOTYPE_EXTENSION_COST = 500;
+export const PROTOTYPE_CREATIVE_BONUS = 250;
 
 export const BOARD_STAGES = [
   "SCENARIO",

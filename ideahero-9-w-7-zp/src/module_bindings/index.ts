@@ -36,6 +36,7 @@ import {
 // Import all reducer arg schemas
 import AdvanceStageReducer from "./advance_stage_reducer";
 import CastVoteReducer from "./cast_vote_reducer";
+import ClearOwnPrototypeDrawingReducer from "./clear_own_prototype_drawing_reducer";
 import CreateRoomReducer from "./create_room_reducer";
 import EndJourneyReducer from "./end_journey_reducer";
 import FinishPrototypeActivityReducer from "./finish_prototype_activity_reducer";
@@ -50,6 +51,7 @@ import StartGameReducer from "./start_game_reducer";
 import StartPrototypeActivityReducer from "./start_prototype_activity_reducer";
 import SubmitContributionReducer from "./submit_contribution_reducer";
 import SubmitPrototypeArtifactReducer from "./submit_prototype_artifact_reducer";
+import SubmitPrototypeDrawingStrokeReducer from "./submit_prototype_drawing_stroke_reducer";
 import UpdateJourneyReducer from "./update_journey_reducer";
 import VoteCardChangeReducer from "./vote_card_change_reducer";
 import VoteMarketingPlanReducer from "./vote_marketing_plan_reducer";
@@ -67,6 +69,8 @@ import MemberRoomsRow from "./member_rooms_table";
 import OwnVotesRow from "./own_votes_table";
 import PilotSimulationsRow from "./pilot_simulations_table";
 import ProjectPrototypesRow from "./project_prototypes_table";
+import PrototypeArtifactsRow from "./prototype_artifacts_table";
+import PrototypeDrawingStrokesRow from "./prototype_drawing_strokes_table";
 import RoomCardDrawsRow from "./room_card_draws_table";
 import RoomContributionStatusRow from "./room_contribution_status_table";
 import RoomDecisionsRow from "./room_decisions_table";
@@ -141,6 +145,20 @@ const tablesSchema = __schema({
     constraints: [
     ],
   }, ProjectPrototypesRow),
+  prototype_artifacts: __table({
+    name: 'prototype_artifacts',
+    indexes: [
+    ],
+    constraints: [
+    ],
+  }, PrototypeArtifactsRow),
+  prototype_drawing_strokes: __table({
+    name: 'prototype_drawing_strokes',
+    indexes: [
+    ],
+    constraints: [
+    ],
+  }, PrototypeDrawingStrokesRow),
   room_card_draws: __table({
     name: 'room_card_draws',
     indexes: [
@@ -238,6 +256,7 @@ const tablesSchema = __schema({
 const reducersSchema = __reducers(
   __reducerSchema("advance_stage", AdvanceStageReducer),
   __reducerSchema("cast_vote", CastVoteReducer),
+  __reducerSchema("clear_own_prototype_drawing", ClearOwnPrototypeDrawingReducer),
   __reducerSchema("create_room", CreateRoomReducer),
   __reducerSchema("end_journey", EndJourneyReducer),
   __reducerSchema("finish_prototype_activity", FinishPrototypeActivityReducer),
@@ -252,6 +271,7 @@ const reducersSchema = __reducers(
   __reducerSchema("start_prototype_activity", StartPrototypeActivityReducer),
   __reducerSchema("submit_contribution", SubmitContributionReducer),
   __reducerSchema("submit_prototype_artifact", SubmitPrototypeArtifactReducer),
+  __reducerSchema("submit_prototype_drawing_stroke", SubmitPrototypeDrawingStrokeReducer),
   __reducerSchema("update_journey", UpdateJourneyReducer),
   __reducerSchema("vote_card_change", VoteCardChangeReducer),
   __reducerSchema("vote_marketing_plan", VoteMarketingPlanReducer),

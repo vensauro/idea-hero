@@ -15,6 +15,8 @@ import type {
   PilotSimulation,
   Player,
   ProjectPrototype,
+  PrototypeArtifact,
+  PrototypeDrawingStroke,
   Room,
   RoomEconomy,
   SalesResult,
@@ -294,6 +296,12 @@ function App() {
   const [projectPrototypes, projectPrototypesReady] = useTable(
     tables.project_prototypes,
   );
+  const [prototypeArtifacts, prototypeArtifactsReady] = useTable(
+    tables.prototype_artifacts,
+  );
+  const [prototypeDrawingStrokes, prototypeDrawingStrokesReady] = useTable(
+    tables.prototype_drawing_strokes,
+  );
   const [groupVotes, groupVotesReady] = useTable(tables.room_group_votes);
   const [pilotSimulations, pilotSimulationsReady] = useTable(
     tables.pilot_simulations,
@@ -361,6 +369,8 @@ function App() {
     !stageCostsReady ||
     !economyTransactionsReady ||
     !projectPrototypesReady ||
+    !prototypeArtifactsReady ||
+    !prototypeDrawingStrokesReady ||
     !groupVotesReady ||
     !pilotSimulationsReady ||
     !marketingPlansReady ||
@@ -432,6 +442,12 @@ function App() {
   const roomPrototype = projectPrototypes.find(
     (item) => item.roomId === currentRoom.id,
   );
+  const roomPrototypeArtifacts = prototypeArtifacts.filter(
+    (item) => item.roomId === currentRoom.id,
+  );
+  const roomPrototypeDrawingStrokes = prototypeDrawingStrokes.filter(
+    (item) => item.roomId === currentRoom.id,
+  );
   const roomGroupVotes = groupVotes.filter(
     (item) => item.roomId === currentRoom.id,
   );
@@ -465,6 +481,8 @@ function App() {
       stageCosts={roomStageCosts}
       economyTransactions={roomTransactions}
       projectPrototype={roomPrototype}
+      prototypeArtifacts={roomPrototypeArtifacts}
+      prototypeDrawingStrokes={roomPrototypeDrawingStrokes}
       groupVotes={roomGroupVotes}
       pilotSimulation={roomPilot}
       marketingPlan={roomMarketing}
@@ -994,6 +1012,8 @@ function GameBoard({
   stageCosts,
   economyTransactions,
   projectPrototype,
+  prototypeArtifacts,
+  prototypeDrawingStrokes,
   groupVotes,
   pilotSimulation,
   marketingPlan,
@@ -1015,6 +1035,8 @@ function GameBoard({
   stageCosts: readonly StageCost[];
   economyTransactions: readonly EconomyTransaction[];
   projectPrototype?: ProjectPrototype;
+  prototypeArtifacts: readonly PrototypeArtifact[];
+  prototypeDrawingStrokes: readonly PrototypeDrawingStroke[];
   groupVotes: readonly GroupVote[];
   pilotSimulation?: PilotSimulation;
   marketingPlan?: MarketingPlan;
@@ -1213,6 +1235,8 @@ function GameBoard({
         stageCosts={stageCosts}
         transactions={economyTransactions}
         prototype={projectPrototype}
+        prototypeArtifacts={prototypeArtifacts}
+        prototypeDrawingStrokes={prototypeDrawingStrokes}
         groupVotes={groupVotes}
         pilot={pilotSimulation}
         marketing={marketingPlan}

@@ -20,6 +20,7 @@ export default __t.row({
   caption: __t.string(),
   durationSeconds: __t.u32().name("duration_seconds"),
   investment: __t.u32(),
+  creativePoints: __t.u32().name("creative_points"),
   committed: __t.bool(),
   startedAt: __t.timestamp().name("started_at"),
   createdAt: __t.timestamp().name("created_at"),

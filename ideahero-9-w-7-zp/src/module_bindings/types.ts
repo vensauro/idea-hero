@@ -188,12 +188,41 @@ export const ProjectPrototype = __t.object("ProjectPrototype", {
   caption: __t.string(),
   durationSeconds: __t.u32(),
   investment: __t.u32(),
+  creativePoints: __t.u32(),
   committed: __t.bool(),
   startedAt: __t.timestamp(),
   createdAt: __t.timestamp(),
   updatedAt: __t.timestamp(),
 });
 export type ProjectPrototype = __Infer<typeof ProjectPrototype>;
+
+export const PrototypeArtifact = __t.object("PrototypeArtifact", {
+  id: __t.u64(),
+  roomId: __t.u64(),
+  artifactKind: __t.string(),
+  artifactData: __t.string(),
+  caption: __t.string(),
+  authorIdentity: __t.identity(),
+  createdAt: __t.timestamp(),
+  updatedAt: __t.timestamp(),
+});
+export type PrototypeArtifact = __Infer<typeof PrototypeArtifact>;
+
+export const PrototypeArtifacts = __t.object("PrototypeArtifacts", {});
+export type PrototypeArtifacts = __Infer<typeof PrototypeArtifacts>;
+
+export const PrototypeDrawingStroke = __t.object("PrototypeDrawingStroke", {
+  id: __t.u64(),
+  roomId: __t.u64(),
+  authorIdentity: __t.identity(),
+  color: __t.string(),
+  points: __t.string(),
+  createdAt: __t.timestamp(),
+});
+export type PrototypeDrawingStroke = __Infer<typeof PrototypeDrawingStroke>;
+
+export const PrototypeDrawingStrokes = __t.object("PrototypeDrawingStrokes", {});
+export type PrototypeDrawingStrokes = __Infer<typeof PrototypeDrawingStrokes>;
 
 export const ProjectPrototypes = __t.object("ProjectPrototypes", {});
 export type ProjectPrototypes = __Infer<typeof ProjectPrototypes>;
