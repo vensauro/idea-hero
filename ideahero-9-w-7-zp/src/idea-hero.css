@@ -1127,13 +1127,28 @@ h1 {
 }
 
 .group-vote-progress {
-  display: flex;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
   align-items: center;
-  justify-content: space-between;
   gap: 12px;
-  min-height: 34px;
-  color: #5c6c77;
-  font-size: 0.82rem;
+  padding: 0.7rem 0.85rem;
+  color: var(--ink);
+  background: rgba(255, 249, 237, 0.8);
+  border: 2px dashed rgba(52, 44, 59, 0.5);
+  border-radius: 12px 8px 14px 9px;
+  font-size: 0.95rem;
+}
+
+.group-vote-progress strong {
+  justify-self: end;
+  text-align: right;
+}
+
+.group-vote-progress p {
+  grid-column: 1 / -1;
+  margin: 0;
+  font-weight: 750;
+  line-height: 1.35;
 }
 
 .vote-avatar-stack {
@@ -2285,6 +2300,51 @@ h1 {
   color: var(--ink);
   font-size: clamp(2.6rem, 5.5vw, 4.8rem);
   line-height: 0.95;
+}
+
+.stage-host-context {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: end;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.host-identity {
+  display: grid;
+  gap: 0.2rem;
+  margin: 0;
+}
+
+.host-identity span {
+  color: var(--muted);
+  font-size: 0.875rem;
+  font-weight: 800;
+}
+
+.host-identity strong {
+  color: var(--ink);
+  font-size: 1.1rem;
+}
+
+.runway-stage-heading .host-end-panel {
+  justify-self: end;
+  width: min(100%, 650px);
+  margin: 0;
+  padding: 0.9rem 1rem;
+  color: var(--ink);
+  background: rgba(217, 237, 131, 0.42);
+  border: 2px solid var(--line);
+  border-radius: 14px 9px 16px 11px;
+}
+
+.runway-stage-heading .host-end-panel .kicker {
+  margin: 0;
+}
+
+.runway-stage-heading .host-end-panel span {
+  max-width: 46ch;
+  color: var(--ink);
 }
 
 .runway-stage-activity {
@@ -3450,6 +3510,16 @@ h1 {
 }
 
 @media (max-width: 640px) {
+  .stage-host-context {
+    grid-template-columns: 1fr;
+    align-items: stretch;
+  }
+
+  .runway-stage-heading .host-end-panel {
+    justify-self: stretch;
+    width: 100%;
+  }
+
   .runway-wallet {
     margin-bottom: 2rem;
   }
