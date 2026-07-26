@@ -2733,6 +2733,18 @@ h1 {
   color: var(--ink);
 }
 
+.runway-wallet-details em {
+  color: #143f43;
+  font-size: 0.875rem;
+  font-style: normal;
+  font-weight: 800;
+}
+
+.runway-wallet .transaction-ledger {
+  margin: 1rem 0 0;
+  background: rgba(255, 249, 237, 0.88);
+}
+
 .economy-event {
   color: #fff;
   background: var(--pink);

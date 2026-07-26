@@ -133,9 +133,11 @@ function ownTopicVote(
 export function RunwayWallet({
   economy,
   stageCost,
+  transactions,
 }: {
   economy: RoomEconomy;
   stageCost?: StageCost;
+  transactions: readonly EconomyTransaction[];
 }) {
   const usableBalance = Math.max(0, economy.balance - economy.reservedBalance);
   const fill = Math.min(
@@ -173,10 +175,12 @@ export function RunwayWallet({
         )}
         {stageCost && (
           <span>
-            {stageCost.label} <b>−{formatCredits(stageCost.amount)}</b>
+            {stageCost.label} <b>−{formatCredits(stageCost.amount)}</b>{" "}
+            <em>{stageCost.applied ? "Pago" : "ao concluir"}</em>
           </span>
         )}
       </div>
+      <TransactionLedger transactions={transactions} />
     </section>
   );
 }
@@ -303,20 +307,6 @@ export function EconomyEventOverlay({
         Pular animação
       </button>
     </aside>
-  );
-}
-
-function StageCostCard({ cost }: { cost?: StageCost }) {
-  if (!cost) return null;
-  return (
-    <div className="stage-cost-card" aria-label="Custo desta etapa">
-      <span aria-hidden="true">↘</span>
-      <div>
-        <small>Custo revelado · {cost.label}</small>
-        <strong>−{formatCredits(cost.amount)} créditos</strong>
-      </div>
-      <b>{cost.applied ? "Pago" : "Aguardando"}</b>
-    </div>
   );
 }
 
@@ -580,7 +570,11 @@ export function RunwayFinalStage(props: RunwayFinalStageProps) {
         decisions={decisions}
       />
 
-      <RunwayWallet economy={economy} stageCost={stageCost} />
+      <RunwayWallet
+        economy={economy}
+        stageCost={stageCost}
+        transactions={transactions}
+      />
 
       <section className="stage-layout runway-stage-layout">
         <article className="stage-intro">
@@ -588,7 +582,6 @@ export function RunwayFinalStage(props: RunwayFinalStageProps) {
             Etapa {room.stageIndex + 1} de 8 · {STAGE_LABELS[stage]}
           </p>
           <h1>{STAGE_TITLES[stage]}</h1>
-          <StageCostCard cost={stageCost} />
           <InspirationCard card={card} stageLabel={STAGE_LABELS[stage]} />
           {stage !== "MARKETING" && stage !== "SALES" && (
             <CardChangeButton
@@ -601,7 +594,6 @@ export function RunwayFinalStage(props: RunwayFinalStageProps) {
               groupVotes={groupVotes}
             />
           )}
-          <TransactionLedger transactions={transactions} />
         </article>
 
         <article className="contribution-panel runway-stage-panel">

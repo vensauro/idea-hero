@@ -1285,6 +1285,7 @@ function GameBoard({
       <RunwayWallet
         economy={economy}
         stageCost={stageCosts.find((item) => item.stage === stage)}
+        transactions={economyTransactions}
       />
 
       <section className="stage-layout">
