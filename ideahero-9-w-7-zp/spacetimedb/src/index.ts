@@ -961,8 +961,6 @@ export const start_game = spacetimedb.reducer(
     const seed = ctx.random.integerInRange(1, 2_147_483_647);
     const funding = createFundingOpportunity(seed);
     const costs = createStageCosts(seed);
-    const scenarioCost = costs.find((item) => item.stage === "SCENARIO");
-    if (!scenarioCost) throw new SenderError("Custo inicial indisponível.");
 
     const economy = ctx.db.roomEconomy.insert({
       roomId,
@@ -1003,38 +1001,6 @@ export const start_game = spacetimedb.reducer(
         updatedAt: ctx.timestamp,
       });
     }
-
-    const charged = Math.min(economy.balance, scenarioCost.amount);
-    const balanceAfterCost = economy.balance - charged;
-    const storedScenarioCost = Array.from(
-      ctx.db.stageCost.roomId.filter(roomId),
-    ).find((item) => item.stage === "SCENARIO");
-    if (!storedScenarioCost) {
-      throw new SenderError("Custo de pesquisa não foi preparado.");
-    }
-    ctx.db.stageCost.id.update({
-      ...storedScenarioCost,
-      applied: true,
-      updatedAt: ctx.timestamp,
-    });
-    ctx.db.roomEconomy.roomId.update({
-      ...economy,
-      balance: balanceAfterCost,
-      nextSequence: 2,
-      updatedAt: ctx.timestamp,
-    });
-    ctx.db.economyTransaction.insert({
-      id: 0n,
-      roomId,
-      stage: "SCENARIO",
-      delta: -charged,
-      balanceAfter: balanceAfterCost,
-      sequence: 1,
-      reason: "STAGE_COST",
-      eventKey: `stage-cost:${roomId}:SCENARIO`,
-      label: scenarioCost.label,
-      createdAt: ctx.timestamp,
-    });
 
     ctx.db.room.id.update({
       ...currentRoom,
@@ -2357,6 +2323,37 @@ export const advance_stage = spacetimedb.reducer(
       }
     }
 
+    let balance = economy.balance;
+    let sequence = economy.nextSequence;
+    const currentStageCost = Array.from(
+      ctx.db.stageCost.roomId.filter(roomId),
+    ).find((item) => item.stage === currentRoom.currentStage);
+    if (!currentStageCost) {
+      throw new SenderError("Custo da etapa indisponível.");
+    }
+    if (!currentStageCost.applied) {
+      const charged = Math.min(balance, currentStageCost.amount);
+      balance -= charged;
+      ctx.db.stageCost.id.update({
+        ...currentStageCost,
+        applied: true,
+        updatedAt: ctx.timestamp,
+      });
+      ctx.db.economyTransaction.insert({
+        id: 0n,
+        roomId,
+        stage: currentRoom.currentStage,
+        delta: -charged,
+        balanceAfter: balance,
+        sequence,
+        reason: "STAGE_COST",
+        eventKey: `stage-cost:${roomId}:${currentRoom.currentStage}`,
+        label: currentStageCost.label,
+        createdAt: ctx.timestamp,
+      });
+      sequence += 1;
+    }
+
     const nextIndex = currentRoom.stageIndex + 1;
     if (nextIndex >= BOARD_STATES.length) {
       if (!ctx.db.journey.roomId.find(roomId)) {
@@ -2383,6 +2380,12 @@ export const advance_stage = spacetimedb.reducer(
       if (activeInvite?.roomId === roomId) {
         ctx.db.roomCode.code.delete(activeInvite.code);
       }
+      ctx.db.roomEconomy.roomId.update({
+        ...economy,
+        balance,
+        nextSequence: sequence,
+        updatedAt: ctx.timestamp,
+      });
       ctx.db.room.id.update({
         ...currentRoom,
         status: "FINISHED",
@@ -2457,37 +2460,8 @@ export const advance_stage = spacetimedb.reducer(
       });
     }
 
-    let balance = economy.balance;
-    let sequence = economy.nextSequence;
     let fundingRevealed = economy.fundingRevealed;
     let reservedBalance = economy.reservedBalance;
-    const cost = Array.from(ctx.db.stageCost.roomId.filter(roomId)).find(
-      (item) => item.stage === nextStage,
-    );
-    if (!cost) throw new SenderError("Custo da etapa indisponível.");
-
-    if (!cost.applied) {
-      const charged = Math.min(balance, cost.amount);
-      balance -= charged;
-      ctx.db.stageCost.id.update({
-        ...cost,
-        applied: true,
-        updatedAt: ctx.timestamp,
-      });
-      ctx.db.economyTransaction.insert({
-        id: 0n,
-        roomId,
-        stage: nextStage,
-        delta: -charged,
-        balanceAfter: balance,
-        sequence,
-        reason: "STAGE_COST",
-        eventKey: `stage-cost:${roomId}:${nextStage}`,
-        label: cost.label,
-        createdAt: ctx.timestamp,
-      });
-      sequence += 1;
-    }
 
     if (!fundingRevealed && economy.fundingStage === nextStage) {
       balance += economy.fundingValue;
