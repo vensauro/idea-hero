@@ -1247,6 +1247,13 @@ function GameBoard({
         ))}
       </nav>
 
+      <JourneySummary
+        room={room}
+        contributions={contributions}
+        players={players}
+        decisions={decisions}
+      />
+
       <section className="presence-row" aria-label="Jogadores na sala">
         {players.map((item) => (
           <div
@@ -1262,13 +1269,6 @@ function GameBoard({
       <RunwayWallet
         economy={economy}
         stageCost={stageCosts.find((item) => item.stage === stage)}
-      />
-
-      <JourneySummary
-        room={room}
-        contributions={contributions}
-        players={players}
-        decisions={decisions}
       />
 
       <section className="stage-layout">
