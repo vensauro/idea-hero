@@ -2229,6 +2229,10 @@ h1 {
   border-radius: 14px;
 }
 
+.stage-intro > .transaction-ledger {
+  margin-top: 2rem;
+}
+
 .transaction-ledger summary {
   cursor: pointer;
   color: #435b70;
