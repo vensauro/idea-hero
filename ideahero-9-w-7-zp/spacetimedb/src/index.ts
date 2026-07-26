@@ -9,6 +9,7 @@ import {
   CARD_REDRAW_COST,
   INITIAL_RUNWAY,
   PROTOTYPE_BASE_SECONDS,
+  PROTOTYPE_CREATIVE_BONUS,
   PROTOTYPE_EXTENSION_COST,
   PROTOTYPE_EXTENSION_SECONDS,
   calculateSalesResult,
@@ -35,6 +36,14 @@ const BOARD_STATES = [
 const COLLABORATIVE_STAGES = new Set<string>(BOARD_STATES.slice(0, 4));
 const MIN_PLAYERS = 2;
 const ROOM_CODE_TTL_MICROS = 24n * 60n * 60n * 1_000_000n;
+const DRAWING_COLORS = [
+  "#e85671",
+  "#218c95",
+  "#6f58c9",
+  "#e39a22",
+  "#438454",
+  "#a94791",
+];
 
 const profile = table(
   { name: "profile" },
@@ -164,10 +173,38 @@ const projectPrototype = table(
     caption: t.string(),
     durationSeconds: t.u32(),
     investment: t.u32(),
+    // Keep the new field defaulted so deployed rooms can migrate safely.
+    creativePoints: t.u32().default(0),
     committed: t.bool(),
     startedAt: t.timestamp(),
     createdAt: t.timestamp(),
     updatedAt: t.timestamp(),
+  },
+);
+
+const prototypeArtifact = table(
+  { name: "prototype_artifact" },
+  {
+    id: t.u64().primaryKey().autoInc(),
+    roomId: t.u64().index("btree"),
+    artifactKind: t.string().index("btree"),
+    artifactData: t.string(),
+    caption: t.string(),
+    authorIdentity: t.identity().index("btree"),
+    createdAt: t.timestamp(),
+    updatedAt: t.timestamp(),
+  },
+);
+
+const prototypeDrawingStroke = table(
+  { name: "prototype_drawing_stroke" },
+  {
+    id: t.u64().primaryKey().autoInc(),
+    roomId: t.u64().index("btree"),
+    authorIdentity: t.identity().index("btree"),
+    color: t.string(),
+    points: t.string(),
+    createdAt: t.timestamp(),
   },
 );
 
@@ -356,6 +393,8 @@ const spacetimedb = schema({
   stageCost,
   economyTransaction,
   projectPrototype,
+  prototypeArtifact,
+  prototypeDrawingStroke,
   groupVote,
   pilotSimulation,
   marketingPlan,
@@ -451,6 +490,34 @@ export const project_prototypes = spacetimedb.view(
       if (!membership.active) continue;
       const prototype = ctx.db.projectPrototype.roomId.find(membership.roomId);
       if (prototype) rows.push(prototype);
+    }
+    return rows;
+  },
+);
+
+export const prototype_artifacts = spacetimedb.view(
+  { name: "prototype_artifacts", public: true },
+  t.array(prototypeArtifact.rowType),
+  (ctx) => {
+    const rows = [];
+    for (const membership of ctx.db.player.identity.filter(ctx.sender)) {
+      if (!membership.active) continue;
+      rows.push(...ctx.db.prototypeArtifact.roomId.filter(membership.roomId));
+    }
+    return rows;
+  },
+);
+
+export const prototype_drawing_strokes = spacetimedb.view(
+  { name: "prototype_drawing_strokes", public: true },
+  t.array(prototypeDrawingStroke.rowType),
+  (ctx) => {
+    const rows = [];
+    for (const membership of ctx.db.player.identity.filter(ctx.sender)) {
+      if (!membership.active) continue;
+      rows.push(
+        ...ctx.db.prototypeDrawingStroke.roomId.filter(membership.roomId),
+      );
     }
     return rows;
   },
@@ -1314,6 +1381,7 @@ export const start_prototype_activity = spacetimedb.reducer(
       caption: "",
       durationSeconds: PROTOTYPE_BASE_SECONDS,
       investment: 0,
+      creativePoints: 0,
       committed: false,
       startedAt: ctx.timestamp,
       createdAt: ctx.timestamp,
@@ -1331,6 +1399,16 @@ export const start_prototype_activity = spacetimedb.reducer(
   },
 );
 
+function prototypeTimeHasEnded(
+  startedAt: Timestamp,
+  durationSeconds: number,
+  now: Timestamp,
+) {
+  const endingAt =
+    startedAt.microsSinceUnixEpoch + BigInt(durationSeconds) * 1_000_000n;
+  return now.microsSinceUnixEpoch >= endingAt;
+}
+
 export const submit_prototype_artifact = spacetimedb.reducer(
   {
     roomId: t.u64(),
@@ -1346,7 +1424,12 @@ export const submit_prototype_artifact = spacetimedb.reducer(
       currentRoom.status !== "ACTIVE" ||
       currentRoom.currentStage !== "PROTOTYPE" ||
       !prototype ||
-      prototype.committed
+      prototype.committed ||
+      prototypeTimeHasEnded(
+        prototype.startedAt,
+        prototype.durationSeconds,
+        ctx.timestamp,
+      )
     ) {
       throw new SenderError("O protótipo não pode mais ser alterado.");
     }
@@ -1372,13 +1455,174 @@ export const submit_prototype_artifact = spacetimedb.reducer(
       );
     }
     const caption = input.caption.trim().replace(/\s+/g, " ").slice(0, 120);
+    const previousArtifact = Array.from(
+      ctx.db.prototypeArtifact.roomId.filter(input.roomId),
+    ).find((artifact) => artifact.artifactKind === input.artifactKind);
+    if (previousArtifact) {
+      ctx.db.prototypeArtifact.id.update({
+        ...previousArtifact,
+        artifactData: input.artifactData,
+        caption,
+        authorIdentity: ctx.sender,
+        updatedAt: ctx.timestamp,
+      });
+    } else {
+      ctx.db.prototypeArtifact.insert({
+        id: 0n,
+        roomId: input.roomId,
+        artifactKind: input.artifactKind,
+        artifactData: input.artifactData,
+        caption,
+        authorIdentity: ctx.sender,
+        createdAt: ctx.timestamp,
+        updatedAt: ctx.timestamp,
+      });
+      const economy = ctx.db.roomEconomy.roomId.find(input.roomId);
+      if (!economy) {
+        throw new SenderError("A economia compartilhada da sala não existe.");
+      }
+      const balanceAfter = economy.balance + PROTOTYPE_CREATIVE_BONUS;
+      ctx.db.roomEconomy.roomId.update({
+        ...economy,
+        balance: balanceAfter,
+        nextSequence: economy.nextSequence + 1,
+        updatedAt: ctx.timestamp,
+      });
+      ctx.db.economyTransaction.insert({
+        id: 0n,
+        roomId: input.roomId,
+        stage: "PROTOTYPE",
+        delta: PROTOTYPE_CREATIVE_BONUS,
+        balanceAfter,
+        sequence: economy.nextSequence,
+        reason: "PROTOTYPE_CREATIVE_BONUS",
+        eventKey: `prototype-creative:${input.roomId}:${input.artifactKind}`,
+        label: `Bônus criativo: ${input.artifactKind.toLowerCase()}`,
+        createdAt: ctx.timestamp,
+      });
+    }
     ctx.db.projectPrototype.roomId.update({
       ...prototype,
       artifactKind: input.artifactKind,
       artifactData: input.artifactData,
       caption,
+      creativePoints:
+        prototype.creativePoints +
+        (previousArtifact ? 0 : PROTOTYPE_CREATIVE_BONUS),
       updatedAt: ctx.timestamp,
     });
+  },
+);
+
+export const submit_prototype_drawing_stroke = spacetimedb.reducer(
+  { roomId: t.u64(), points: t.string() },
+  (ctx, { roomId, points }) => {
+    const currentRoom = ctx.db.room.id.find(roomId);
+    const prototype = ctx.db.projectPrototype.roomId.find(roomId);
+    if (
+      !currentRoom ||
+      currentRoom.status !== "ACTIVE" ||
+      currentRoom.currentStage !== "PROTOTYPE" ||
+      !prototype ||
+      prototype.committed ||
+      prototypeTimeHasEnded(
+        prototype.startedAt,
+        prototype.durationSeconds,
+        ctx.timestamp,
+      )
+    ) {
+      throw new SenderError(
+        "O tempo do protótipo terminou; o desenho está bloqueado.",
+      );
+    }
+    const membership = Array.from(ctx.db.player.roomId.filter(roomId)).find(
+      (item) => item.active && item.identity.isEqual(ctx.sender),
+    );
+    if (!membership) throw new SenderError("Você não pertence a esta sala.");
+    if (points.length < 13 || points.length > 12_000) {
+      throw new SenderError("O traço de desenho não é válido.");
+    }
+    const drawingArtifact = Array.from(
+      ctx.db.prototypeArtifact.roomId.filter(roomId),
+    ).find((artifact) => artifact.artifactKind === "DRAWING");
+    if (!drawingArtifact) {
+      ctx.db.prototypeArtifact.insert({
+        id: 0n,
+        roomId,
+        artifactKind: "DRAWING",
+        artifactData: "",
+        caption: "Desenho colaborativo",
+        authorIdentity: ctx.sender,
+        createdAt: ctx.timestamp,
+        updatedAt: ctx.timestamp,
+      });
+      const economy = ctx.db.roomEconomy.roomId.find(roomId);
+      if (!economy) {
+        throw new SenderError("A economia compartilhada da sala não existe.");
+      }
+      const balanceAfter = economy.balance + PROTOTYPE_CREATIVE_BONUS;
+      ctx.db.projectPrototype.roomId.update({
+        ...prototype,
+        creativePoints: prototype.creativePoints + PROTOTYPE_CREATIVE_BONUS,
+        updatedAt: ctx.timestamp,
+      });
+      ctx.db.roomEconomy.roomId.update({
+        ...economy,
+        balance: balanceAfter,
+        nextSequence: economy.nextSequence + 1,
+        updatedAt: ctx.timestamp,
+      });
+      ctx.db.economyTransaction.insert({
+        id: 0n,
+        roomId,
+        stage: "PROTOTYPE",
+        delta: PROTOTYPE_CREATIVE_BONUS,
+        balanceAfter,
+        sequence: economy.nextSequence,
+        reason: "PROTOTYPE_CREATIVE_BONUS",
+        eventKey: `prototype-creative:${roomId}:DRAWING`,
+        label: "Bônus criativo: drawing",
+        createdAt: ctx.timestamp,
+      });
+    }
+    const color =
+      DRAWING_COLORS[Number(membership.id % BigInt(DRAWING_COLORS.length))];
+    ctx.db.prototypeDrawingStroke.insert({
+      id: 0n,
+      roomId,
+      authorIdentity: ctx.sender,
+      color,
+      points,
+      createdAt: ctx.timestamp,
+    });
+  },
+);
+
+export const clear_own_prototype_drawing = spacetimedb.reducer(
+  { roomId: t.u64() },
+  (ctx, { roomId }) => {
+    const currentRoom = ctx.db.room.id.find(roomId);
+    const prototype = ctx.db.projectPrototype.roomId.find(roomId);
+    if (
+      !currentRoom ||
+      currentRoom.currentStage !== "PROTOTYPE" ||
+      !prototype ||
+      prototype.committed ||
+      prototypeTimeHasEnded(
+        prototype.startedAt,
+        prototype.durationSeconds,
+        ctx.timestamp,
+      )
+    ) {
+      throw new SenderError(
+        "O tempo do protótipo terminou; o desenho está bloqueado.",
+      );
+    }
+    for (const stroke of ctx.db.prototypeDrawingStroke.roomId.filter(roomId)) {
+      if (stroke.authorIdentity.isEqual(ctx.sender)) {
+        ctx.db.prototypeDrawingStroke.id.delete(stroke.id);
+      }
+    }
   },
 );
 
@@ -1387,10 +1631,14 @@ export const vote_prototype_ready = spacetimedb.reducer(
   (ctx, { roomId, ready }) => {
     const currentRoom = ctx.db.room.id.find(roomId);
     const prototype = ctx.db.projectPrototype.roomId.find(roomId);
+    const hasArtifact =
+      Boolean(prototype?.artifactData) ||
+      Array.from(ctx.db.prototypeArtifact.roomId.filter(roomId)).length > 0;
     if (
       !currentRoom ||
       currentRoom.currentStage !== "PROTOTYPE" ||
-      !prototype?.artifactData ||
+      !prototype ||
+      !hasArtifact ||
       prototype.committed
     ) {
       throw new SenderError("Registre um protótipo antes de votar.");
@@ -1472,10 +1720,14 @@ export const finish_prototype_activity = spacetimedb.reducer(
   (ctx, { roomId }) => {
     const currentRoom = ctx.db.room.id.find(roomId);
     const prototype = ctx.db.projectPrototype.roomId.find(roomId);
+    const hasArtifact =
+      Boolean(prototype?.artifactData) ||
+      Array.from(ctx.db.prototypeArtifact.roomId.filter(roomId)).length > 0;
     if (
       !currentRoom ||
       currentRoom.currentStage !== "PROTOTYPE" ||
-      !prototype?.artifactData
+      !prototype ||
+      !hasArtifact
     ) {
       throw new SenderError("Registre um protótipo antes de concluir.");
     }
@@ -1530,6 +1782,11 @@ export const vote_prototype_extension = spacetimedb.reducer(
       currentRoom.currentStage !== "PROTOTYPE" ||
       !prototype ||
       prototype.committed ||
+      prototypeTimeHasEnded(
+        prototype.startedAt,
+        prototype.durationSeconds,
+        ctx.timestamp,
+      ) ||
       !economy
     ) {
       throw new SenderError("Não é possível aumentar o tempo agora.");

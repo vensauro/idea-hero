@@ -17,6 +17,8 @@ import type {
   MarketingPlan,
   PilotSimulation,
   Player,
+  PrototypeArtifact,
+  PrototypeDrawingStroke,
   ProjectPrototype,
   Room,
   RoomEconomy,
@@ -30,6 +32,7 @@ import {
   CARD_REDRAW_COST,
   MARKETING_LAUNCH_OPTIONS,
   PROTOTYPE_EXTENSION_COST,
+  PROTOTYPE_CREATIVE_BONUS,
 } from "../spacetimedb/src/economy";
 
 const STAGES = [
@@ -454,6 +457,8 @@ type RunwayFinalStageProps = {
   stageCosts: readonly StageCost[];
   transactions: readonly EconomyTransaction[];
   prototype?: ProjectPrototype;
+  prototypeArtifacts: readonly PrototypeArtifact[];
+  prototypeDrawingStrokes: readonly PrototypeDrawingStroke[];
   groupVotes: readonly GroupVote[];
   pilot?: PilotSimulation;
   marketing?: MarketingPlan;
@@ -472,6 +477,8 @@ export function RunwayFinalStage(props: RunwayFinalStageProps) {
     stageCosts,
     transactions,
     prototype,
+    prototypeArtifacts,
+    prototypeDrawingStrokes,
     groupVotes,
     pilot,
     marketing,
@@ -588,6 +595,8 @@ export function RunwayFinalStage(props: RunwayFinalStageProps) {
             <PrototypeStage
               room={room}
               prototype={prototype}
+              artifacts={prototypeArtifacts}
+              drawingStrokes={prototypeDrawingStrokes}
               groupVotes={groupVotes}
               currentPlayer={currentPlayer}
               players={players}
@@ -674,10 +683,88 @@ async function fileAsDataUrl(file: File) {
   });
 }
 
-function DrawingBoard({ onSave }: { onSave: (data: string) => void }) {
+type DrawingPoint = { x: number; y: number };
+
+const DRAWING_COLORS = [
+  "#e85671",
+  "#218c95",
+  "#6f58c9",
+  "#e39a22",
+  "#438454",
+  "#a94791",
+];
+
+function drawingColorFor(player: Player) {
+  return DRAWING_COLORS[Number(player.id % BigInt(DRAWING_COLORS.length))];
+}
+
+function readDrawingPoints(points: string): DrawingPoint[] {
+  try {
+    const decoded: unknown = JSON.parse(points);
+    if (!Array.isArray(decoded)) return [];
+    return decoded.filter(
+      (point): point is DrawingPoint =>
+        typeof point?.x === "number" && typeof point?.y === "number",
+    );
+  } catch {
+    return [];
+  }
+}
+
+function paintStroke(
+  context: CanvasRenderingContext2D,
+  points: readonly DrawingPoint[],
+  color: string,
+) {
+  if (points.length === 0) return;
+  context.strokeStyle = color;
+  context.fillStyle = color;
+  context.lineWidth = 7;
+  context.lineCap = "round";
+  context.lineJoin = "round";
+  if (points.length === 1) {
+    context.beginPath();
+    context.arc(points[0].x, points[0].y, 3.5, 0, Math.PI * 2);
+    context.fill();
+    return;
+  }
+  context.beginPath();
+  context.moveTo(points[0].x, points[0].y);
+  for (const point of points.slice(1)) context.lineTo(point.x, point.y);
+  context.stroke();
+}
+
+function DrawingBoard({
+  strokes,
+  players,
+  currentPlayer,
+  editable,
+  onSubmitStroke,
+  onClearOwnStrokes,
+}: {
+  strokes: readonly PrototypeDrawingStroke[];
+  players: readonly Player[];
+  currentPlayer: Player;
+  editable: boolean;
+  onSubmitStroke: (points: DrawingPoint[]) => void;
+  onClearOwnStrokes: () => void;
+}) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const drawingRef = useRef(false);
-  const [empty, setEmpty] = useState(true);
+  const pointsRef = useRef<DrawingPoint[]>([]);
+  const [fullscreen, setFullscreen] = useState(false);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    const context = canvas?.getContext("2d");
+    if (!canvas || !context) return;
+    context.clearRect(0, 0, canvas.width, canvas.height);
+    [...strokes]
+      .sort((left, right) => Number(left.id - right.id))
+      .forEach((stroke) =>
+        paintStroke(context, readDrawingPoints(stroke.points), stroke.color),
+      );
+  }, [strokes]);
 
   function point(event: ReactPointerEvent<HTMLCanvasElement>) {
     const canvas = event.currentTarget;
@@ -689,13 +776,14 @@ function DrawingBoard({ onSave }: { onSave: (data: string) => void }) {
   }
 
   function begin(event: ReactPointerEvent<HTMLCanvasElement>) {
+    if (!editable) return;
     const context = canvasRef.current?.getContext("2d");
     if (!context) return;
     const current = point(event);
     drawingRef.current = true;
+    pointsRef.current = [current];
     event.currentTarget.setPointerCapture(event.pointerId);
-    context.beginPath();
-    context.moveTo(current.x, current.y);
+    paintStroke(context, [current], drawingColorFor(currentPlayer));
   }
 
   function draw(event: ReactPointerEvent<HTMLCanvasElement>) {
@@ -703,29 +791,35 @@ function DrawingBoard({ onSave }: { onSave: (data: string) => void }) {
     const context = canvasRef.current?.getContext("2d");
     if (!context) return;
     const current = point(event);
-    context.lineWidth = 7;
-    context.lineCap = "round";
-    context.lineJoin = "round";
-    context.strokeStyle = "#315f65";
-    context.lineTo(current.x, current.y);
-    context.stroke();
-    setEmpty(false);
+    const previous = pointsRef.current.at(-1);
+    if (!previous) return;
+    pointsRef.current.push(current);
+    paintStroke(context, [previous, current], drawingColorFor(currentPlayer));
+    onSubmitStroke([previous, current]);
   }
 
   function finish() {
+    if (!drawingRef.current) return;
     drawingRef.current = false;
-  }
-
-  function clear() {
-    const canvas = canvasRef.current;
-    const context = canvas?.getContext("2d");
-    if (!canvas || !context) return;
-    context.clearRect(0, 0, canvas.width, canvas.height);
-    setEmpty(true);
+    if (pointsRef.current.length === 1) onSubmitStroke(pointsRef.current);
+    pointsRef.current = [];
   }
 
   return (
-    <div className="prototype-drawing">
+    <div className={`prototype-drawing ${fullscreen ? "is-fullscreen" : ""}`}>
+      <div className="drawing-board-heading">
+        <div>
+          <strong>Quadro de desenho ao vivo</strong>
+          <small>Cada pessoa desenha com sua própria cor.</small>
+        </div>
+        <button
+          type="button"
+          className="secondary-button"
+          onClick={() => setFullscreen((value) => !value)}
+        >
+          {fullscreen ? "Sair da tela cheia" : "Desenhar em tela cheia"}
+        </button>
+      </div>
       <canvas
         ref={canvasRef}
         width={720}
@@ -736,22 +830,25 @@ function DrawingBoard({ onSave }: { onSave: (data: string) => void }) {
         onPointerUp={finish}
         onPointerCancel={finish}
       />
-      <div>
-        <button type="button" className="secondary-button" onClick={clear}>
-          Limpar
-        </button>
-        <button
-          type="button"
-          className="primary-button"
-          disabled={empty}
-          onClick={() => {
-            const canvas = canvasRef.current;
-            if (canvas) onSave(canvas.toDataURL("image/webp", 0.72));
-          }}
-        >
-          Compartilhar desenho
-        </button>
+      <div className="drawing-color-key" aria-label="Cores dos participantes">
+        {players.map((player) => (
+          <span key={player.id.toString()}>
+            <i style={{ background: drawingColorFor(player) }} />
+            {player.displayName}
+          </span>
+        ))}
       </div>
+      {editable && (
+        <div>
+          <button
+            type="button"
+            className="secondary-button"
+            onClick={onClearOwnStrokes}
+          >
+            Apagar meus traços
+          </button>
+        </div>
+      )}
     </div>
   );
 }
@@ -759,6 +856,8 @@ function DrawingBoard({ onSave }: { onSave: (data: string) => void }) {
 function PrototypeStage({
   room,
   prototype,
+  artifacts,
+  drawingStrokes,
   groupVotes,
   currentPlayer,
   players,
@@ -766,6 +865,8 @@ function PrototypeStage({
 }: {
   room: Room;
   prototype?: ProjectPrototype;
+  artifacts: readonly PrototypeArtifact[];
+  drawingStrokes: readonly PrototypeDrawingStroke[];
   groupVotes: readonly GroupVote[];
   currentPlayer: Player;
   players: readonly Player[];
@@ -773,6 +874,8 @@ function PrototypeStage({
 }) {
   const startActivity = useReducer(reducers.startPrototypeActivity);
   const submitArtifact = useReducer(reducers.submitPrototypeArtifact);
+  const submitDrawingStroke = useReducer(reducers.submitPrototypeDrawingStroke);
+  const clearOwnDrawing = useReducer(reducers.clearOwnPrototypeDrawing);
   const voteReady = useReducer(reducers.votePrototypeReady);
   const voteExtension = useReducer(reducers.votePrototypeExtension);
   const finishActivity = useReducer(reducers.finishPrototypeActivity);
@@ -794,6 +897,13 @@ function PrototypeStage({
     ? prototype.startedAt.toDate().getTime() + prototype.durationSeconds * 1000
     : 0;
   const secondsLeft = Math.max(0, Math.ceil((endingAt - clock) / 1000));
+  const canEdit = !prototype?.committed && secondsLeft > 0;
+  const hasArtifact = artifacts.length > 0 || Boolean(prototype?.artifactData);
+  const usedKinds = new Set(artifacts.map((artifact) => artifact.artifactKind));
+  const mediaArtifacts = artifacts.filter(
+    (artifact) =>
+      artifact.artifactKind === "IMAGE" || artifact.artifactKind === "AUDIO",
+  );
 
   useEffect(() => {
     if (!prototype || prototype.committed) return;
@@ -822,6 +932,13 @@ function PrototypeStage({
         caption,
       }),
     );
+  }
+
+  function saveDrawingStroke(points: DrawingPoint[]) {
+    void submitDrawingStroke({
+      roomId: room.id,
+      points: JSON.stringify(points),
+    }).catch((caught) => setError(errorMessage(caught)));
   }
 
   if (!prototype) {
@@ -867,7 +984,7 @@ function PrototypeStage({
         </div>
       </div>
 
-      {prototype.artifactData ? (
+      {prototype.artifactData && artifacts.length === 0 ? (
         <section className="shared-artifact" aria-live="polite">
           <div className="shared-artifact-heading">
             <div>
@@ -890,12 +1007,65 @@ function PrototypeStage({
           )}
         </section>
       ) : (
-        <p className="empty-artifact">
+        <p className="empty-artifact" hidden={artifacts.length > 0}>
           Ainda não há artefato. Criem o primeiro.
         </p>
       )}
 
-      {!prototype.committed && (
+      {artifacts.length > 0 && (
+        <section className="shared-artifact" aria-live="polite">
+          <div className="shared-artifact-heading">
+            <div>
+              <p className="kicker">Protótipo da equipe</p>
+              <h3>Três formas de tornar a ideia real</h3>
+            </div>
+            <span>{usedKinds.size}/3 linguagens criativas</span>
+          </div>
+          <div
+            className="creative-bonus-progress"
+            aria-label="Bônus por linguagens criativas"
+          >
+            {(["DRAWING", "IMAGE", "AUDIO"] as const).map((kind) => (
+              <span
+                className={usedKinds.has(kind) ? "is-earned" : ""}
+                key={kind}
+              >
+                {kind === "DRAWING"
+                  ? "Desenho"
+                  : kind === "IMAGE"
+                    ? "Foto"
+                    : "Som"}
+                <b>+{PROTOTYPE_CREATIVE_BONUS}</b>
+              </span>
+            ))}
+          </div>
+          {mediaArtifacts.map((artifact) => (
+            <figure
+              className="prototype-media-artifact"
+              key={artifact.id.toString()}
+            >
+              <figcaption>
+                {artifact.caption ||
+                  (artifact.artifactKind === "AUDIO"
+                    ? "Registro em áudio"
+                    : "Registro em imagem")}
+              </figcaption>
+              {artifact.artifactKind === "AUDIO" ? (
+                <audio controls src={artifact.artifactData}>
+                  Seu navegador não reproduz este áudio.
+                </audio>
+              ) : (
+                <img
+                  src={artifact.artifactData}
+                  alt={artifact.caption || "Protótipo em imagem"}
+                />
+              )}
+            </figure>
+          ))}
+        </section>
+      )}
+
+      {canEdit && (
         <>
           <div className="artifact-mode-tabs" role="tablist">
             {(["DRAWING", "IMAGE", "AUDIO"] as const).map((value) => (
@@ -925,7 +1095,14 @@ function PrototypeStage({
           </label>
           {mode === "DRAWING" ? (
             <DrawingBoard
-              onSave={(data) => void saveArtifact("DRAWING", data)}
+              strokes={drawingStrokes}
+              players={players}
+              currentPlayer={currentPlayer}
+              editable={canEdit}
+              onSubmitStroke={saveDrawingStroke}
+              onClearOwnStrokes={() =>
+                void run(() => clearOwnDrawing({ roomId: room.id }))
+              }
             />
           ) : (
             <label className="artifact-upload-card">
@@ -951,7 +1128,7 @@ function PrototypeStage({
             </label>
           )}
 
-          {prototype.artifactData && (
+          {hasArtifact && (
             <div className="prototype-group-actions">
               <button
                 type="button"
@@ -1011,6 +1188,26 @@ function PrototypeStage({
                 />
               </div>
             )}
+        </>
+      )}
+
+      {!canEdit && !prototype.committed && (
+        <>
+          <p className="completion-callout">
+            O tempo acabou. O protótipo foi bloqueado exatamente como está.
+          </p>
+          {hasArtifact && (
+            <button
+              type="button"
+              className="secondary-button"
+              disabled={pending}
+              onClick={() =>
+                void run(() => finishActivity({ roomId: room.id }))
+              }
+            >
+              Confirmar protótipo encerrado
+            </button>
+          )}
         </>
       )}
 

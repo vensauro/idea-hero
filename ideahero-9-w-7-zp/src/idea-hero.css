@@ -1390,6 +1390,94 @@ h1 {
   flex-wrap: wrap;
 }
 
+.drawing-board-heading {
+  justify-content: space-between;
+  padding: 0.65rem 0.15rem;
+}
+
+.drawing-board-heading > div {
+  display: grid;
+  gap: 0.18rem;
+}
+
+.drawing-board-heading small {
+  color: var(--muted);
+}
+
+.drawing-color-key {
+  justify-content: flex-start !important;
+}
+
+.drawing-color-key span {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.38rem;
+  font-size: 0.8rem;
+  font-weight: 800;
+}
+
+.drawing-color-key i {
+  width: 0.8rem;
+  height: 0.8rem;
+  border: 2px solid var(--line);
+  border-radius: 999px;
+}
+
+.prototype-drawing.is-fullscreen {
+  position: fixed;
+  z-index: 50;
+  inset: 0;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto auto;
+  gap: 0.8rem;
+  margin: 0;
+  padding: max(1rem, env(safe-area-inset-top))
+    max(1rem, env(safe-area-inset-right)) max(1rem, env(safe-area-inset-bottom))
+    max(1rem, env(safe-area-inset-left));
+  background: var(--paper);
+}
+
+.prototype-drawing.is-fullscreen canvas {
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  aspect-ratio: auto;
+}
+
+.creative-bonus-progress {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.5rem;
+}
+
+.creative-bonus-progress span {
+  display: grid;
+  gap: 0.2rem;
+  padding: 0.55rem;
+  color: var(--muted);
+  border: 2px dashed var(--line);
+  border-radius: 10px;
+  font-size: 0.75rem;
+}
+
+.creative-bonus-progress .is-earned {
+  color: var(--ink);
+  background: var(--lime);
+  border-style: solid;
+}
+
+.prototype-media-artifact {
+  display: grid;
+  gap: 0.5rem;
+  margin: 0;
+}
+
+.prototype-media-artifact figcaption {
+  color: var(--muted);
+  font-size: 0.85rem;
+  font-weight: 800;
+}
+
 .artifact-upload-card {
   display: grid;
   min-height: 220px;
