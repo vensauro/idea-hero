@@ -225,13 +225,27 @@ export function EconomyEventOverlay({
   );
   const [visible, setVisible] = useState<EconomyTransaction>();
   const [pending, setPending] = useState<EconomyTransaction[]>([]);
+  const [seenSequence, setSeenSequence] = useState<number | undefined>();
   const timeoutRef = useRef<number>();
   const storageKey = `idea-hero:economy:${roomId.toString()}`;
 
   useEffect(() => {
-    const seen = Number(window.sessionStorage.getItem(storageKey) ?? "-1");
-    setPending(ordered.filter((item) => item.sequence > seen));
-  }, [ordered, storageKey]);
+    setVisible(undefined);
+    setPending([]);
+    setSeenSequence(Number(window.sessionStorage.getItem(storageKey) ?? "-1"));
+  }, [storageKey]);
+
+  useEffect(() => {
+    if (seenSequence === undefined) return;
+    setPending((current) => {
+      const queued = new Set(current.map((item) => item.sequence));
+      if (visible) queued.add(visible.sequence);
+      const additions = ordered.filter(
+        (item) => item.sequence > seenSequence && !queued.has(item.sequence),
+      );
+      return additions.length === 0 ? current : [...current, ...additions];
+    });
+  }, [ordered, seenSequence, visible]);
 
   useEffect(() => {
     if (visible || pending.length === 0) return;
@@ -239,6 +253,7 @@ export function EconomyEventOverlay({
     setVisible(next);
     setPending(rest);
     window.sessionStorage.setItem(storageKey, String(next.sequence));
+    setSeenSequence(next.sequence);
   }, [pending, storageKey, visible]);
 
   useEffect(() => {
@@ -255,6 +270,7 @@ export function EconomyEventOverlay({
     const latest = ordered.at(-1);
     if (latest)
       window.sessionStorage.setItem(storageKey, String(latest.sequence));
+    if (latest) setSeenSequence(latest.sequence);
     window.clearTimeout(timeoutRef.current);
     setPending([]);
     setVisible(undefined);
