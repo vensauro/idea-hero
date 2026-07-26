@@ -2954,6 +2954,15 @@ h1 {
   font-weight: 400;
 }
 
+.runway-stage-activity > .section-heading h2 {
+  font-size: clamp(2rem, 4vw, 3.1rem);
+  line-height: 0.95;
+}
+
+.runway-stage-activity > .section-heading > span {
+  font-size: 0.95rem;
+}
+
 .prototype-start-card {
   min-height: 480px;
   padding: clamp(1.5rem, 6vw, 3.2rem);
