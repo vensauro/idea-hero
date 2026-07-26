@@ -2356,6 +2356,24 @@ export const advance_stage = spacetimedb.reducer(
 
     const nextIndex = currentRoom.stageIndex + 1;
     if (nextIndex >= BOARD_STATES.length) {
+      if (currentRoom.currentStage === "SALES") {
+        const sales = ctx.db.salesResult.roomId.find(roomId);
+        if (sales) {
+          const tier =
+            balance < 8_000
+              ? "NEEDS_ITERATION"
+              : balance < 12_000
+                ? "MARKET_SIGNAL"
+                : balance < 16_000
+                  ? "TRACTION"
+                  : "GROWTH_OPPORTUNITY";
+          ctx.db.salesResult.roomId.update({
+            ...sales,
+            finalRunway: balance,
+            tier,
+          });
+        }
+      }
       if (!ctx.db.journey.roomId.find(roomId)) {
         const solutionDecision = Array.from(
           ctx.db.decision.roomId.filter(roomId),
