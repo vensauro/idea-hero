@@ -526,14 +526,12 @@ function LeaveRoomButton({
 
     setLeaving(true);
     setError("");
+    const previousUrl = window.location.href;
+    window.history.replaceState(null, "", clearRoomInviteUrl(previousUrl));
     try {
       await leaveRoom({ roomId: room.id });
-      window.history.replaceState(
-        null,
-        "",
-        clearRoomInviteUrl(window.location.href),
-      );
     } catch (caught) {
+      window.history.replaceState(null, "", previousUrl);
       setError(errorMessage(caught));
       setLeaving(false);
     }
@@ -1918,17 +1916,15 @@ function JourneyResult({
     ) {
       return;
     }
+    const previousUrl = window.location.href;
+    window.history.replaceState(null, "", clearRoomInviteUrl(previousUrl));
     const leftRoom = await runFinalAction(
       "leave",
       () => leaveRoom({ roomId: room.id }),
       "Tudo pronto para uma nova jornada.",
     );
-    if (leftRoom) {
-      window.history.replaceState(
-        null,
-        "",
-        clearRoomInviteUrl(window.location.href),
-      );
+    if (!leftRoom) {
+      window.history.replaceState(null, "", previousUrl);
     }
   }
 
