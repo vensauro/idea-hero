@@ -1834,11 +1834,6 @@ function JourneyResult({
     summary,
     publicId: journey?.publicId || `journey-${room.id.toString(36)}`,
   };
-  const validManifest =
-    title.trim().length >= 3 &&
-    title.trim().length <= 80 &&
-    summary.trim().length >= 10 &&
-    summary.trim().length <= 400;
   const manifestChanged =
     title !== (journey?.title ?? fallbackTitle) ||
     summary !== (journey?.summary ?? fallbackSummary) ||
@@ -1977,8 +1972,10 @@ function JourneyResult({
           ★
         </span>
         <p className="kicker">Jornada concluída</p>
-        <h1>{title}</h1>
-        <p className="result-manifest-copy">{summary}</p>
+        <h1>{title || fallbackTitle}</h1>
+        <p className="result-manifest-copy">
+          {summary || fallbackSummary}
+        </p>
         <p className="result-people">
           {players.length}{" "}
           {players.length === 1 ? "pessoa percorreu" : "pessoas percorreram"} as
@@ -2057,9 +2054,7 @@ function JourneyResult({
                 id="journey-title"
                 value={title}
                 onChange={(event) => setTitle(event.target.value)}
-                minLength={3}
                 maxLength={80}
-                required
               />
             </label>
             <label htmlFor="journey-summary">
@@ -2068,9 +2063,7 @@ function JourneyResult({
                 id="journey-summary"
                 value={summary}
                 onChange={(event) => setSummary(event.target.value)}
-                minLength={10}
                 maxLength={400}
-                required
               />
             </label>
             <VoiceInputButton
@@ -2098,7 +2091,7 @@ function JourneyResult({
               <small>{summary.length}/400 caracteres</small>
               <button
                 className="primary-button"
-                disabled={!validManifest || !manifestChanged || !!busyAction}
+                disabled={!manifestChanged || !!busyAction}
               >
                 {busyAction === "save" ? "Salvando…" : "Salvar manifesto"}
               </button>
@@ -2183,7 +2176,7 @@ function JourneyResult({
         <div className="result-actions">
           <button
             className="primary-button"
-            disabled={!validManifest || !!busyAction}
+            disabled={!!busyAction}
             onClick={() => void shareResult()}
           >
             {busyAction === "share"
@@ -2192,7 +2185,7 @@ function JourneyResult({
           </button>
           <button
             className="secondary-button"
-            disabled={!validManifest || !!busyAction}
+            disabled={!!busyAction}
             onClick={downloadResult}
           >
             Baixar jornada (.md)

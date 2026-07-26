@@ -695,16 +695,16 @@ function journeyPublicId(roomId: bigint) {
 
 function normalizeJourneyTitle(title: string) {
   const normalized = title.trim().replace(/\s+/g, " ");
-  if (normalized.length < 3 || normalized.length > 80) {
-    throw new SenderError("O título deve ter entre 3 e 80 caracteres.");
+  if (normalized.length > 80) {
+    throw new SenderError("O título deve ter no máximo 80 caracteres.");
   }
   return normalized;
 }
 
 function normalizeJourneySummary(summary: string) {
   const normalized = summary.trim().replace(/\s+/g, " ");
-  if (normalized.length < 10 || normalized.length > 400) {
-    throw new SenderError("O manifesto deve ter entre 10 e 400 caracteres.");
+  if (normalized.length > 400) {
+    throw new SenderError("O manifesto deve ter no máximo 400 caracteres.");
   }
   return normalized;
 }
