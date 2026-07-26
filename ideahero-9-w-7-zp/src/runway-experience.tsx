@@ -1094,10 +1094,6 @@ function PilotStage({
           <div>
             <small>Adaptação escolhida pela equipe</small>
             <h2>{pilot.decision}</h2>
-            <p>
-              Este aprendizado segue para o lançamento. Não há nota, julgamento
-              do anfitrião ou bônus financeiro.
-            </p>
           </div>
         </section>
       ) : (
