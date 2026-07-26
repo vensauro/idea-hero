@@ -1828,6 +1828,7 @@ function JourneyResult({
   const [notice, setNotice] = useState("");
   const [error, setError] = useState("");
   const [voiceSuggestion, setVoiceSuggestion] = useState("");
+  const [syncingManifest, setSyncingManifest] = useState(false);
   const isHost = sameIdentity(currentPlayer.identity, room.ownerIdentity);
   const journeyIdentity = {
     title,
@@ -1846,10 +1847,29 @@ function JourneyResult({
   );
 
   useEffect(() => {
+    if (isHost) return;
     setTitle(journey?.title ?? fallbackTitle);
     setSummary(journey?.summary ?? fallbackSummary);
     setVoiceSuggestion("");
-  }, [fallbackSummary, fallbackTitle, journey?.summary, journey?.title]);
+  }, [
+    fallbackSummary,
+    fallbackTitle,
+    isHost,
+    journey?.summary,
+    journey?.title,
+  ]);
+
+  useEffect(() => {
+    if (!isHost || !manifestChanged) return;
+    const timer = window.setTimeout(() => {
+      setSyncingManifest(true);
+      setError("");
+      void updateJourney({ roomId: room.id, title, summary })
+        .catch((caught) => setError(errorMessage(caught)))
+        .finally(() => setSyncingManifest(false));
+    }, 600);
+    return () => window.clearTimeout(timer);
+  }, [isHost, manifestChanged, room.id, summary, title, updateJourney]);
 
   function applyManifestVoice({
     transcript,
@@ -1973,9 +1993,7 @@ function JourneyResult({
         </span>
         <p className="kicker">Jornada concluída</p>
         <h1>{title || fallbackTitle}</h1>
-        <p className="result-manifest-copy">
-          {summary || fallbackSummary}
-        </p>
+        <p className="result-manifest-copy">{summary || fallbackSummary}</p>
         <p className="result-people">
           {players.length}{" "}
           {players.length === 1 ? "pessoa percorreu" : "pessoas percorreram"} as
@@ -2038,67 +2056,77 @@ function JourneyResult({
         </section>
       )}
 
-      {isHost && (
-        <section className="manifest-editor" aria-labelledby="manifest-title">
-          <div className="manifest-heading">
-            <div>
-              <p className="kicker">Manifesto final</p>
-              <h2 id="manifest-title">Dê um nome ao que vocês criaram</h2>
-            </div>
-            <span>Somente o anfitrião edita</span>
+      <section className="manifest-editor" aria-labelledby="manifest-title">
+        <div className="manifest-heading">
+          <div>
+            <p className="kicker">Manifesto final</p>
+            <h2 id="manifest-title">Dê um nome ao que vocês criaram</h2>
           </div>
-          <form onSubmit={saveManifest}>
-            <label htmlFor="journey-title">
-              Nome do projeto
-              <input
-                id="journey-title"
-                value={title}
-                onChange={(event) => setTitle(event.target.value)}
-                maxLength={80}
-              />
-            </label>
-            <label htmlFor="journey-summary">
-              Manifesto em uma frase
-              <textarea
-                id="journey-summary"
-                value={summary}
-                onChange={(event) => setSummary(event.target.value)}
-                maxLength={400}
-              />
-            </label>
+          <span>
+            {isHost ? "Você edita para o grupo" : "Editado pelo anfitrião"}
+          </span>
+        </div>
+        <form onSubmit={saveManifest}>
+          <label htmlFor="journey-title">
+            Nome do projeto
+            <input
+              id="journey-title"
+              value={title}
+              onChange={(event) => setTitle(event.target.value)}
+              maxLength={80}
+              disabled={!isHost || !!busyAction}
+            />
+          </label>
+          <label htmlFor="journey-summary">
+            Manifesto em uma frase
+            <textarea
+              id="journey-summary"
+              value={summary}
+              onChange={(event) => setSummary(event.target.value)}
+              maxLength={400}
+              disabled={!isHost || !!busyAction}
+            />
+          </label>
+          {isHost && (
             <VoiceInputButton
               stage="JOURNEY"
               target="journey-summary"
               disabled={!!busyAction}
               onResult={applyManifestVoice}
             />
-            {voiceSuggestion && (
-              <div className="voice-suggestion">
-                <p>Versao curta sugerida: {voiceSuggestion}</p>
-                <button
-                  type="button"
-                  className="secondary-button"
-                  onClick={() => {
-                    setSummary(voiceSuggestion);
-                    setVoiceSuggestion("");
-                  }}
-                >
-                  Usar versao curta
-                </button>
-              </div>
-            )}
-            <div className="manifest-footer">
-              <small>{summary.length}/400 caracteres</small>
+          )}
+          {isHost && voiceSuggestion && (
+            <div className="voice-suggestion">
+              <p>Versao curta sugerida: {voiceSuggestion}</p>
+              <button
+                type="button"
+                className="secondary-button"
+                onClick={() => {
+                  setSummary(voiceSuggestion);
+                  setVoiceSuggestion("");
+                }}
+              >
+                Usar versao curta
+              </button>
+            </div>
+          )}
+          <div className="manifest-footer">
+            <small>
+              {syncingManifest
+                ? "Sincronizando com o grupo…"
+                : `${summary.length}/400 caracteres`}
+            </small>
+            {isHost && (
               <button
                 className="primary-button"
                 disabled={!manifestChanged || !!busyAction}
               >
-                {busyAction === "save" ? "Salvando…" : "Salvar manifesto"}
+                {busyAction === "save" ? "Salvando…" : "Salvar agora"}
               </button>
-            </div>
-          </form>
-        </section>
-      )}
+            )}
+          </div>
+        </form>
+      </section>
 
       <div className="document-heading">
         <div>
