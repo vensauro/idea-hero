@@ -662,14 +662,6 @@ async function uploadPrototypeFile(
   kind: "DRAWING" | "IMAGE" | "AUDIO",
   file: File,
 ) {
-  const maximumSize = kind === "DRAWING" ? 2_000_000 : 650_000;
-  if (file.size > maximumSize) {
-    throw new Error(
-      kind === "DRAWING"
-        ? "O desenho ficou grande demais para salvar."
-        : "Use um arquivo de até 650 KB.",
-    );
-  }
   const formData = new FormData();
   formData.set("roomId", roomId.toString());
   formData.set("kind", kind);
@@ -1177,7 +1169,7 @@ function PrototypeStage({
                   ? "Tirar ou escolher uma foto"
                   : "Gravar ou escolher um áudio"}
               </strong>
-              <small>Até 650 KB · aparece para toda a sala</small>
+              <small>Até 25 MB · aparece para toda a sala</small>
               <input
                 type="file"
                 accept={mode === "IMAGE" ? "image/*" : "audio/*"}

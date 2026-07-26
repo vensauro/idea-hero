@@ -4,8 +4,7 @@ import {
   uploadPrototypeFile,
 } from "../object-storage.server";
 
-const MAX_MEDIA_BYTES = 650_000;
-const MAX_DRAWING_BYTES = 2_000_000;
+const MAX_UPLOAD_BYTES = 25 * 1024 * 1024;
 const imageTypes = new Set([
   "image/jpeg",
   "image/png",
@@ -56,15 +55,10 @@ export async function action({ request }: { request: Request }) {
       return json({ error: "Este formato de arquivo não é compatível." }, 415);
     }
 
-    const maximumSize =
-      kind === "DRAWING" ? MAX_DRAWING_BYTES : MAX_MEDIA_BYTES;
-    if (file.size > maximumSize) {
+    if (file.size > MAX_UPLOAD_BYTES) {
       return json(
         {
-          error:
-            kind === "DRAWING"
-              ? "O desenho ficou grande demais para salvar."
-              : "Use um arquivo de até 650 KB.",
+          error: "Use um arquivo de até 25 MB.",
         },
         413,
       );

@@ -1440,9 +1440,7 @@ export const submit_prototype_artifact = spacetimedb.reducer(
       input.artifactData.length < 32 ||
       input.artifactData.length > 900_000
     ) {
-      throw new SenderError(
-        "O arquivo precisa ser uma imagem ou áudio de até 650 KB.",
-      );
+      throw new SenderError("O arquivo enviado não é válido.");
     }
     const caption = input.caption.trim().replace(/\s+/g, " ").slice(0, 120);
     if (previousArtifact) {
