@@ -580,7 +580,7 @@ h1 {
 .decision-reveal blockquote {
   position: relative;
   margin: 0.75rem 0;
-  max-width: 28ch;
+  max-width: none;
   font-family: "Palmer Lake Print", Inter, sans-serif;
   font-size: clamp(2rem, 5vw, 3rem);
   line-height: 1;
@@ -830,7 +830,7 @@ h1 {
 }
 
 .result-hero h1 {
-  max-width: 18ch;
+  max-width: none;
   color: var(--ink);
   font-size: clamp(3.4rem, 9vw, 6.4rem);
 }
@@ -2881,7 +2881,7 @@ h1 {
 }
 
 .prototype-start-card h2 {
-  max-width: 11ch;
+  max-width: none;
   font-family: "Palmer Lake Print", Inter, sans-serif;
   font-size: clamp(3rem, 7vw, 5rem);
   font-weight: 400;

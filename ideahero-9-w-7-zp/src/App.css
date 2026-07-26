@@ -395,7 +395,7 @@ textarea:focus {
 }
 .lobby-hero h1 {
   margin-inline: auto;
-  max-width: 12ch;
+  max-width: none;
 }
 .lobby-hero > p:not(.kicker) {
   color: var(--muted);
@@ -644,7 +644,7 @@ textarea:focus {
   padding: clamp(0.5rem, 2vw, 1.5rem);
 }
 .stage-intro h1 {
-  max-width: 10ch;
+  max-width: none;
 }
 .stage-intro > p:not(.kicker) {
   color: var(--muted);
@@ -759,7 +759,7 @@ textarea:focus {
   color: var(--ink);
 }
 .result-hero h1 {
-  max-width: 16ch;
+  max-width: none;
   margin-inline: auto;
 }
 .result-hero > p:not(.kicker) {
