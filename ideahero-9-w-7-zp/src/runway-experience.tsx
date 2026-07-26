@@ -27,6 +27,7 @@ import type {
   VisibleContribution,
 } from "./module_bindings/types";
 import { BrandLogo, InspirationCard } from "./experience";
+import { JourneySummary } from "./JourneySummary";
 import { formatCredits } from "./runway-format";
 import {
   CARD_REDRAW_COST,
@@ -470,6 +471,8 @@ export function RunwayFinalStage(props: RunwayFinalStageProps) {
   const {
     room,
     players,
+    contributions,
+    decisions,
     currentPlayer,
     card,
     draw,
@@ -554,17 +557,12 @@ export function RunwayFinalStage(props: RunwayFinalStageProps) {
         ))}
       </nav>
 
-      <section className="presence-row" aria-label="Jogadores na sala">
-        {players.map((player) => (
-          <div
-            className={`presence-avatar ${player.online ? "" : "is-offline"}`}
-            key={player.id.toString()}
-          >
-            <span aria-hidden="true">{player.displayName.slice(0, 1)}</span>
-            <small>{player.displayName}</small>
-          </div>
-        ))}
-      </section>
+      <JourneySummary
+        room={room}
+        contributions={contributions}
+        players={players}
+        decisions={decisions}
+      />
 
       <RunwayWallet economy={economy} stageCost={stageCost} />
 

@@ -42,6 +42,7 @@ import {
 import { createRoomWithAvailableCode } from "./room-code";
 import { latestOpenSession } from "./room-session";
 import { VoiceInputButton, type VoiceInputResult } from "./VoiceInputButton";
+import { JourneySummary } from "./JourneySummary";
 import {
   CardChangeButton,
   EconomyEventOverlay,
@@ -1729,81 +1730,6 @@ function GameBoard({
         </article>
       </section>
     </main>
-  );
-}
-
-function JourneySummary({
-  room,
-  contributions,
-  players,
-  decisions,
-}: {
-  room: Room;
-  contributions: VisibleContribution[];
-  players: Player[];
-  decisions: readonly Decision[];
-}) {
-  return (
-    <aside className="journey-summary">
-      <div className="section-heading">
-        <div>
-          <p className="kicker">Memória coletiva</p>
-          <h2>Jornada construída até aqui</h2>
-        </div>
-        <div className="journey-summary-meta">
-          <span>{room.stageIndex + 1} de 8 etapas</span>
-          <div className="journey-summary-players" aria-label="Participantes">
-            {players.map((player) => (
-              <span
-                className={player.online ? "" : "is-offline"}
-                key={player.id.toString()}
-                title={player.displayName}
-              >
-                {AVATAR_GLYPHS[player.avatarId] ?? "✦"}
-              </span>
-            ))}
-          </div>
-        </div>
-      </div>
-      <div className="journey-columns">
-        {BOARD_STATES.slice(0, room.stageIndex + 1).map((stage) => {
-          const entries = contributions.filter((item) => item.stage === stage);
-          const stageDecision = decisions.find(
-            (item) => item.roomId === room.id && item.stage === stage,
-          );
-          const isCurrent = stage === room.currentStage;
-          return (
-            <section className={isCurrent ? "is-current" : ""} key={stage}>
-              <strong>{STAGE_CONTENT[stage].eyebrow}</strong>
-              {stageDecision ? (
-                <p className="journey-decision">
-                  ★ {stageDecision.summary} <em>— escolha do grupo</em>
-                </p>
-              ) : entries.length === 0 ? (
-                <small>
-                  {isCurrent ? "Estamos construindo agora" : "Em construção"}
-                </small>
-              ) : (
-                entries.map((entry) => {
-                  const authorIdentity = entry.authorIdentity;
-                  const author = authorIdentity
-                    ? players.find((item) =>
-                        sameIdentity(item.identity, authorIdentity),
-                      )
-                    : undefined;
-                  return (
-                    <p key={entry.id.toString()}>
-                      {entry.content}{" "}
-                      <em>— {author?.displayName ?? "Anônimo"}</em>
-                    </p>
-                  );
-                })
-              )}
-            </section>
-          );
-        })}
-      </div>
-    </aside>
   );
 }
 
