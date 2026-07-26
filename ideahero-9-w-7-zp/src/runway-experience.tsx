@@ -677,16 +677,38 @@ export function RunwayFinalStage(props: RunwayFinalStageProps) {
   );
 }
 
-async function fileAsDataUrl(file: File) {
-  if (file.size > 650_000) {
-    throw new Error("Use um arquivo de até 650 KB.");
+async function uploadPrototypeFile(
+  roomId: bigint,
+  kind: "DRAWING" | "IMAGE" | "AUDIO",
+  file: File,
+) {
+  const maximumSize = kind === "DRAWING" ? 2_000_000 : 650_000;
+  if (file.size > maximumSize) {
+    throw new Error(
+      kind === "DRAWING"
+        ? "O desenho ficou grande demais para salvar."
+        : "Use um arquivo de até 650 KB.",
+    );
   }
-  return new Promise<string>((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(String(reader.result));
-    reader.onerror = () => reject(new Error("Não foi possível ler o arquivo."));
-    reader.readAsDataURL(file);
+  const formData = new FormData();
+  formData.set("roomId", roomId.toString());
+  formData.set("kind", kind);
+  formData.set("file", file);
+  const response = await fetch("/api/storage", {
+    method: "POST",
+    body: formData,
   });
+  const result = (await response.json()) as { error?: string; key?: string };
+  if (!response.ok || !result.key) {
+    throw new Error(result.error || "Não foi possível salvar o arquivo.");
+  }
+  return result.key;
+}
+
+function artifactSource(data: string) {
+  return data.startsWith("idea-hero/prototype/")
+    ? `/api/storage?key=${encodeURIComponent(data)}`
+    : data;
 }
 
 type DrawingPoint = { x: number; y: number };
@@ -747,6 +769,8 @@ function DrawingBoard({
   editable,
   onSubmitStroke,
   onClearOwnStrokes,
+  onSaveSnapshot,
+  hasStoredSnapshot = false,
 }: {
   strokes: readonly PrototypeDrawingStroke[];
   players: readonly Player[];
@@ -754,10 +778,13 @@ function DrawingBoard({
   editable: boolean;
   onSubmitStroke: (points: DrawingPoint[]) => void;
   onClearOwnStrokes: () => void;
+  onSaveSnapshot?: (snapshot: Blob) => void;
+  hasStoredSnapshot?: boolean;
 }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const drawingRef = useRef(false);
   const pointsRef = useRef<DrawingPoint[]>([]);
+  const snapshotRequestedRef = useRef(false);
   const [fullscreen, setFullscreen] = useState(false);
 
   useEffect(() => {
@@ -771,6 +798,31 @@ function DrawingBoard({
         paintStroke(context, readDrawingPoints(stroke.points), stroke.color),
       );
   }, [strokes]);
+
+  useEffect(() => {
+    if (
+      editable ||
+      !onSaveSnapshot ||
+      hasStoredSnapshot ||
+      strokes.length === 0 ||
+      snapshotRequestedRef.current
+    ) {
+      return;
+    }
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const timer = window.setTimeout(() => {
+      snapshotRequestedRef.current = true;
+      canvas.toBlob(
+        (snapshot) => {
+          if (snapshot) onSaveSnapshot(snapshot);
+        },
+        "image/webp",
+        0.88,
+      );
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, [editable, hasStoredSnapshot, onSaveSnapshot, strokes.length]);
 
   function point(event: ReactPointerEvent<HTMLCanvasElement>) {
     const canvas = event.currentTarget;
@@ -910,6 +962,9 @@ function PrototypeStage({
     (artifact) =>
       artifact.artifactKind === "IMAGE" || artifact.artifactKind === "AUDIO",
   );
+  const drawingSnapshot = artifacts.find(
+    (artifact) => artifact.artifactKind === "DRAWING" && artifact.artifactData,
+  );
 
   useEffect(() => {
     if (!prototype || prototype.committed) return;
@@ -929,15 +984,27 @@ function PrototypeStage({
     }
   }
 
-  async function saveArtifact(kind: string, data: string) {
+  async function saveArtifact(kind: string, data: string, label = caption) {
     await run(() =>
       submitArtifact({
         roomId: room.id,
         artifactKind: kind,
         artifactData: data,
-        caption,
+        caption: label,
       }),
     );
+  }
+
+  async function saveDrawingSnapshot(snapshot: Blob) {
+    try {
+      const image = new File([snapshot], "desenho-da-equipe.webp", {
+        type: "image/webp",
+      });
+      const key = await uploadPrototypeFile(room.id, "DRAWING", image);
+      await saveArtifact("DRAWING", key, "Desenho colaborativo");
+    } catch (caught) {
+      setError(errorMessage(caught));
+    }
   }
 
   function saveDrawingStroke(points: DrawingPoint[]) {
@@ -1002,12 +1069,12 @@ function PrototypeStage({
             {!prototype.committed && <span>Todos podem substituir</span>}
           </div>
           {prototype.artifactKind === "AUDIO" ? (
-            <audio controls src={prototype.artifactData}>
+            <audio controls src={artifactSource(prototype.artifactData)}>
               Seu navegador não reproduz este áudio.
             </audio>
           ) : (
             <img
-              src={prototype.artifactData}
+              src={artifactSource(prototype.artifactData)}
               alt={prototype.caption || "Protótipo compartilhado"}
             />
           )}
@@ -1053,6 +1120,8 @@ function PrototypeStage({
               editable={false}
               onSubmitStroke={() => undefined}
               onClearOwnStrokes={() => undefined}
+              onSaveSnapshot={saveDrawingSnapshot}
+              hasStoredSnapshot={Boolean(drawingSnapshot)}
             />
           )}
           {mediaArtifacts.map((artifact) => (
@@ -1067,12 +1136,12 @@ function PrototypeStage({
                     : "Registro em imagem")}
               </figcaption>
               {artifact.artifactKind === "AUDIO" ? (
-                <audio controls src={artifact.artifactData}>
+                <audio controls src={artifactSource(artifact.artifactData)}>
                   Seu navegador não reproduz este áudio.
                 </audio>
               ) : (
                 <img
-                  src={artifact.artifactData}
+                  src={artifactSource(artifact.artifactData)}
                   alt={artifact.caption || "Protótipo em imagem"}
                 />
               )}
@@ -1136,8 +1205,8 @@ function PrototypeStage({
                 onChange={(event) => {
                   const file = event.target.files?.[0];
                   if (!file) return;
-                  void fileAsDataUrl(file)
-                    .then((data) => saveArtifact(mode, data))
+                  void uploadPrototypeFile(room.id, mode, file)
+                    .then((key) => saveArtifact(mode, key))
                     .catch((caught) => setError(errorMessage(caught)));
                 }}
               />

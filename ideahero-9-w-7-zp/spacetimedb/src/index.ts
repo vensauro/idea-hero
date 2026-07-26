@@ -1375,6 +1375,13 @@ function prototypeTimeHasEnded(
   return now.microsSinceUnixEpoch >= endingAt;
 }
 
+function isPrototypeStorageKey(roomId: bigint, artifactData: string) {
+  return new RegExp(
+    `^idea-hero/prototype/${roomId.toString()}/[a-z0-9-]+\\.(?:jpe?g|png|webp|gif|mp3|wav|ogg|webm|m4a)$`,
+    "i",
+  ).test(artifactData);
+}
+
 export const submit_prototype_artifact = spacetimedb.reducer(
   {
     roomId: t.u64(),
@@ -1389,13 +1396,7 @@ export const submit_prototype_artifact = spacetimedb.reducer(
       !currentRoom ||
       currentRoom.status !== "ACTIVE" ||
       currentRoom.currentStage !== "PROTOTYPE" ||
-      !prototype ||
-      prototype.committed ||
-      prototypeTimeHasEnded(
-        prototype.startedAt,
-        prototype.durationSeconds,
-        ctx.timestamp,
-      )
+      !prototype
     ) {
       throw new SenderError("O protótipo não pode mais ser alterado.");
     }
@@ -1406,7 +1407,30 @@ export const submit_prototype_artifact = spacetimedb.reducer(
     if (!["DRAWING", "IMAGE", "AUDIO"].includes(input.artifactKind)) {
       throw new SenderError("Escolha desenho, imagem ou áudio.");
     }
+    const previousArtifact = Array.from(
+      ctx.db.prototypeArtifact.roomId.filter(input.roomId),
+    ).find((artifact) => artifact.artifactKind === input.artifactKind);
+    const isStoredFile = isPrototypeStorageKey(
+      input.roomId,
+      input.artifactData,
+    );
+    const canSaveFrozenDrawing =
+      input.artifactKind === "DRAWING" &&
+      isStoredFile &&
+      previousArtifact?.artifactData === "";
+    if (
+      (prototype.committed ||
+        prototypeTimeHasEnded(
+          prototype.startedAt,
+          prototype.durationSeconds,
+          ctx.timestamp,
+        )) &&
+      !canSaveFrozenDrawing
+    ) {
+      throw new SenderError("O protótipo não pode mais ser alterado.");
+    }
     const validMedia =
+      isStoredFile ||
       (input.artifactKind === "AUDIO" &&
         input.artifactData.startsWith("data:audio/")) ||
       (input.artifactKind !== "AUDIO" &&
@@ -1421,9 +1445,6 @@ export const submit_prototype_artifact = spacetimedb.reducer(
       );
     }
     const caption = input.caption.trim().replace(/\s+/g, " ").slice(0, 120);
-    const previousArtifact = Array.from(
-      ctx.db.prototypeArtifact.roomId.filter(input.roomId),
-    ).find((artifact) => artifact.artifactKind === input.artifactKind);
     if (previousArtifact) {
       ctx.db.prototypeArtifact.id.update({
         ...previousArtifact,
