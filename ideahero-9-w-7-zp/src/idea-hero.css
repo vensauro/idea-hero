@@ -2065,7 +2065,7 @@ h1 {
 .card-change-control {
   display: grid;
   gap: 7px;
-  margin-top: 14px;
+  margin-top: 2rem;
 }
 
 .card-change-button {
