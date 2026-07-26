@@ -3,10 +3,15 @@
 
 /* eslint-disable */
 /* tslint:disable */
-import { t as __t } from "spacetimedb";
+import {
+  TypeBuilder as __TypeBuilder,
+  t as __t,
+  type AlgebraicTypeType as __AlgebraicTypeType,
+  type Infer as __Infer,
+} from "spacetimedb";
 
 export default __t.row({
-  id: __t.u64(),
+  id: __t.u64().primaryKey(),
   roomId: __t.u64().name("room_id"),
   authorIdentity: __t.identity().name("author_identity"),
   color: __t.string(),

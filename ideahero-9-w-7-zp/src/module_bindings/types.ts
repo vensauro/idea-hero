@@ -196,6 +196,9 @@ export const ProjectPrototype = __t.object("ProjectPrototype", {
 });
 export type ProjectPrototype = __Infer<typeof ProjectPrototype>;
 
+export const ProjectPrototypes = __t.object("ProjectPrototypes", {});
+export type ProjectPrototypes = __Infer<typeof ProjectPrototypes>;
+
 export const PrototypeArtifact = __t.object("PrototypeArtifact", {
   id: __t.u64(),
   roomId: __t.u64(),
@@ -223,9 +226,6 @@ export type PrototypeDrawingStroke = __Infer<typeof PrototypeDrawingStroke>;
 
 export const PrototypeDrawingStrokes = __t.object("PrototypeDrawingStrokes", {});
 export type PrototypeDrawingStrokes = __Infer<typeof PrototypeDrawingStrokes>;
-
-export const ProjectPrototypes = __t.object("ProjectPrototypes", {});
-export type ProjectPrototypes = __Infer<typeof ProjectPrototypes>;
 
 export const Room = __t.object("Room", {
   id: __t.u64(),

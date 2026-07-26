@@ -3,6 +3,14 @@
 
 /* eslint-disable */
 /* tslint:disable */
-import { t as __t } from "spacetimedb";
+import {
+  TypeBuilder as __TypeBuilder,
+  t as __t,
+  type AlgebraicTypeType as __AlgebraicTypeType,
+  type Infer as __Infer,
+} from "spacetimedb";
 
-export default { roomId: __t.u64(), points: __t.string() };
+export default {
+  roomId: __t.u64(),
+  points: __t.string(),
+};
