@@ -1281,18 +1281,6 @@ function GameBoard({
         decisions={decisions}
       />
 
-      <section className="presence-row" aria-label="Jogadores na sala">
-        {players.map((item) => (
-          <div
-            className={`presence-avatar ${item.online ? "" : "is-offline"}`}
-            key={item.id.toString()}
-          >
-            <span>{AVATAR_GLYPHS[item.avatarId] ?? "✦"}</span>
-            <small>{item.displayName}</small>
-          </div>
-        ))}
-      </section>
-
       <RunwayWallet
         economy={economy}
         stageCost={stageCosts.find((item) => item.stage === stage)}
@@ -1761,6 +1749,20 @@ function JourneySummary({
         <div>
           <p className="kicker">Memória coletiva</p>
           <h2>Jornada construída até aqui</h2>
+        </div>
+        <div className="journey-summary-meta">
+          <span>{room.stageIndex + 1} de 8 etapas</span>
+          <div className="journey-summary-players" aria-label="Participantes">
+            {players.map((player) => (
+              <span
+                className={player.online ? "" : "is-offline"}
+                key={player.id.toString()}
+                title={player.displayName}
+              >
+                {AVATAR_GLYPHS[player.avatarId] ?? "✦"}
+              </span>
+            ))}
+          </div>
         </div>
       </div>
       <div className="journey-columns">
