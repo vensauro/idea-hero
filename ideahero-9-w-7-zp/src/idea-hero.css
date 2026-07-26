@@ -1097,7 +1097,14 @@ h1 {
 .result-page small,
 .game-shell .kicker,
 .result-page .kicker {
-  font-size: 0.8rem;
+  font-size: 0.875rem;
+}
+
+.welcome-card small,
+.welcome-card .kicker,
+.lobby-page small,
+.lobby-page .kicker {
+  font-size: 0.875rem;
 }
 
 .prototype-timer strong,
@@ -3460,4 +3467,33 @@ h1 {
   .runway-meter span {
     transition: none;
   }
+}
+
+/* Avoid microcopy throughout the journey and result screens. */
+.welcome-card::after,
+.game-shell .stage-cost-card small,
+.game-shell .card-stage,
+.game-shell .mission-label,
+.game-shell .phase-callout span,
+.game-shell .vote-option > span,
+.game-shell .decision-reveal > p:last-child,
+.game-shell .participant-progress small,
+.game-shell .contribution-status span,
+.game-shell .journey-decision em,
+.result-page .document-decision small,
+.game-shell .host-end-panel span,
+.game-shell .error-message,
+.result-page .document-heading > span,
+.game-shell .phase-ribbon span,
+.game-shell .shared-artifact-heading > span,
+.game-shell .artifact-upload-card small,
+.game-shell .pilot-feedback-portrait b,
+.game-shell .marketing-choice-card b,
+.game-shell .marketing-choice-card em,
+.game-shell .marketing-choice-image span,
+.game-shell .runway-rules-chip,
+.game-shell .economy-event > button,
+.game-shell .stage-cost-card > b,
+.game-shell .runway-wallet::after {
+  font-size: 0.875rem;
 }

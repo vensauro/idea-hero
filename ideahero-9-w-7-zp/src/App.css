@@ -130,7 +130,8 @@ h2 {
 
 .intro {
   color: var(--muted);
-  line-height: 1.6;
+  font-size: clamp(1.1rem, 2.5vw, 1.25rem);
+  line-height: 1.55;
 }
 .brand-mark,
 .result-star {
@@ -1045,4 +1046,23 @@ textarea:focus {
   .round-timer p {
     text-align: left;
   }
+}
+
+/* Supporting text stays readable at the default browser zoom. */
+.leave-room-button,
+.leave-room-error,
+.profile-trigger-copy small,
+.profile-trigger-edit,
+.section-heading > span,
+.ready-chip,
+.room-pill,
+.journey-columns em,
+.round-timer span,
+.prototype-direction-heading > span,
+.product-type strong,
+.product-type small,
+.copilot-row span,
+.copilot-note,
+.copilot-button {
+  font-size: 0.875rem;
 }
