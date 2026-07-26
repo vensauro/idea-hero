@@ -354,6 +354,7 @@ h1 {
 .contribution-panel > .section-heading,
 .contribution-panel > form,
 .contribution-panel > .shared-ideas,
+.contribution-panel > .host-stage-action,
 .contribution-panel > .next-up,
 .contribution-panel > .next-stage-button,
 .contribution-panel > .waiting-note,
@@ -363,6 +364,42 @@ h1 {
 
 .contribution-panel > .section-heading {
   margin-top: 1.5rem;
+}
+
+.host-stage-action {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 1rem;
+  margin-top: 1rem;
+  padding: 1rem;
+  color: var(--ink);
+  background: rgba(217, 237, 131, 0.34);
+  border: 3px solid var(--line);
+  border-radius: 16px 10px 18px 12px;
+  box-shadow: 4px 4px 0 var(--line);
+}
+
+.host-stage-action > div {
+  display: grid;
+  gap: 0.3rem;
+}
+
+.host-stage-action .kicker,
+.host-stage-action span {
+  margin: 0;
+}
+
+.host-stage-action strong {
+  font-size: 1.15rem;
+}
+
+.host-stage-action span {
+  line-height: 1.4;
+}
+
+.host-stage-action > button {
+  min-width: min(100%, 220px);
 }
 
 .stage-mission {
@@ -1010,6 +1047,14 @@ h1 {
   .host-end-panel {
     align-items: stretch;
     flex-direction: column;
+  }
+
+  .host-stage-action {
+    grid-template-columns: 1fr;
+  }
+
+  .host-stage-action > button {
+    width: 100%;
   }
 
   .host-end-button {

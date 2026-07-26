@@ -1113,6 +1113,10 @@ function GameBoard({
   const [saving, setSaving] = useState(false);
   const [actionPending, setActionPending] = useState(false);
   const isHost = sameIdentity(currentPlayer.identity, room.ownerIdentity);
+  const host = players.find((player) =>
+    sameIdentity(player.identity, room.ownerIdentity),
+  );
+  const hostName = host?.displayName ?? "A pessoa anfitriã";
   const [productType, setProductType] = useState<ProductType>("digital");
   const [copilotSuggestion, setCopilotSuggestion] = useState("");
   const [voiceSuggestion, setVoiceSuggestion] = useState("");
@@ -1357,6 +1361,75 @@ function GameBoard({
                     : "Veja a síntese escolhida, reconheça a autoria e prepare-se para avançar."}
               </span>
             </div>
+          )}
+          {collaborative && (
+            <section
+              className={`host-stage-action ${isHost ? "is-host" : ""}`}
+              aria-label="Próxima ação do anfitrião"
+            >
+              <div>
+                <p className="kicker">
+                  {isHost
+                    ? "Sua ação de anfitrião"
+                    : "Próxima ação do anfitrião"}
+                </p>
+                <strong>
+                  {phase === "CONTRIBUTING"
+                    ? `${hostName} abre a votação`
+                    : phase === "VOTING"
+                      ? `${hostName} revela a decisão coletiva`
+                      : `${hostName} confirma e avança a jornada`}
+                </strong>
+                <span>
+                  {phase === "CONTRIBUTING"
+                    ? groupReady
+                      ? "Todas as contribuições chegaram. A votação pode começar quando o grupo estiver atento."
+                      : `Faltam ${onlinePlayers.length - contributingPlayers.length} contribuições antes de abrir a votação.`
+                    : phase === "VOTING"
+                      ? allVoted
+                        ? "Todas as pessoas online votaram. A escolha do grupo está pronta para ser revelada."
+                        : `Faltam ${onlinePlayers.length - activeStageVotes.length} votos antes da revelação.`
+                      : "A escolha já faz parte da memória coletiva. O anfitrião pode levar o grupo à próxima etapa."}
+                </span>
+              </div>
+              {isHost && phase === "CONTRIBUTING" && (
+                <button
+                  className="primary-button"
+                  disabled={!groupReady || actionPending}
+                  onClick={() =>
+                    void runStageAction(() => openVoting({ roomId: room.id }))
+                  }
+                >
+                  {groupReady ? "Abrir votação" : "Esperando contribuições"}
+                </button>
+              )}
+              {isHost && phase === "VOTING" && (
+                <button
+                  className="primary-button"
+                  disabled={!allVoted || actionPending}
+                  onClick={() =>
+                    void runStageAction(() => resolveStage({ roomId: room.id }))
+                  }
+                >
+                  {allVoted ? "Revelar decisão coletiva" : "Esperando votos"}
+                </button>
+              )}
+              {isHost && phase === "REVIEW" && (
+                <button
+                  className="primary-button"
+                  disabled={actionPending}
+                  onClick={() =>
+                    void runStageAction(() => advanceStage({ roomId: room.id }))
+                  }
+                >
+                  {stage === "SALES"
+                    ? "Concluir a jornada"
+                    : `Confirmar e avançar para ${
+                        STAGE_CONTENT[BOARD_STATES[room.stageIndex + 1]].eyebrow
+                      }`}
+                </button>
+              )}
+            </section>
           )}
           <StageMission stage={stage} />
           {stage === "PROTOTYPE" && phase === "CONTRIBUTING" && (
@@ -1656,43 +1729,6 @@ function GameBoard({
                   : guidance.next}
           </p>
 
-          {isHost && collaborative && phase === "CONTRIBUTING" && (
-            <button
-              className="secondary-button next-stage-button"
-              disabled={!groupReady || actionPending}
-              onClick={() =>
-                void runStageAction(() => openVoting({ roomId: room.id }))
-              }
-            >
-              {groupReady ? "Abrir votação" : "Esperando contribuições"}
-            </button>
-          )}
-          {isHost && collaborative && phase === "VOTING" && (
-            <button
-              className="secondary-button next-stage-button"
-              disabled={!allVoted || actionPending}
-              onClick={() =>
-                void runStageAction(() => resolveStage({ roomId: room.id }))
-              }
-            >
-              {allVoted ? "Revelar decisão coletiva" : "Esperando votos"}
-            </button>
-          )}
-          {isHost && (!collaborative || phase === "REVIEW") && (
-            <button
-              className="secondary-button next-stage-button"
-              disabled={!groupReady || actionPending}
-              onClick={() =>
-                void runStageAction(() => advanceStage({ roomId: room.id }))
-              }
-            >
-              {stage === "SALES"
-                ? "Concluir a jornada"
-                : `Confirmar e avançar para ${
-                    STAGE_CONTENT[BOARD_STATES[room.stageIndex + 1]].eyebrow
-                  }`}
-            </button>
-          )}
           {isHost && (
             <aside className="host-end-panel" aria-label="Opções do anfitrião">
               <div>
