@@ -149,7 +149,7 @@ export function RunwayWallet({
           <span>Caixa do projeto</span>
           <strong>{formatCredits(economy.balance)} créditos</strong>
         </div>
-        <span className="runway-rules-chip">Runway compartilhado</span>
+        <span className="runway-rules-chip">Caixa compartilhado</span>
       </div>
       <div
         className="runway-meter"
