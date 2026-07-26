@@ -4,12 +4,6 @@
   font-display: swap;
 }
 
-@font-face {
-  font-family: "Palmer Lake Script";
-  src: url("/fonts/PalmerLakeScript-Regular.otf") format("opentype");
-  font-display: swap;
-}
-
 :root {
   --ink: #292332;
   --paper: #fff9ed;
@@ -50,7 +44,10 @@ body {
 
 h1,
 h2 {
-  text-wrap: balance;
+  hyphens: none;
+  overflow-wrap: normal;
+  text-wrap: pretty;
+  word-break: normal;
 }
 
 h1 {
@@ -234,10 +231,11 @@ h1 {
 }
 
 .stage-intro h1 {
-  max-width: 11ch;
+  max-width: none;
   margin-bottom: 0.7rem;
   color: var(--ink);
-  font-size: clamp(3rem, 7vw, 5.4rem);
+  font-size: clamp(2.6rem, 5.4vw, 4.7rem);
+  line-height: 1;
 }
 
 .stage-intro > p:not(.kicker) {
@@ -1062,6 +1060,21 @@ h1 {
   .card-skeleton {
     animation: none;
   }
+}
+
+/* Keep labels readable without forcing a word onto every line. */
+.game-shell small,
+.result-page small,
+.game-shell .kicker,
+.result-page .kicker {
+  font-size: 0.8rem;
+}
+
+.prototype-timer strong,
+.runway-wallet-heading strong,
+.sales-formula strong,
+.sales-reveal strong {
+  font-family: "Palmer Lake Print", Inter, sans-serif;
 }
 
 /* Collaborative final-stage cards */
