@@ -515,9 +515,6 @@ export function RunwayFinalStage(props: RunwayFinalStageProps) {
   } = props;
   const stage = room.currentStage;
   const isHost = sameIdentity(currentPlayer.identity, room.ownerIdentity);
-  const host = players.find((player) =>
-    sameIdentity(player.identity, room.ownerIdentity),
-  );
   const advanceStage = useReducer(reducers.advanceStage);
   const endJourney = useReducer(reducers.endJourney);
   const [pending, setPending] = useState(false);
@@ -599,35 +596,6 @@ export function RunwayFinalStage(props: RunwayFinalStageProps) {
             Etapa {room.stageIndex + 1} de 8 · {STAGE_LABELS[stage]}
           </p>
           <h1>{STAGE_TITLES[stage]}</h1>
-          <div className="stage-host-context">
-            <p className="host-identity">
-              <span>Anfitrião desta jornada</span>
-              <strong>{host?.displayName ?? "Pessoa anfitriã"}</strong>
-            </p>
-            {isHost && (
-              <aside
-                className="host-end-panel"
-                aria-label="Painel do anfitrião"
-              >
-                <div>
-                  <p className="kicker">Seu painel de anfitrião</p>
-                  <strong>Você coordena o ritmo da atividade.</strong>
-                  <span>
-                    Encerre para todos apenas se o grupo precisar parar; o
-                    progresso parcial continua salvo.
-                  </span>
-                </div>
-                <button
-                  type="button"
-                  className="host-end-button"
-                  disabled={pending}
-                  onClick={endEarly}
-                >
-                  Encerrar para todos
-                </button>
-              </aside>
-            )}
-          </div>
         </header>
 
         <div className="runway-stage-activity">
@@ -687,6 +655,22 @@ export function RunwayFinalStage(props: RunwayFinalStageProps) {
             <p className="waiting-note">
               A etapa avança quando uma escolha alcança a maioria do grupo.
             </p>
+          )}
+          {isHost && (
+            <aside className="host-end-panel" aria-label="Opções do anfitrião">
+              <div>
+                <strong>Precisa parar a atividade?</strong>
+                <span>O progresso parcial será preservado para o grupo.</span>
+              </div>
+              <button
+                type="button"
+                className="host-end-button"
+                disabled={pending}
+                onClick={endEarly}
+              >
+                Encerrar para todos
+              </button>
+            </aside>
           )}
           {error && <p className="error-message">{error}</p>}
         </div>
