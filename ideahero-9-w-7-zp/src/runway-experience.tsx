@@ -1,5 +1,5 @@
 import {
-  FormEvent,
+  PointerEvent as ReactPointerEvent,
   ReactNode,
   useEffect,
   useMemo,
@@ -13,11 +13,11 @@ import type {
   CardDraw,
   Decision,
   EconomyTransaction,
+  GroupVote,
   MarketingPlan,
   PilotSimulation,
   Player,
   ProjectPrototype,
-  PrototypeReaction,
   Room,
   RoomEconomy,
   SalesResult,
@@ -28,12 +28,8 @@ import { BrandLogo, InspirationCard } from "./experience";
 import { formatCredits } from "./runway-format";
 import {
   CARD_REDRAW_COST,
-  MARKETING_AUDIENCES,
-  MARKETING_CHANNELS,
-  PROTOTYPE_FIDELITIES,
-  type MarketingAudience,
-  type MarketingChannel,
-  type PrototypeFidelity,
+  MARKETING_LAUNCH_OPTIONS,
+  PROTOTYPE_EXTENSION_COST,
 } from "../spacetimedb/src/economy";
 
 const STAGES = [
@@ -59,9 +55,9 @@ const STAGE_LABELS: Record<string, string> = {
 };
 
 const STAGE_TITLES: Record<string, string> = {
-  PROTOTYPE: "Torne a ideia visível",
-  PILOT: "Teste com a realidade",
-  MARKETING: "Prepare a chegada ao mercado",
+  PROTOTYPE: "Faça a ideia existir",
+  PILOT: "Reaja ao primeiro teste",
+  MARKETING: "Escolha como chegar ao mercado",
   SALES: "Revele o resultado",
 };
 
@@ -79,12 +75,6 @@ const CHANNEL_LABELS: Record<string, string> = {
   DIRECT: "Contato direto",
 };
 
-const PILOT_LABELS: Record<string, string> = {
-  PROMISING: "Promissor",
-  MIXED: "Sinal misto",
-  FRICTION: "Atrito encontrado",
-};
-
 const TIER_LABELS: Record<string, string> = {
   NEEDS_ITERATION: "Precisa de iteração",
   MARKET_SIGNAL: "Sinal de mercado",
@@ -100,8 +90,40 @@ function sameIdentity(
 }
 
 function errorMessage(error: unknown) {
-  if (error instanceof Error) return error.message;
-  return String(error);
+  return error instanceof Error ? error.message : String(error);
+}
+
+function majorityFor(players: readonly Player[] | undefined) {
+  return (
+    Math.floor((players ?? []).filter((player) => player.online).length / 2) + 1
+  );
+}
+
+function topicVotes(
+  votes: readonly GroupVote[] | undefined,
+  topic: string,
+  players: readonly Player[] | undefined,
+) {
+  const online = (players ?? []).filter((player) => player.online);
+  return (votes ?? []).filter(
+    (vote) =>
+      vote.topic === topic &&
+      online.some((player) =>
+        sameIdentity(player.identity, vote.playerIdentity),
+      ),
+  );
+}
+
+function ownTopicVote(
+  votes: readonly GroupVote[] | undefined,
+  topic: string,
+  player: Player,
+) {
+  return (votes ?? []).find(
+    (vote) =>
+      vote.topic === topic &&
+      sameIdentity(vote.playerIdentity, player.identity),
+  );
 }
 
 export function RunwayWallet({
@@ -221,19 +243,18 @@ export function EconomyEventOverlay({
     return () => window.clearTimeout(timeoutRef.current);
   }, [visible]);
 
+  if (!visible) return null;
+  const positive = visible.delta > 0;
+  const funding = visible.reason === "FUNDING_OPPORTUNITY";
+
   function skipAnimations() {
     const latest = ordered.at(-1);
-    if (latest) {
+    if (latest)
       window.sessionStorage.setItem(storageKey, String(latest.sequence));
-    }
     window.clearTimeout(timeoutRef.current);
     setPending([]);
     setVisible(undefined);
   }
-
-  if (!visible) return null;
-  const positive = visible.delta > 0;
-  const funding = visible.reason === "FUNDING_OPPORTUNITY";
 
   return (
     <aside
@@ -311,20 +332,64 @@ function TransactionLedger({
   );
 }
 
+function VoteProgress({
+  votes,
+  required,
+  players,
+}: {
+  votes: readonly GroupVote[];
+  required: number;
+  players: readonly Player[];
+}) {
+  return (
+    <div className="group-vote-progress" aria-live="polite">
+      <div className="vote-avatar-stack" aria-hidden="true">
+        {votes.map((vote) => {
+          const player = players.find((item) =>
+            sameIdentity(item.identity, vote.playerIdentity),
+          );
+          return (
+            <span title={player?.displayName} key={vote.id.toString()}>
+              {player?.displayName.slice(0, 1).toUpperCase() ?? "?"}
+            </span>
+          );
+        })}
+      </div>
+      <strong>
+        {votes.length}/{required} para decidir
+      </strong>
+    </div>
+  );
+}
+
 export function CardChangeButton({
   room,
   draw,
   economy,
   locked,
+  players,
+  currentPlayer,
+  groupVotes,
 }: {
   room: Room;
   draw?: CardDraw;
   economy: RoomEconomy;
   locked: boolean;
+  players: readonly Player[];
+  currentPlayer: Player;
+  groupVotes: readonly GroupVote[];
 }) {
-  const redrawCard = useReducer(reducers.redrawCard);
+  const voteCardChange = useReducer(reducers.voteCardChange);
+  const refreshRedrawnCard = useReducer(reducers.refreshRedrawnCard);
+  const refreshedDrawRef = useRef<string | undefined>(undefined);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState("");
+  const currentStageVotes = (groupVotes ?? []).filter(
+    (vote) => vote.stage === room.currentStage,
+  );
+  const votes = topicVotes(currentStageVotes, "CARD_CHANGE", players);
+  const ownVote = ownTopicVote(currentStageVotes, "CARD_CHANGE", currentPlayer);
+  const required = majorityFor(players);
   const unavailable =
     locked ||
     !draw ||
@@ -332,17 +397,18 @@ export function CardChangeButton({
     room.stageIndex > 5 ||
     economy.balance < CARD_REDRAW_COST;
 
-  async function changeCard() {
-    if (
-      !window.confirm(
-        "Usar 500 créditos do caixa compartilhado para trocar esta carta?",
-      )
-    )
-      return;
+  useEffect(() => {
+    if (!draw || draw.drawIndex === 0) return;
+    if (refreshedDrawRef.current === draw.cardId) return;
+    refreshedDrawRef.current = draw.cardId;
+    void refreshRedrawnCard({ roomId: room.id }).catch(() => undefined);
+  }, [draw, refreshRedrawnCard, room.id]);
+
+  async function toggleVote() {
     setPending(true);
     setError("");
     try {
-      await redrawCard({ roomId: room.id });
+      await voteCardChange({ roomId: room.id, support: !ownVote });
     } catch (caught) {
       setError(errorMessage(caught));
     } finally {
@@ -351,29 +417,27 @@ export function CardChangeButton({
   }
 
   return (
-    <div className="card-change-control">
+    <div className="card-change-control collaborative-card-change">
       <button
         type="button"
         className="card-change-button"
         disabled={unavailable || pending}
-        onClick={() => void changeCard()}
+        aria-pressed={Boolean(ownVote)}
+        onClick={() => void toggleVote()}
       >
         {draw && draw.drawIndex > 0
-          ? "Carta já trocada"
-          : pending
-            ? "Trocando…"
-            : "Trocar carta · −500"}
+          ? "Carta trocada pela equipe"
+          : ownVote
+            ? "Retirar voto de troca"
+            : "Votar para trocar · −500"}
       </button>
+      {!unavailable && (
+        <VoteProgress votes={votes} required={required} players={players} />
+      )}
       {locked && draw?.drawIndex === 0 && (
-        <small>
-          A troca fecha quando a equipe se compromete com esta etapa.
-        </small>
+        <small>A votação fechou quando a equipe começou esta etapa.</small>
       )}
-      {error && (
-        <small className="error-message" role="alert">
-          {error}
-        </small>
-      )}
+      {error && <small className="error-message">{error}</small>}
     </div>
   );
 }
@@ -390,7 +454,7 @@ type RunwayFinalStageProps = {
   stageCosts: readonly StageCost[];
   transactions: readonly EconomyTransaction[];
   prototype?: ProjectPrototype;
-  reactions: readonly PrototypeReaction[];
+  groupVotes: readonly GroupVote[];
   pilot?: PilotSimulation;
   marketing?: MarketingPlan;
   sales?: SalesResult;
@@ -408,7 +472,7 @@ export function RunwayFinalStage(props: RunwayFinalStageProps) {
     stageCosts,
     transactions,
     prototype,
-    reactions,
+    groupVotes,
     pilot,
     marketing,
     sales,
@@ -428,7 +492,8 @@ export function RunwayFinalStage(props: RunwayFinalStageProps) {
     (stage === "SALES" && Boolean(sales));
   const cardLocked =
     (stage === "PROTOTYPE" && Boolean(prototype)) ||
-    (stage === "PILOT" && Boolean(pilot));
+    (stage === "PILOT" &&
+      topicVotes(groupVotes, "PILOT_RESPONSE", players).length > 0);
 
   async function run(action: () => Promise<unknown>) {
     setPending(true);
@@ -484,9 +549,7 @@ export function RunwayFinalStage(props: RunwayFinalStageProps) {
             className={`presence-avatar ${player.online ? "" : "is-offline"}`}
             key={player.id.toString()}
           >
-            <span aria-hidden="true">
-              {player.avatarId === "comet" ? "☄️" : "✦"}
-            </span>
+            <span aria-hidden="true">{player.displayName.slice(0, 1)}</span>
             <small>{player.displayName}</small>
           </div>
         ))}
@@ -502,12 +565,15 @@ export function RunwayFinalStage(props: RunwayFinalStageProps) {
           <h1>{STAGE_TITLES[stage]}</h1>
           <StageCostCard cost={stageCost} />
           <InspirationCard card={card} stageLabel={STAGE_LABELS[stage]} />
-          {isHost && stage !== "MARKETING" && stage !== "SALES" && (
+          {stage !== "MARKETING" && stage !== "SALES" && (
             <CardChangeButton
               room={room}
               draw={draw}
               economy={economy}
               locked={Boolean(cardLocked)}
+              players={players}
+              currentPlayer={currentPlayer}
+              groupVotes={groupVotes}
             />
           )}
           <TransactionLedger transactions={transactions} />
@@ -518,18 +584,19 @@ export function RunwayFinalStage(props: RunwayFinalStageProps) {
             <PrototypeStage
               room={room}
               prototype={prototype}
-              reactions={reactions}
+              groupVotes={groupVotes}
               currentPlayer={currentPlayer}
-              isHost={isHost}
-              maxInvestment={economy.balance}
+              players={players}
+              economy={economy}
             />
           )}
           {stage === "PILOT" && (
             <PilotStage
               room={room}
               pilot={pilot}
-              prototype={prototype}
-              isHost={isHost}
+              groupVotes={groupVotes}
+              currentPlayer={currentPlayer}
+              players={players}
             />
           )}
           {stage === "MARKETING" && (
@@ -537,20 +604,22 @@ export function RunwayFinalStage(props: RunwayFinalStageProps) {
               room={room}
               marketing={marketing}
               economy={economy}
-              isHost={isHost}
+              groupVotes={groupVotes}
+              currentPlayer={currentPlayer}
+              players={players}
+              card={card}
             />
           )}
           {stage === "SALES" && (
             <SalesStage
               economy={economy}
               sales={sales}
-              marketing={marketing}
               pilot={pilot}
               transactions={transactions}
             />
           )}
 
-          {isHost && stageReady && (
+          {stageReady && (
             <button
               className="primary-button next-stage-button"
               disabled={pending}
@@ -558,16 +627,12 @@ export function RunwayFinalStage(props: RunwayFinalStageProps) {
             >
               {stage === "SALES"
                 ? "Concluir e ver a jornada"
-                : `Confirmar e avançar para ${
-                    STAGE_LABELS[STAGES[room.stageIndex + 1]]
-                  }`}
+                : `Avançar para ${STAGE_LABELS[STAGES[room.stageIndex + 1]]}`}
             </button>
           )}
-          {!isHost && (
+          {!stageReady && (
             <p className="waiting-note">
-              {stageReady
-                ? "Tudo pronto. O anfitrião conduz a próxima revelação."
-                : "Construam a decisão juntos; o anfitrião registra a escolha."}
+              A etapa avança quando uma escolha alcança a maioria do grupo.
             </p>
           )}
           {isHost && (
@@ -586,246 +651,151 @@ export function RunwayFinalStage(props: RunwayFinalStageProps) {
               </button>
             </aside>
           )}
-          {error && (
-            <p className="error-message" role="alert">
-              {error}
-            </p>
-          )}
+          {error && <p className="error-message">{error}</p>}
         </article>
       </section>
     </main>
   );
 }
 
-function PrototypeStage({
-  room,
-  prototype,
-  reactions,
-  currentPlayer,
-  isHost,
-  maxInvestment,
-}: {
-  room: Room;
-  prototype?: ProjectPrototype;
-  reactions: readonly PrototypeReaction[];
-  currentPlayer: Player;
-  isHost: boolean;
-  maxInvestment: number;
-}) {
-  const commitPrototype = useReducer(reducers.commitProjectPrototype);
-  const react = useReducer(reducers.reactToPrototype);
-  const [personSituation, setPersonSituation] = useState(
-    prototype?.personSituation ?? "",
-  );
-  const [firstAction, setFirstAction] = useState(prototype?.firstAction ?? "");
-  const [keyInteraction, setKeyInteraction] = useState(
-    prototype?.keyInteraction ?? "",
-  );
-  const [evidence, setEvidence] = useState(prototype?.evidence ?? "");
-  const [fidelity, setFidelity] = useState<PrototypeFidelity>(
-    (prototype?.fidelity as PrototypeFidelity) ?? "LEAN",
-  );
-  const [pending, setPending] = useState(false);
-  const [error, setError] = useState("");
-  const ownReaction = reactions.find((item) =>
-    sameIdentity(item.playerIdentity, currentPlayer.identity),
-  );
+async function fileAsDataUrl(file: File) {
+  if (file.size > 650_000) {
+    throw new Error("Use um arquivo de até 650 KB.");
+  }
+  return new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result));
+    reader.onerror = () => reject(new Error("Não foi possível ler o arquivo."));
+    reader.readAsDataURL(file);
+  });
+}
 
-  async function submit(event: FormEvent) {
-    event.preventDefault();
-    setPending(true);
-    setError("");
-    try {
-      await commitPrototype({
-        roomId: room.id,
-        personSituation,
-        firstAction,
-        keyInteraction,
-        evidence,
-        fidelity,
-      });
-    } catch (caught) {
-      setError(errorMessage(caught));
-    } finally {
-      setPending(false);
-    }
+function DrawingBoard({ onSave }: { onSave: (data: string) => void }) {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const drawingRef = useRef(false);
+  const [empty, setEmpty] = useState(true);
+
+  function point(event: ReactPointerEvent<HTMLCanvasElement>) {
+    const canvas = event.currentTarget;
+    const rect = canvas.getBoundingClientRect();
+    return {
+      x: ((event.clientX - rect.left) / rect.width) * canvas.width,
+      y: ((event.clientY - rect.top) / rect.height) * canvas.height,
+    };
   }
 
-  async function sendReaction(reaction: string) {
-    setPending(true);
-    setError("");
-    try {
-      await react({ roomId: room.id, reaction });
-    } catch (caught) {
-      setError(errorMessage(caught));
-    } finally {
-      setPending(false);
-    }
+  function begin(event: ReactPointerEvent<HTMLCanvasElement>) {
+    const context = canvasRef.current?.getContext("2d");
+    if (!context) return;
+    const current = point(event);
+    drawingRef.current = true;
+    event.currentTarget.setPointerCapture(event.pointerId);
+    context.beginPath();
+    context.moveTo(current.x, current.y);
   }
 
-  const reactionCounts = ["CLEAR", "RISKY", "MISSING"].map((reaction) => ({
-    reaction,
-    count: reactions.filter((item) => item.reaction === reaction).length,
-  }));
+  function draw(event: ReactPointerEvent<HTMLCanvasElement>) {
+    if (!drawingRef.current) return;
+    const context = canvasRef.current?.getContext("2d");
+    if (!context) return;
+    const current = point(event);
+    context.lineWidth = 7;
+    context.lineCap = "round";
+    context.lineJoin = "round";
+    context.strokeStyle = "#315f65";
+    context.lineTo(current.x, current.y);
+    context.stroke();
+    setEmpty(false);
+  }
+
+  function finish() {
+    drawingRef.current = false;
+  }
+
+  function clear() {
+    const canvas = canvasRef.current;
+    const context = canvas?.getContext("2d");
+    if (!canvas || !context) return;
+    context.clearRect(0, 0, canvas.width, canvas.height);
+    setEmpty(true);
+  }
 
   return (
-    <>
-      <div className="section-heading">
-        <div>
-          <p className="kicker">Canvas compartilhado · 2–3 minutos</p>
-          <h2>Construa uma cena que possa ser testada</h2>
-        </div>
-        <span>O anfitrião é o escriba</span>
-      </div>
-
-      <form className="prototype-canvas" onSubmit={submit}>
-        <label>
-          Pessoa e situação
-          <textarea
-            value={personSituation}
-            onChange={(event) => setPersonSituation(event.target.value)}
-            placeholder="Quem está vivendo qual situação?"
-            minLength={2}
-            maxLength={220}
-            required
-            disabled={!isHost || prototype?.committed}
-          />
-        </label>
-        <label>
-          Primeira ação
-          <textarea
-            value={firstAction}
-            onChange={(event) => setFirstAction(event.target.value)}
-            placeholder="O que essa pessoa faz primeiro?"
-            minLength={2}
-            maxLength={220}
-            required
-            disabled={!isHost || prototype?.committed}
-          />
-        </label>
-        <label>
-          Interação-chave
-          <textarea
-            value={keyInteraction}
-            onChange={(event) => setKeyInteraction(event.target.value)}
-            placeholder="Onde o valor realmente acontece?"
-            minLength={2}
-            maxLength={220}
-            required
-            disabled={!isHost || prototype?.committed}
-          />
-        </label>
-        <label>
-          Prova observável de valor
-          <textarea
-            value={evidence}
-            onChange={(event) => setEvidence(event.target.value)}
-            placeholder="O que alguém poderá ver, contar ou medir?"
-            minLength={2}
-            maxLength={220}
-            required
-            disabled={!isHost || prototype?.committed}
-          />
-        </label>
-
-        <fieldset
-          className="fidelity-fieldset"
-          disabled={!isHost || prototype?.committed}
+    <div className="prototype-drawing">
+      <canvas
+        ref={canvasRef}
+        width={720}
+        height={420}
+        aria-label="Área de desenho do protótipo"
+        onPointerDown={begin}
+        onPointerMove={draw}
+        onPointerUp={finish}
+        onPointerCancel={finish}
+      />
+      <div>
+        <button type="button" className="secondary-button" onClick={clear}>
+          Limpar
+        </button>
+        <button
+          type="button"
+          className="primary-button"
+          disabled={empty}
+          onClick={() => {
+            const canvas = canvasRef.current;
+            if (canvas) onSave(canvas.toDataURL("image/webp", 0.72));
+          }}
         >
-          <legend>Quanto investir para reduzir a incerteza?</legend>
-          <div className="fidelity-grid">
-            {(
-              Object.entries(PROTOTYPE_FIDELITIES) as Array<
-                [
-                  PrototypeFidelity,
-                  (typeof PROTOTYPE_FIDELITIES)[PrototypeFidelity],
-                ]
-              >
-            ).map(([id, option]) => (
-              <label
-                className={`${fidelity === id ? "is-selected" : ""} ${
-                  option.cost > maxInvestment ? "is-unavailable" : ""
-                }`}
-                key={id}
-              >
-                <input
-                  type="radio"
-                  name="fidelity"
-                  value={id}
-                  checked={fidelity === id}
-                  disabled={option.cost > maxInvestment}
-                  onChange={() => setFidelity(id)}
-                />
-                <strong>{option.label}</strong>
-                <b>−{formatCredits(option.cost)}</b>
-                <small>
-                  {option.promising}% promissor · {option.friction}% atrito
-                </small>
-              </label>
-            ))}
-          </div>
-        </fieldset>
-        <p className="decision-note">
-          Mais investimento reduz a chance de atrito, mas deixa menos caixa para
-          o lançamento.
-        </p>
-        {isHost && !prototype?.committed && (
-          <button className="primary-button" disabled={pending}>
-            {pending
-              ? "Comprometendo…"
-              : "Comprometer protótipo e investimento"}
-          </button>
-        )}
-      </form>
-
-      {prototype?.committed && (
-        <section className="prototype-reactions" aria-live="polite">
-          <strong>Como o protótipo está parecendo?</strong>
-          <div className="reaction-row">
-            {reactionCounts.map(({ reaction, count }) => (
-              <button
-                key={reaction}
-                type="button"
-                disabled={pending}
-                aria-pressed={ownReaction?.reaction === reaction}
-                onClick={() => void sendReaction(reaction)}
-              >
-                {reaction === "CLEAR"
-                  ? "Claro"
-                  : reaction === "RISKY"
-                    ? "Arriscado"
-                    : "Faltando"}{" "}
-                <b>{count}</b>
-              </button>
-            ))}
-          </div>
-        </section>
-      )}
-      {error && <p className="error-message">{error}</p>}
-    </>
+          Compartilhar desenho
+        </button>
+      </div>
+    </div>
   );
 }
 
-function PilotStage({
+function PrototypeStage({
   room,
-  pilot,
   prototype,
-  isHost,
+  groupVotes,
+  currentPlayer,
+  players,
+  economy,
 }: {
   room: Room;
-  pilot?: PilotSimulation;
   prototype?: ProjectPrototype;
-  isHost: boolean;
+  groupVotes: readonly GroupVote[];
+  currentPlayer: Player;
+  players: readonly Player[];
+  economy: RoomEconomy;
 }) {
-  const resolvePilot = useReducer(reducers.resolvePilot);
-  const commitDecision = useReducer(reducers.commitPilotDecision);
-  const [successSignal, setSuccessSignal] = useState(
-    pilot?.successSignal ?? "",
-  );
-  const [decision, setDecision] = useState(pilot?.decision || "KEEP");
-  const [revision, setRevision] = useState(pilot?.revision ?? "");
+  const startActivity = useReducer(reducers.startPrototypeActivity);
+  const submitArtifact = useReducer(reducers.submitPrototypeArtifact);
+  const voteReady = useReducer(reducers.votePrototypeReady);
+  const voteExtension = useReducer(reducers.votePrototypeExtension);
+  const finishActivity = useReducer(reducers.finishPrototypeActivity);
+  const [mode, setMode] = useState<"DRAWING" | "IMAGE" | "AUDIO">("DRAWING");
+  const [caption, setCaption] = useState("");
   const [pending, setPending] = useState(false);
   const [error, setError] = useState("");
+  const [clock, setClock] = useState(Date.now());
+  const readyVotes = topicVotes(groupVotes, "PROTOTYPE_READY", players);
+  const extensionVotes = topicVotes(groupVotes, "PROTOTYPE_EXTENSION", players);
+  const ownReady = ownTopicVote(groupVotes, "PROTOTYPE_READY", currentPlayer);
+  const ownExtension = ownTopicVote(
+    groupVotes,
+    "PROTOTYPE_EXTENSION",
+    currentPlayer,
+  );
+  const required = majorityFor(players);
+  const endingAt = prototype
+    ? prototype.startedAt.toDate().getTime() + prototype.durationSeconds * 1000
+    : 0;
+  const secondsLeft = Math.max(0, Math.ceil((endingAt - clock) / 1000));
+
+  useEffect(() => {
+    if (!prototype || prototype.committed) return;
+    const timer = window.setInterval(() => setClock(Date.now()), 500);
+    return () => window.clearInterval(timer);
+  }, [prototype]);
 
   async function run(action: () => Promise<unknown>) {
     setPending(true);
@@ -839,132 +809,333 @@ function PilotStage({
     }
   }
 
+  async function saveArtifact(kind: string, data: string) {
+    await run(() =>
+      submitArtifact({
+        roomId: room.id,
+        artifactKind: kind,
+        artifactData: data,
+        caption,
+      }),
+    );
+  }
+
+  if (!prototype) {
+    return (
+      <section className="prototype-start-card">
+        <span aria-hidden="true">✦</span>
+        <p className="kicker">Desafio compartilhado · 2 minutos</p>
+        <h2>Prontos para criar algo que todos possam ver?</h2>
+        <p>
+          O relógio começa quando alguém revelar o desafio. Qualquer pessoa pode
+          desenhar, fotografar ou registrar um som.
+        </p>
+        <button
+          className="primary-button"
+          disabled={pending}
+          onClick={() => void run(() => startActivity({ roomId: room.id }))}
+        >
+          Revelar desafio e iniciar
+        </button>
+        {error && <p className="error-message">{error}</p>}
+      </section>
+    );
+  }
+
   return (
     <>
-      <div className="section-heading">
+      <div className="prototype-challenge-card">
         <div>
-          <p className="kicker">Teste comprometido · 2–3 minutos</p>
-          <h2>Qual sinal provará que isso funciona?</h2>
+          <p className="kicker">Carta de atividade</p>
+          <h2>{prototype.challengeTitle}</h2>
+          <p>{prototype.challengeDescription}</p>
         </div>
-        <span>Fidelidade {prototype?.fidelity ?? "—"}</span>
+        <div
+          className={`prototype-timer ${secondsLeft <= 15 ? "is-ending" : ""}`}
+          role="timer"
+          aria-label={`${secondsLeft} segundos restantes`}
+        >
+          <small>Tempo</small>
+          <strong>
+            {Math.floor(secondsLeft / 60)}:
+            {String(secondsLeft % 60).padStart(2, "0")}
+          </strong>
+        </div>
       </div>
 
-      {!pilot?.resolved ? (
-        <form
-          className="runway-form"
-          onSubmit={(event) => {
-            event.preventDefault();
-            void run(() => resolvePilot({ roomId: room.id, successSignal }));
-          }}
-        >
-          <label>
-            Sinal observável de sucesso
-            <textarea
-              value={successSignal}
-              onChange={(event) => setSuccessSignal(event.target.value)}
-              placeholder="Ex.: a pessoa completa a primeira ação sem ajuda."
-              minLength={2}
-              maxLength={220}
-              required
-              disabled={!isHost}
-            />
-          </label>
-          {isHost && (
-            <button className="primary-button" disabled={pending}>
-              {pending ? "Testando…" : "Comprometer teste e revelar resultado"}
-            </button>
-          )}
-        </form>
-      ) : (
-        <section className={`pilot-result is-${pilot.outcome.toLowerCase()}`}>
-          <span aria-hidden="true">
-            {pilot.outcome === "PROMISING"
-              ? "↗"
-              : pilot.outcome === "MIXED"
-                ? "≈"
-                : "△"}
-          </span>
-          <div>
-            <p className="kicker">Resultado do teste</p>
-            <h2>{PILOT_LABELS[pilot.outcome]}</h2>
-            <p>
-              Sinal observado: <strong>{pilot.successSignal}</strong>
-            </p>
-            <b>
-              +{formatCredits(pilot.readinessBonus)} de prontidão para Vendas
-            </b>
-            <small>
-              Prontidão não entra no caixa; melhora a simulação final.
-            </small>
+      {prototype.artifactData ? (
+        <section className="shared-artifact" aria-live="polite">
+          <div className="shared-artifact-heading">
+            <div>
+              <p className="kicker">Protótipo da equipe</p>
+              <h3>
+                {prototype.caption || "Sem legenda — deixem a ideia falar"}
+              </h3>
+            </div>
+            {!prototype.committed && <span>Todos podem substituir</span>}
           </div>
+          {prototype.artifactKind === "AUDIO" ? (
+            <audio controls src={prototype.artifactData}>
+              Seu navegador não reproduz este áudio.
+            </audio>
+          ) : (
+            <img
+              src={prototype.artifactData}
+              alt={prototype.caption || "Protótipo compartilhado"}
+            />
+          )}
         </section>
+      ) : (
+        <p className="empty-artifact">
+          Ainda não há artefato. Criem o primeiro.
+        </p>
       )}
 
-      {pilot?.resolved && !pilot.completed && (
-        <form
-          className="pilot-decision"
-          onSubmit={(event) => {
-            event.preventDefault();
-            void run(() =>
-              commitDecision({ roomId: room.id, decision, revision }),
-            );
-          }}
-        >
-          <fieldset disabled={!isHost}>
-            <legend>O que fazemos com o aprendizado?</legend>
-            <div className="decision-choice-row">
-              {["KEEP", "ADAPT", "REBUILD"].map((choice) => (
-                <label
-                  className={decision === choice ? "is-selected" : ""}
-                  key={choice}
-                >
-                  <input
-                    type="radio"
-                    name="pilot-decision"
-                    value={choice}
-                    checked={decision === choice}
-                    onChange={() => setDecision(choice)}
-                  />
-                  {choice === "KEEP"
-                    ? "Manter"
-                    : choice === "ADAPT"
-                      ? "Adaptar"
-                      : "Reconstruir"}
-                </label>
-              ))}
-            </div>
-          </fieldset>
-          {decision !== "KEEP" && (
-            <label>
-              Uma revisão curta
-              <textarea
-                value={revision}
-                onChange={(event) => setRevision(event.target.value)}
-                minLength={2}
-                maxLength={220}
-                required
-                disabled={!isHost}
-                placeholder="O que muda antes do lançamento?"
+      {!prototype.committed && (
+        <>
+          <div className="artifact-mode-tabs" role="tablist">
+            {(["DRAWING", "IMAGE", "AUDIO"] as const).map((value) => (
+              <button
+                type="button"
+                role="tab"
+                aria-selected={mode === value}
+                key={value}
+                onClick={() => setMode(value)}
+              >
+                {value === "DRAWING"
+                  ? "Desenhar"
+                  : value === "IMAGE"
+                    ? "Foto"
+                    : "Som"}
+              </button>
+            ))}
+          </div>
+          <label className="artifact-caption">
+            Uma legenda curta, se ajudar
+            <input
+              value={caption}
+              maxLength={120}
+              onChange={(event) => setCaption(event.target.value)}
+              placeholder="O que estamos mostrando?"
+            />
+          </label>
+          {mode === "DRAWING" ? (
+            <DrawingBoard
+              onSave={(data) => void saveArtifact("DRAWING", data)}
+            />
+          ) : (
+            <label className="artifact-upload-card">
+              <span aria-hidden="true">{mode === "IMAGE" ? "▣" : "♪"}</span>
+              <strong>
+                {mode === "IMAGE"
+                  ? "Tirar ou escolher uma foto"
+                  : "Gravar ou escolher um áudio"}
+              </strong>
+              <small>Até 650 KB · aparece para toda a sala</small>
+              <input
+                type="file"
+                accept={mode === "IMAGE" ? "image/*" : "audio/*"}
+                capture={mode === "IMAGE" ? "environment" : true}
+                onChange={(event) => {
+                  const file = event.target.files?.[0];
+                  if (!file) return;
+                  void fileAsDataUrl(file)
+                    .then((data) => saveArtifact(mode, data))
+                    .catch((caught) => setError(errorMessage(caught)));
+                }}
               />
             </label>
           )}
-          {isHost && (
-            <button className="primary-button" disabled={pending}>
-              Registrar aprendizado
-            </button>
+
+          {prototype.artifactData && (
+            <div className="prototype-group-actions">
+              <button
+                type="button"
+                className="primary-button"
+                aria-pressed={Boolean(ownReady)}
+                disabled={pending}
+                onClick={() =>
+                  void run(() =>
+                    voteReady({ roomId: room.id, ready: !ownReady }),
+                  )
+                }
+              >
+                {ownReady ? "Retirar meu pronto" : "Está pronto"}
+              </button>
+              <VoteProgress
+                votes={readyVotes}
+                required={required}
+                players={players}
+              />
+              {secondsLeft === 0 && (
+                <button
+                  type="button"
+                  className="secondary-button"
+                  disabled={pending}
+                  onClick={() =>
+                    void run(() => finishActivity({ roomId: room.id }))
+                  }
+                >
+                  Encerrar pelo tempo
+                </button>
+              )}
+            </div>
           )}
-        </form>
+
+          {prototype.investment === 0 &&
+            economy.balance >= PROTOTYPE_EXTENSION_COST && (
+              <div className="prototype-extension-vote">
+                <button
+                  type="button"
+                  aria-pressed={Boolean(ownExtension)}
+                  disabled={pending}
+                  onClick={() =>
+                    void run(() =>
+                      voteExtension({
+                        roomId: room.id,
+                        support: !ownExtension,
+                      }),
+                    )
+                  }
+                >
+                  +30 segundos · −500
+                </button>
+                <VoteProgress
+                  votes={extensionVotes}
+                  required={required}
+                  players={players}
+                />
+              </div>
+            )}
+        </>
       )}
-      {pilot?.completed && (
+
+      {prototype.committed && (
         <p className="completion-callout">
-          ✓ Decisão registrada:{" "}
-          {pilot.decision === "KEEP"
-            ? "manter"
-            : pilot.decision === "ADAPT"
-              ? "adaptar"
-              : "reconstruir"}
-          {pilot.revision ? ` — ${pilot.revision}` : ""}
+          ✓ A maioria aprovou este protótipo para o teste.
         </p>
+      )}
+      {error && <p className="error-message">{error}</p>}
+    </>
+  );
+}
+
+function PilotStage({
+  room,
+  pilot,
+  groupVotes,
+  currentPlayer,
+  players,
+}: {
+  room: Room;
+  pilot?: PilotSimulation;
+  groupVotes: readonly GroupVote[];
+  currentPlayer: Player;
+  players: readonly Player[];
+}) {
+  const voteResponse = useReducer(reducers.votePilotResponse);
+  const [pending, setPending] = useState(false);
+  const [error, setError] = useState("");
+  const votes = topicVotes(groupVotes, "PILOT_RESPONSE", players);
+  const ownVote = ownTopicVote(groupVotes, "PILOT_RESPONSE", currentPlayer);
+  const required = majorityFor(players);
+
+  if (!pilot) {
+    return <p className="empty-state">Preparando o feedback do teste…</p>;
+  }
+
+  const options = [
+    {
+      key: "A",
+      title: pilot.optionA,
+      description: pilot.optionADescription,
+    },
+    {
+      key: "B",
+      title: pilot.optionB,
+      description: pilot.optionBDescription,
+    },
+    {
+      key: "C",
+      title: pilot.optionC,
+      description: pilot.optionCDescription,
+    },
+  ];
+
+  async function choose(choice: string) {
+    setPending(true);
+    setError("");
+    try {
+      await voteResponse({ roomId: room.id, choice });
+    } catch (caught) {
+      setError(errorMessage(caught));
+    } finally {
+      setPending(false);
+    }
+  }
+
+  return (
+    <>
+      <section className="pilot-feedback-card">
+        <div className="pilot-feedback-portrait" aria-hidden="true">
+          <span>“</span>
+          <b>1º teste</b>
+        </div>
+        <div>
+          <p className="kicker">Feedback simulado de uma pessoa real</p>
+          <h2>{pilot.feedbackTitle}</h2>
+          <p>{pilot.feedbackDescription}</p>
+        </div>
+      </section>
+
+      {pilot.completed ? (
+        <section className="pilot-learning">
+          <span aria-hidden="true">✓</span>
+          <div>
+            <small>Adaptação escolhida pela equipe</small>
+            <h2>{pilot.decision}</h2>
+            <p>
+              Este aprendizado segue para o lançamento. Não há nota, julgamento
+              do anfitrião ou bônus financeiro.
+            </p>
+          </div>
+        </section>
+      ) : (
+        <>
+          <div className="section-heading">
+            <div>
+              <p className="kicker">Resposta rápida</p>
+              <h2>O que muda antes do lançamento?</h2>
+            </div>
+            <span>Maioria decide</span>
+          </div>
+          <div className="pilot-option-grid">
+            {options.map((option) => {
+              const count = votes.filter(
+                (vote) => vote.choice === option.key,
+              ).length;
+              return (
+                <button
+                  type="button"
+                  className={
+                    ownVote?.choice === option.key ? "is-selected" : ""
+                  }
+                  disabled={pending}
+                  key={option.key}
+                  onClick={() => void choose(option.key)}
+                >
+                  <span>{option.key}</span>
+                  <strong>{option.title}</strong>
+                  <p>{option.description}</p>
+                  <small>
+                    {count} {count === 1 ? "voto" : "votos"}
+                  </small>
+                </button>
+              );
+            })}
+          </div>
+          <VoteProgress votes={votes} required={required} players={players} />
+        </>
       )}
       {error && <p className="error-message">{error}</p>}
     </>
@@ -975,38 +1146,32 @@ function MarketingStage({
   room,
   marketing,
   economy,
-  isHost,
+  groupVotes,
+  currentPlayer,
+  players,
+  card,
 }: {
   room: Room;
   marketing?: MarketingPlan;
   economy: RoomEconomy;
-  isHost: boolean;
+  groupVotes: readonly GroupVote[];
+  currentPlayer: Player;
+  players: readonly Player[];
+  card?: Card;
 }) {
-  const commitMarketing = useReducer(reducers.commitMarketingPlan);
-  const [audience, setAudience] = useState<MarketingAudience>("EARLY_ADOPTERS");
-  const [valuePromise, setValuePromise] = useState("");
-  const [channel, setChannel] = useState<MarketingChannel>("SOCIAL");
-  const [callToAction, setCallToAction] = useState("");
-  const [investment, setInvestment] = useState(0);
+  const voteMarketing = useReducer(reducers.voteMarketingPlan);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState("");
-  const maxInvestment =
-    Math.floor(Math.max(0, economy.balance - economy.reservedBalance) / 500) *
-    500;
+  const votes = topicVotes(groupVotes, "MARKETING_PLAN", players);
+  const ownVote = ownTopicVote(groupVotes, "MARKETING_PLAN", currentPlayer);
+  const required = majorityFor(players);
+  const available = Math.max(0, economy.balance - economy.reservedBalance);
 
-  async function submit(event: FormEvent) {
-    event.preventDefault();
+  async function choose(choice: string) {
     setPending(true);
     setError("");
     try {
-      await commitMarketing({
-        roomId: room.id,
-        audience,
-        valuePromise,
-        channel,
-        callToAction,
-        investment,
-      });
+      await voteMarketing({ roomId: room.id, choice });
     } catch (caught) {
       setError(errorMessage(caught));
     } finally {
@@ -1019,7 +1184,7 @@ function MarketingStage({
       <>
         <div className="section-heading">
           <div>
-            <p className="kicker">Plano bloqueado</p>
+            <p className="kicker">Carta escolhida</p>
             <h2>A resposta do mercado chegou</h2>
           </div>
           <span>Investimento {formatCredits(marketing.investment)}</span>
@@ -1030,31 +1195,32 @@ function MarketingStage({
             <strong>{AUDIENCE_LABELS[marketing.audience]}</strong>
           </p>
           <p>
-            <small>Promessa</small>
-            <strong>{marketing.valuePromise}</strong>
-          </p>
-          <p>
             <small>Canal</small>
             <strong>{CHANNEL_LABELS[marketing.channel]}</strong>
           </p>
           <p>
-            <small>Chamada</small>
+            <small>Convite</small>
             <strong>{marketing.callToAction}</strong>
           </p>
         </div>
-        <section className="market-response" aria-live="assertive">
-          <span aria-hidden="true">◎</span>
-          <p className="kicker">Carta de resposta do mercado</p>
-          <h2>{marketing.responseTitle}</h2>
-          <p>{marketing.responseDescription}</p>
-          <div>
-            <span>Base {(marketing.baseMultiplier / 100).toFixed(1)}×</span>
-            {marketing.matched && <b>Combinação +0,2×</b>}
-            <strong>
-              Resultado {(marketing.effectiveMultiplier / 100).toFixed(1)}×
-            </strong>
+        <figure className="market-response-card" aria-live="assertive">
+          <div className="market-response-image">
+            {card && <img src={card.imagePath} alt="" />}
+            <span>Resposta do mercado</span>
           </div>
-        </section>
+          <figcaption>
+            <p className="kicker">Carta revelada</p>
+            <h2>{marketing.responseTitle}</h2>
+            <p>{marketing.responseDescription}</p>
+            <div>
+              <span>Base {(marketing.baseMultiplier / 100).toFixed(1)}×</span>
+              {marketing.matched && <b>Combinação +0,2×</b>}
+              <strong>
+                {(marketing.effectiveMultiplier / 100).toFixed(1)}×
+              </strong>
+            </div>
+          </figcaption>
+        </figure>
       </>
     );
   }
@@ -1063,10 +1229,10 @@ function MarketingStage({
     <>
       <div className="section-heading">
         <div>
-          <p className="kicker">Plano compacto · 2–3 minutos</p>
-          <h2>Faça uma aposta clara de lançamento</h2>
+          <p className="kicker">Cartas de lançamento</p>
+          <h2>Qual aposta combina com a ideia?</h2>
         </div>
-        <span>Reserva protegida</span>
+        <span>Maioria decide</span>
       </div>
       <div className="sales-reserve-callout">
         <span aria-hidden="true">▣</span>
@@ -1074,91 +1240,50 @@ function MarketingStage({
           <strong>
             {formatCredits(economy.reservedBalance)} créditos reservados
           </strong>
-          O custo conhecido de Vendas não pode ser usado em Marketing.
+          O custo de Vendas está protegido.
         </p>
       </div>
-      <form className="runway-form marketing-form" onSubmit={submit}>
-        <label>
-          Público prioritário
-          <select
-            value={audience}
-            onChange={(event) =>
-              setAudience(event.target.value as MarketingAudience)
-            }
-            disabled={!isHost}
-          >
-            {MARKETING_AUDIENCES.map((value) => (
-              <option value={value} key={value}>
-                {AUDIENCE_LABELS[value]}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label>
-          Promessa de valor
-          <textarea
-            value={valuePromise}
-            onChange={(event) => setValuePromise(event.target.value)}
-            minLength={2}
-            maxLength={220}
-            required
-            disabled={!isHost}
-            placeholder="Para este público, qual mudança importa?"
-          />
-        </label>
-        <label>
-          Canal principal
-          <select
-            value={channel}
-            onChange={(event) =>
-              setChannel(event.target.value as MarketingChannel)
-            }
-            disabled={!isHost}
-          >
-            {MARKETING_CHANNELS.map((value) => (
-              <option value={value} key={value}>
-                {CHANNEL_LABELS[value]}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label>
-          Chamada para ação
-          <textarea
-            value={callToAction}
-            onChange={(event) => setCallToAction(event.target.value)}
-            minLength={2}
-            maxLength={220}
-            required
-            disabled={!isHost}
-            placeholder="O que queremos que a pessoa faça agora?"
-          />
-        </label>
-        <label className="investment-control">
-          <span>
-            Investimento em Marketing
-            <b>{formatCredits(investment)} créditos</b>
-          </span>
-          <input
-            type="range"
-            min={0}
-            max={maxInvestment}
-            step={500}
-            value={investment}
-            onChange={(event) => setInvestment(Number(event.target.value))}
-            disabled={!isHost}
-          />
-          <small>
-            Máximo disponível: {formatCredits(maxInvestment)} · incrementos de
-            500
-          </small>
-        </label>
-        {isHost && (
-          <button className="primary-button" disabled={pending}>
-            {pending ? "Bloqueando plano…" : "Bloquear plano e revelar mercado"}
-          </button>
-        )}
-      </form>
+      <div className="marketing-card-grid">
+        {MARKETING_LAUNCH_OPTIONS.map((option, index) => {
+          const count = votes.filter(
+            (vote) => vote.choice === option.key,
+          ).length;
+          const unavailable = option.investment > available;
+          return (
+            <button
+              type="button"
+              className={`marketing-choice-card is-${option.accent} ${
+                ownVote?.choice === option.key ? "is-selected" : ""
+              }`}
+              disabled={pending || unavailable}
+              key={option.key}
+              onClick={() => void choose(option.key)}
+            >
+              <div className="marketing-choice-image">
+                <img src={option.imagePath} alt={option.imageAlt} />
+                <span>0{index + 1}</span>
+              </div>
+              <div>
+                <small>{AUDIENCE_LABELS[option.audience]}</small>
+                <h3>{option.label}</h3>
+                <p>{option.valuePromise}</p>
+                <b>{CHANNEL_LABELS[option.channel]}</b>
+                <strong>
+                  {option.investment === 0
+                    ? "Orgânico"
+                    : `−${formatCredits(option.investment)}`}
+                </strong>
+                <em>
+                  {unavailable
+                    ? "Reserva protegida"
+                    : `${count} ${count === 1 ? "voto" : "votos"}`}
+                </em>
+              </div>
+            </button>
+          );
+        })}
+      </div>
+      <VoteProgress votes={votes} required={required} players={players} />
       {error && <p className="error-message">{error}</p>}
     </>
   );
@@ -1167,22 +1292,16 @@ function MarketingStage({
 function SalesStage({
   economy,
   sales,
-  marketing,
   pilot,
   transactions,
 }: {
   economy: RoomEconomy;
   sales?: SalesResult;
-  marketing?: MarketingPlan;
   pilot?: PilotSimulation;
   transactions: readonly EconomyTransaction[];
 }) {
   if (!sales) {
-    return (
-      <p className="empty-state" role="status">
-        Preparando a cerimônia de Vendas…
-      </p>
-    );
+    return <p className="empty-state">Preparando a cerimônia de Vendas…</p>;
   }
   const changeCosts = transactions
     .filter((item) => item.reason === "CARD_REDRAW")
@@ -1193,20 +1312,17 @@ function SalesStage({
   const funding = transactions
     .filter((item) => item.reason === "FUNDING_OPPORTUNITY")
     .reduce((total, item) => total + item.delta, 0);
-
+  const prototypeInvestment = transactions
+    .filter((item) => item.reason === "PROTOTYPE_INVESTMENT")
+    .reduce((total, item) => total + Math.abs(item.delta), 0);
   const lines = [
     ["Capital inicial", economy.initialBalance],
     ["Financiamento recebido", funding],
     ["Custos operacionais", -operatingCosts],
     ["Trocas de carta", -changeCosts],
-    ["Investimento no protótipo", -(marketing ? 0 : 0)],
+    ["Tempo extra de protótipo", -prototypeInvestment],
     ["Investimento em Marketing", -sales.marketingInvestment],
-    ["Prontidão do Piloto", sales.readinessBonus],
   ] as const;
-  const prototypeInvestment = transactions
-    .filter((item) => item.reason === "PROTOTYPE_INVESTMENT")
-    .reduce((total, item) => total + Math.abs(item.delta), 0);
-  lines[4][1] = -prototypeInvestment;
 
   return (
     <>
@@ -1221,6 +1337,12 @@ function SalesStage({
         Este resultado é uma simulação do jogo para aprender sobre escolhas e
         runway — não é uma previsão financeira.
       </p>
+      {pilot?.decision && (
+        <p className="pilot-carryover">
+          <small>Aprendizado levado ao lançamento</small>
+          <strong>{pilot.decision}</strong>
+        </p>
+      )}
       <section className="sales-ledger" aria-live="polite">
         {lines.map(([label, value], index) => (
           <div style={{ animationDelay: `${index * 120}ms` }} key={label}>
@@ -1232,14 +1354,10 @@ function SalesStage({
           </div>
         ))}
       </section>
-      <section className="sales-formula">
-        <p>
-          Base 5.000 + Marketing {formatCredits(sales.marketingInvestment)} +
-          Prontidão {formatCredits(pilot?.readinessBonus ?? 0)}
-        </p>
+      <div className="sales-formula">
+        <p>Base 5.000 + Marketing {formatCredits(sales.marketingInvestment)}</p>
         <strong>× {(sales.multiplier / 100).toFixed(1)}</strong>
-        <span>{marketing?.responseTitle}</span>
-      </section>
+      </div>
       <section className="sales-reveal">
         <div>
           <small>Vendas simuladas</small>
@@ -1247,9 +1365,9 @@ function SalesStage({
         </div>
         <div>
           <small>Runway final</small>
-          <strong>{formatCredits(sales.finalRunway)} créditos</strong>
+          <strong>{formatCredits(sales.finalRunway)}</strong>
         </div>
-        <p>{TIER_LABELS[sales.tier] ?? sales.tier}</p>
+        <p>{TIER_LABELS[sales.tier]}</p>
       </section>
     </>
   );

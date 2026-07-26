@@ -12,9 +12,4 @@ import {
 
 export default {
   roomId: __t.u64(),
-  audience: __t.string(),
-  valuePromise: __t.string(),
-  channel: __t.string(),
-  callToAction: __t.string(),
-  investment: __t.u32(),
 };

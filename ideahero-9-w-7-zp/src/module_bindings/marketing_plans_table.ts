@@ -12,6 +12,7 @@ import {
 
 export default __t.row({
   roomId: __t.u64().primaryKey().name("room_id"),
+  optionKey: __t.string().name("option_key"),
   audience: __t.string(),
   valuePromise: __t.string().name("value_promise"),
   channel: __t.string(),

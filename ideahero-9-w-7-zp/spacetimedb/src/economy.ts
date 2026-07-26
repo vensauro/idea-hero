@@ -1,5 +1,8 @@
 export const INITIAL_RUNWAY = 10_000;
 export const CARD_REDRAW_COST = 500;
+export const PROTOTYPE_BASE_SECONDS = 120;
+export const PROTOTYPE_EXTENSION_SECONDS = 30;
+export const PROTOTYPE_EXTENSION_COST = 500;
 
 export const BOARD_STAGES = [
   "SCENARIO",
@@ -13,8 +16,119 @@ export const BOARD_STAGES = [
 ] as const;
 
 export type EconomyStage = (typeof BOARD_STAGES)[number];
-export type PrototypeFidelity = "LEAN" | "FOCUSED" | "ROBUST";
-export type PilotOutcome = "PROMISING" | "MIXED" | "FRICTION";
+
+export const PROTOTYPE_CHALLENGES = [
+  {
+    key: "DRAW",
+    title: "Desenhe a experiência",
+    description:
+      "Transforme a ideia em uma tela, fluxo ou storyboard que outra pessoa consiga entender.",
+    artifactKinds: ["DRAWING", "IMAGE"],
+  },
+  {
+    key: "PHOTO",
+    title: "Monte e fotografe",
+    description:
+      "Use papel, objetos ou pessoas para criar uma versão física e registre uma foto.",
+    artifactKinds: ["IMAGE", "DRAWING"],
+  },
+  {
+    key: "PERFORM",
+    title: "Encene ou cante a ideia",
+    description:
+      "Faça uma demonstração curta, um jingle ou uma fala e registre o resultado.",
+    artifactKinds: ["AUDIO", "IMAGE"],
+  },
+] as const;
+
+export function prototypeChallengeForSeed(seed: number) {
+  return PROTOTYPE_CHALLENGES[
+    deterministicIndex(seed, 26, PROTOTYPE_CHALLENGES.length)
+  ];
+}
+
+export const PILOT_FEEDBACK = [
+  {
+    title: "A ideia foi entendida, mas ainda não inspira confiança",
+    description:
+      "As pessoas compreenderam a proposta, porém hesitaram antes do primeiro compromisso.",
+    options: [
+      {
+        key: "A",
+        title: "Mostrar prova",
+        description: "Adicionar exemplos, resultados ou depoimentos.",
+        learning: "PROOF",
+      },
+      {
+        key: "B",
+        title: "Reduzir o risco",
+        description: "Oferecer uma experiência inicial menor e reversível.",
+        learning: "TRIAL",
+      },
+      {
+        key: "C",
+        title: "Criar proximidade",
+        description:
+          "Apresentar a solução por alguém em quem o público confia.",
+        learning: "TRUST",
+      },
+    ],
+  },
+  {
+    title: "As pessoas gostaram, mas não souberam por onde começar",
+    description:
+      "O valor parece interessante, mas o primeiro passo ficou escondido ou complexo.",
+    options: [
+      {
+        key: "A",
+        title: "Uma ação principal",
+        description: "Remover distrações e destacar apenas o primeiro passo.",
+        learning: "CLARITY",
+      },
+      {
+        key: "B",
+        title: "Exemplo guiado",
+        description: "Demonstrar a primeira experiência antes de pedir ação.",
+        learning: "GUIDANCE",
+      },
+      {
+        key: "C",
+        title: "Ajuda humana",
+        description: "Começar com acompanhamento pessoal e aprender com ele.",
+        learning: "SUPPORT",
+      },
+    ],
+  },
+  {
+    title: "A solução funciona, mas exige mais tempo do que o esperado",
+    description:
+      "O teste revelou valor, porém também revelou esforço demais para a rotina real.",
+    options: [
+      {
+        key: "A",
+        title: "Encurtar o fluxo",
+        description: "Entregar o menor resultado valioso primeiro.",
+        learning: "SPEED",
+      },
+      {
+        key: "B",
+        title: "Automatizar uma parte",
+        description: "Retirar a tarefa mais repetitiva da experiência.",
+        learning: "AUTOMATION",
+      },
+      {
+        key: "C",
+        title: "Mudar o momento",
+        description: "Levar a solução para uma ocasião com menos pressão.",
+        learning: "TIMING",
+      },
+    ],
+  },
+] as const;
+
+export function pilotFeedbackForSeed(seed: number) {
+  return PILOT_FEEDBACK[deterministicIndex(seed, 31, PILOT_FEEDBACK.length)];
+}
 
 export const STAGE_COST_LABELS: Record<EconomyStage, string> = {
   SCENARIO: "Pesquisa",
@@ -108,56 +222,6 @@ export function createFundingOpportunity(seed: number) {
   return { stage, value, ...narrative };
 }
 
-export const PROTOTYPE_FIDELITIES: Record<
-  PrototypeFidelity,
-  {
-    label: string;
-    cost: number;
-    promising: number;
-    mixed: number;
-    friction: number;
-  }
-> = {
-  LEAN: {
-    label: "Lean",
-    cost: 500,
-    promising: 20,
-    mixed: 50,
-    friction: 30,
-  },
-  FOCUSED: {
-    label: "Focado",
-    cost: 1_000,
-    promising: 30,
-    mixed: 50,
-    friction: 20,
-  },
-  ROBUST: {
-    label: "Robusto",
-    cost: 1_500,
-    promising: 40,
-    mixed: 45,
-    friction: 15,
-  },
-};
-
-export function resolvePilotOutcome(
-  seed: number,
-  fidelity: PrototypeFidelity,
-): PilotOutcome {
-  const probabilities = PROTOTYPE_FIDELITIES[fidelity];
-  const roll = deterministicIndex(seed, 30, 100);
-  if (roll < probabilities.promising) return "PROMISING";
-  if (roll < probabilities.promising + probabilities.mixed) return "MIXED";
-  return "FRICTION";
-}
-
-export function pilotReadinessBonus(outcome: PilotOutcome) {
-  if (outcome === "PROMISING") return 2_000;
-  if (outcome === "MIXED") return 1_000;
-  return 0;
-}
-
 export const MARKETING_AUDIENCES = [
   "EARLY_ADOPTERS",
   "COMMUNITIES",
@@ -174,6 +238,63 @@ export const MARKETING_CHANNELS = [
 
 export type MarketingAudience = (typeof MARKETING_AUDIENCES)[number];
 export type MarketingChannel = (typeof MARKETING_CHANNELS)[number];
+
+export const MARKETING_LAUNCH_OPTIONS = [
+  {
+    key: "A",
+    label: "Começo próximo",
+    audience: "COMMUNITIES",
+    valuePromise:
+      "Uma mudança útil compartilhada por pessoas que já confiam umas nas outras.",
+    channel: "COMMUNITY",
+    callToAction: "Experimente com o seu grupo.",
+    investment: 0,
+    accent: "mint",
+    imagePath: "/cards/16d17b42-9b9c-4f4a-b792-5573c116ffa0.webp",
+    imageAlt: "Um caminho colorido atravessa uma paisagem fantástica.",
+  },
+  {
+    key: "B",
+    label: "Convite direto",
+    audience: "EARLY_ADOPTERS",
+    valuePromise:
+      "Uma primeira experiência simples para quem gosta de testar novidades.",
+    channel: "DIRECT",
+    callToAction: "Seja uma das primeiras pessoas a experimentar.",
+    investment: 500,
+    accent: "sun",
+    imagePath: "/cards/22d440f3-97b3-4de6-8bc4-e98cfe8b19b0.webp",
+    imageAlt: "Relógios coloridos representam o momento do lançamento.",
+  },
+  {
+    key: "C",
+    label: "Lançamento com aliados",
+    audience: "ORGANIZATIONS",
+    valuePromise:
+      "Uma solução prática apresentada com credibilidade e alcance.",
+    channel: "PARTNERSHIPS",
+    callToAction: "Leve esta experiência para a sua organização.",
+    investment: 1_000,
+    accent: "violet",
+    imagePath: "/cards/380f0ddd-3b79-4af0-8200-15fade24b735.webp",
+    imageAlt: "Uma constelação de animais representa uma rede de aliados.",
+  },
+] as const satisfies readonly {
+  key: string;
+  label: string;
+  audience: MarketingAudience;
+  valuePromise: string;
+  channel: MarketingChannel;
+  callToAction: string;
+  investment: number;
+  accent: string;
+  imagePath: string;
+  imageAlt: string;
+}[];
+
+export function marketingLaunchOption(choice: string) {
+  return MARKETING_LAUNCH_OPTIONS.find((option) => option.key === choice);
+}
 
 export const MARKET_RESPONSES = [
   {
@@ -267,13 +388,10 @@ export function roundToHundred(value: number) {
 export function calculateSalesResult(input: {
   remainingCredits: number;
   marketingInvestment: number;
-  readinessBonus: number;
   multiplier: number;
 }) {
   const simulatedSales = roundToHundred(
-    ((5_000 + input.marketingInvestment + input.readinessBonus) *
-      input.multiplier) /
-      100,
+    ((5_000 + input.marketingInvestment) * input.multiplier) / 100,
   );
   const finalRunway = input.remainingCredits + simulatedSales;
   const tier =

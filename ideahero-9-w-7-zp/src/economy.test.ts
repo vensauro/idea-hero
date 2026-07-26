@@ -3,14 +3,17 @@ import {
   BOARD_STAGES,
   FUNDING_STAGES,
   FUNDING_VALUES,
+  MARKETING_LAUNCH_OPTIONS,
   MARKET_RESPONSES,
-  PROTOTYPE_FIDELITIES,
+  PILOT_FEEDBACK,
+  PROTOTYPE_CHALLENGES,
   calculateSalesResult,
   createFundingOpportunity,
   createStageCosts,
   effectiveMarketMultiplier,
-  pilotReadinessBonus,
-  resolvePilotOutcome,
+  marketingLaunchOption,
+  pilotFeedbackForSeed,
+  prototypeChallengeForSeed,
   roundToHundred,
 } from "../spacetimedb/src/economy";
 
@@ -69,22 +72,34 @@ describe("economia de runway", () => {
     }
   });
 
-  it("mantém as probabilidades de fidelidade completas e resolve bônus", () => {
-    for (const fidelity of Object.keys(PROTOTYPE_FIDELITIES) as Array<
-      keyof typeof PROTOTYPE_FIDELITIES
-    >) {
-      const odds = PROTOTYPE_FIDELITIES[fidelity];
-      expect(odds.promising + odds.mixed + odds.friction).toBe(100);
-      const outcomes = new Set(
-        Array.from({ length: 1_000 }, (_, seed) =>
-          resolvePilotOutcome(seed, fidelity),
-        ),
-      );
-      expect(outcomes).toEqual(new Set(["PROMISING", "MIXED", "FRICTION"]));
+  it("semeia desafios de protótipo e feedbacks sem criar uma nota", () => {
+    const challenges = new Set();
+    const feedbacks = new Set();
+    for (let seed = 0; seed < 200; seed += 1) {
+      const challenge = prototypeChallengeForSeed(seed);
+      const feedback = pilotFeedbackForSeed(seed);
+      expect(PROTOTYPE_CHALLENGES).toContain(challenge);
+      expect(PILOT_FEEDBACK).toContain(feedback);
+      expect(challenge.artifactKinds.length).toBeGreaterThanOrEqual(2);
+      expect(feedback.options).toHaveLength(3);
+      expect(pilotFeedbackForSeed(seed)).toEqual(feedback);
+      challenges.add(challenge.key);
+      feedbacks.add(feedback.title);
     }
-    expect(pilotReadinessBonus("PROMISING")).toBe(2_000);
-    expect(pilotReadinessBonus("MIXED")).toBe(1_000);
-    expect(pilotReadinessBonus("FRICTION")).toBe(0);
+    expect(challenges.size).toBe(PROTOTYPE_CHALLENGES.length);
+    expect(feedbacks.size).toBe(PILOT_FEEDBACK.length);
+  });
+
+  it("oferece três cartas de Marketing com custos fixos e reserva previsível", () => {
+    expect(MARKETING_LAUNCH_OPTIONS.map((option) => option.investment)).toEqual(
+      [0, 500, 1_000],
+    );
+    for (const option of MARKETING_LAUNCH_OPTIONS) {
+      expect(marketingLaunchOption(option.key)).toEqual(option);
+      expect(option.imagePath).toMatch(/^\/cards\/.+\.webp$/);
+      expect(option.imageAlt.length).toBeGreaterThan(30);
+    }
+    expect(marketingLaunchOption("INVALID")).toBeUndefined();
   });
 
   it("aplica a combinação de mercado e limita o multiplicador a 1,3×", () => {
@@ -113,7 +128,6 @@ describe("economia de runway", () => {
       calculateSalesResult({
         remainingCredits: 1_000,
         marketingInvestment: 0,
-        readinessBonus: 0,
         multiplier: 90,
       }),
     ).toEqual({
@@ -125,7 +139,6 @@ describe("economia de runway", () => {
       calculateSalesResult({
         remainingCredits: 3_000,
         marketingInvestment: 500,
-        readinessBonus: 1_000,
         multiplier: 100,
       }).tier,
     ).toBe("MARKET_SIGNAL");
@@ -133,7 +146,6 @@ describe("economia de runway", () => {
       calculateSalesResult({
         remainingCredits: 6_000,
         marketingInvestment: 1_000,
-        readinessBonus: 2_000,
         multiplier: 110,
       }).tier,
     ).toBe("TRACTION");
@@ -141,7 +153,6 @@ describe("economia de runway", () => {
       calculateSalesResult({
         remainingCredits: 8_000,
         marketingInvestment: 2_000,
-        readinessBonus: 2_000,
         multiplier: 130,
       }).tier,
     ).toBe("GROWTH_OPPORTUNITY");

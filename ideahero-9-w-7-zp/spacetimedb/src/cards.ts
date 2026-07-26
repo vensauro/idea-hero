@@ -335,7 +335,42 @@ export function cardForRoomStage(
   if (stageCards.length === 0) {
     throw new Error(`Nenhuma carta configurada para a etapa ${stage}.`);
   }
-  const firstIndex =
-    stableHash(`${roomCode}:${stage}:deck-v2`) % stageCards.length;
-  return stageCards[(firstIndex + drawIndex) % stageCards.length];
+  const imageGroups = stageCards.reduce<(typeof stageCards)[]>(
+    (groups, card) => {
+      const group = groups.find(
+        (items) => items[0]?.imagePath === card.imagePath,
+      );
+      if (group) group.push(card);
+      else groups.push([card]);
+      return groups;
+    },
+    [],
+  );
+  const firstImageIndex =
+    stableHash(`${roomCode}:${stage}:images-v3`) % imageGroups.length;
+  const imageGroup =
+    imageGroups[(firstImageIndex + drawIndex) % imageGroups.length];
+  const copyIndex =
+    stableHash(`${roomCode}:${stage}:copy-v3:${drawIndex}`) % imageGroup.length;
+  return imageGroup[copyIndex];
+}
+
+export function replacementCardForRoomStage(
+  roomCode: string,
+  stage: string,
+  discardedImagePath: string,
+  drawIndex = 1,
+) {
+  const replacementCards = CARD_CATALOG.filter(
+    (card) => card.stage === stage && card.imagePath !== discardedImagePath,
+  );
+  if (replacementCards.length === 0) {
+    throw new Error(
+      `Nenhuma carta substituta configurada para a etapa ${stage}.`,
+    );
+  }
+  const replacementIndex =
+    stableHash(`${roomCode}:${stage}:replacement-v1:${drawIndex}`) %
+    replacementCards.length;
+  return replacementCards[replacementIndex];
 }

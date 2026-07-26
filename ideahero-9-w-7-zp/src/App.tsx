@@ -9,12 +9,12 @@ import type {
   ContributionStatus,
   Decision,
   EconomyTransaction,
+  GroupVote,
   Journey,
   MarketingPlan,
   PilotSimulation,
   Player,
   ProjectPrototype,
-  PrototypeReaction,
   Room,
   RoomEconomy,
   SalesResult,
@@ -47,6 +47,7 @@ import {
   RunwayWallet,
 } from "./runway-experience";
 import { formatCredits } from "./runway-format";
+import { PILOT_FEEDBACK } from "../spacetimedb/src/economy";
 
 export const BOARD_STATES = [
   "SCENARIO",
@@ -293,9 +294,7 @@ function App() {
   const [projectPrototypes, projectPrototypesReady] = useTable(
     tables.project_prototypes,
   );
-  const [prototypeReactions, prototypeReactionsReady] = useTable(
-    tables.prototype_reactions,
-  );
+  const [groupVotes, groupVotesReady] = useTable(tables.room_group_votes);
   const [pilotSimulations, pilotSimulationsReady] = useTable(
     tables.pilot_simulations,
   );
@@ -362,7 +361,7 @@ function App() {
     !stageCostsReady ||
     !economyTransactionsReady ||
     !projectPrototypesReady ||
-    !prototypeReactionsReady ||
+    !groupVotesReady ||
     !pilotSimulationsReady ||
     !marketingPlansReady ||
     !salesResultsReady
@@ -433,7 +432,7 @@ function App() {
   const roomPrototype = projectPrototypes.find(
     (item) => item.roomId === currentRoom.id,
   );
-  const roomPrototypeReactions = prototypeReactions.filter(
+  const roomGroupVotes = groupVotes.filter(
     (item) => item.roomId === currentRoom.id,
   );
   const roomPilot = pilotSimulations.find(
@@ -466,7 +465,7 @@ function App() {
       stageCosts={roomStageCosts}
       economyTransactions={roomTransactions}
       projectPrototype={roomPrototype}
-      prototypeReactions={roomPrototypeReactions}
+      groupVotes={roomGroupVotes}
       pilotSimulation={roomPilot}
       marketingPlan={roomMarketing}
       salesResult={roomSales}
@@ -995,7 +994,7 @@ function GameBoard({
   stageCosts,
   economyTransactions,
   projectPrototype,
-  prototypeReactions,
+  groupVotes,
   pilotSimulation,
   marketingPlan,
   salesResult,
@@ -1016,7 +1015,7 @@ function GameBoard({
   stageCosts: readonly StageCost[];
   economyTransactions: readonly EconomyTransaction[];
   projectPrototype?: ProjectPrototype;
-  prototypeReactions: readonly PrototypeReaction[];
+  groupVotes: readonly GroupVote[];
   pilotSimulation?: PilotSimulation;
   marketingPlan?: MarketingPlan;
   salesResult?: SalesResult;
@@ -1190,6 +1189,7 @@ function GameBoard({
         currentPlayer={currentPlayer}
         economy={economy}
         transactions={economyTransactions}
+        pilotSimulation={pilotSimulation}
         salesResult={salesResult}
       />
     );
@@ -1209,7 +1209,7 @@ function GameBoard({
         stageCosts={stageCosts}
         transactions={economyTransactions}
         prototype={projectPrototype}
-        reactions={prototypeReactions}
+        groupVotes={groupVotes}
         pilot={pilotSimulation}
         marketing={marketingPlan}
         sales={salesResult}
@@ -1279,14 +1279,15 @@ function GameBoard({
           <h1>{content.title}</h1>
           <p>{content.objective}</p>
           <InspirationCard card={stageCard} stageLabel={content.eyebrow} />
-          {isHost && (
-            <CardChangeButton
-              room={room}
-              draw={stageDraw}
-              economy={economy}
-              locked={stageContributions.length > 0 || phase !== "CONTRIBUTING"}
-            />
-          )}
+          <CardChangeButton
+            room={room}
+            draw={stageDraw}
+            economy={economy}
+            locked={stageContributions.length > 0 || phase !== "CONTRIBUTING"}
+            players={players}
+            currentPlayer={currentPlayer}
+            groupVotes={groupVotes}
+          />
         </article>
 
         <article className="contribution-panel">
@@ -1788,6 +1789,7 @@ function JourneyResult({
   currentPlayer,
   economy,
   transactions,
+  pilotSimulation,
   salesResult,
 }: {
   room: Room;
@@ -1800,6 +1802,7 @@ function JourneyResult({
   currentPlayer: Player;
   economy: RoomEconomy;
   transactions: readonly EconomyTransaction[];
+  pilotSimulation?: PilotSimulation;
   salesResult?: SalesResult;
 }) {
   const updateJourney = useReducer(reducers.updateJourney);
@@ -1836,6 +1839,12 @@ function JourneyResult({
     title !== (journey?.title ?? fallbackTitle) ||
     summary !== (journey?.summary ?? fallbackSummary) ||
     !journey;
+  const pilotFeedback = PILOT_FEEDBACK.find(
+    (feedback) => feedback.title === pilotSimulation?.feedbackTitle,
+  );
+  const pilotChoice = pilotFeedback?.options.find(
+    (option) => option.key === pilotSimulation?.decision,
+  );
 
   useEffect(() => {
     setTitle(journey?.title ?? fallbackTitle);
@@ -2005,8 +2014,8 @@ function JourneyResult({
               </b>
             </span>
             <span>
-              <small>Prontidão</small>
-              <b>+{formatCredits(salesResult.readinessBonus)}</b>
+              <small>Aprendizado do Piloto</small>
+              <b>{pilotChoice?.title ?? "Registrado"}</b>
             </span>
             <span>
               <small>Marketing</small>

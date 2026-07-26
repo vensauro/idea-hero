@@ -12,5 +12,5 @@ import {
 
 export default {
   roomId: __t.u64(),
-  reaction: __t.string(),
+  support: __t.bool(),
 };

@@ -14,7 +14,6 @@ export default __t.row({
   roomId: __t.u64().primaryKey().name("room_id"),
   remainingCredits: __t.u32().name("remaining_credits"),
   marketingInvestment: __t.u32().name("marketing_investment"),
-  readinessBonus: __t.u32().name("readiness_bonus"),
   multiplier: __t.u32(),
   simulatedSales: __t.u32().name("simulated_sales"),
   finalRunway: __t.u32().name("final_runway"),

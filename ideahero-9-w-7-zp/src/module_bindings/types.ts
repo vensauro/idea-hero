@@ -81,6 +81,17 @@ export const EconomyTransaction = __t.object("EconomyTransaction", {
 });
 export type EconomyTransaction = __Infer<typeof EconomyTransaction>;
 
+export const GroupVote = __t.object("GroupVote", {
+  id: __t.u64(),
+  roomId: __t.u64(),
+  stage: __t.string(),
+  topic: __t.string(),
+  playerIdentity: __t.identity(),
+  choice: __t.string(),
+  updatedAt: __t.timestamp(),
+});
+export type GroupVote = __Infer<typeof GroupVote>;
+
 export const Journey = __t.object("Journey", {
   id: __t.u64(),
   roomId: __t.u64(),
@@ -94,6 +105,7 @@ export type Journey = __Infer<typeof Journey>;
 
 export const MarketingPlan = __t.object("MarketingPlan", {
   roomId: __t.u64(),
+  optionKey: __t.string(),
   audience: __t.string(),
   valuePromise: __t.string(),
   channel: __t.string(),
@@ -121,12 +133,19 @@ export type OwnVotes = __Infer<typeof OwnVotes>;
 
 export const PilotSimulation = __t.object("PilotSimulation", {
   roomId: __t.u64(),
-  successSignal: __t.string(),
-  outcome: __t.string(),
-  readinessBonus: __t.u32(),
+  feedbackTitle: __t.string(),
+  feedbackDescription: __t.string(),
+  optionA: __t.string(),
+  optionADescription: __t.string(),
+  optionALearning: __t.string(),
+  optionB: __t.string(),
+  optionBDescription: __t.string(),
+  optionBLearning: __t.string(),
+  optionC: __t.string(),
+  optionCDescription: __t.string(),
+  optionCLearning: __t.string(),
   decision: __t.string(),
-  revision: __t.string(),
-  resolved: __t.bool(),
+  learning: __t.string(),
   completed: __t.bool(),
   createdAt: __t.timestamp(),
   updatedAt: __t.timestamp(),
@@ -161,13 +180,16 @@ export type Profile = __Infer<typeof Profile>;
 
 export const ProjectPrototype = __t.object("ProjectPrototype", {
   roomId: __t.u64(),
-  personSituation: __t.string(),
-  firstAction: __t.string(),
-  keyInteraction: __t.string(),
-  evidence: __t.string(),
-  fidelity: __t.string(),
+  challengeKey: __t.string(),
+  challengeTitle: __t.string(),
+  challengeDescription: __t.string(),
+  artifactKind: __t.string(),
+  artifactData: __t.string(),
+  caption: __t.string(),
+  durationSeconds: __t.u32(),
   investment: __t.u32(),
   committed: __t.bool(),
+  startedAt: __t.timestamp(),
   createdAt: __t.timestamp(),
   updatedAt: __t.timestamp(),
 });
@@ -175,18 +197,6 @@ export type ProjectPrototype = __Infer<typeof ProjectPrototype>;
 
 export const ProjectPrototypes = __t.object("ProjectPrototypes", {});
 export type ProjectPrototypes = __Infer<typeof ProjectPrototypes>;
-
-export const PrototypeReaction = __t.object("PrototypeReaction", {
-  id: __t.u64(),
-  roomId: __t.u64(),
-  playerIdentity: __t.identity(),
-  reaction: __t.string(),
-  updatedAt: __t.timestamp(),
-});
-export type PrototypeReaction = __Infer<typeof PrototypeReaction>;
-
-export const PrototypeReactions = __t.object("PrototypeReactions", {});
-export type PrototypeReactions = __Infer<typeof PrototypeReactions>;
 
 export const Room = __t.object("Room", {
   id: __t.u64(),
@@ -241,6 +251,9 @@ export type RoomEconomy = __Infer<typeof RoomEconomy>;
 export const RoomEconomyTransactions = __t.object("RoomEconomyTransactions", {});
 export type RoomEconomyTransactions = __Infer<typeof RoomEconomyTransactions>;
 
+export const RoomGroupVotes = __t.object("RoomGroupVotes", {});
+export type RoomGroupVotes = __Infer<typeof RoomGroupVotes>;
+
 export const RoomJourneys = __t.object("RoomJourneys", {});
 export type RoomJourneys = __Infer<typeof RoomJourneys>;
 
@@ -260,7 +273,6 @@ export const SalesResult = __t.object("SalesResult", {
   roomId: __t.u64(),
   remainingCredits: __t.u32(),
   marketingInvestment: __t.u32(),
-  readinessBonus: __t.u32(),
   multiplier: __t.u32(),
   simulatedSales: __t.u32(),
   finalRunway: __t.u32(),

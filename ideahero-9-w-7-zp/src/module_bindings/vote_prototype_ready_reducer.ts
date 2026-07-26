@@ -12,6 +12,5 @@ import {
 
 export default {
   roomId: __t.u64(),
-  decision: __t.string(),
-  revision: __t.string(),
+  ready: __t.bool(),
 };

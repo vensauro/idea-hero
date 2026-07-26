@@ -1,22 +1,24 @@
 import { schema, t, table, SenderError } from "spacetimedb/server";
 import { Timestamp } from "spacetimedb";
-import { CARD_CATALOG, cardForRoomStage } from "./cards";
+import {
+  CARD_CATALOG,
+  cardForRoomStage,
+  replacementCardForRoomStage,
+} from "./cards";
 import {
   CARD_REDRAW_COST,
   INITIAL_RUNWAY,
-  MARKETING_AUDIENCES,
-  MARKETING_CHANNELS,
-  PROTOTYPE_FIDELITIES,
+  PROTOTYPE_BASE_SECONDS,
+  PROTOTYPE_EXTENSION_COST,
+  PROTOTYPE_EXTENSION_SECONDS,
   calculateSalesResult,
   createFundingOpportunity,
   createStageCosts,
   effectiveMarketMultiplier,
+  marketingLaunchOption,
   marketResponseForSeed,
-  pilotReadinessBonus,
-  resolvePilotOutcome,
-  type MarketingAudience,
-  type MarketingChannel,
-  type PrototypeFidelity,
+  pilotFeedbackForSeed,
+  prototypeChallengeForSeed,
 } from "./economy";
 
 const BOARD_STATES = [
@@ -154,25 +156,30 @@ const projectPrototype = table(
   { name: "project_prototype" },
   {
     roomId: t.u64().primaryKey(),
-    personSituation: t.string(),
-    firstAction: t.string(),
-    keyInteraction: t.string(),
-    evidence: t.string(),
-    fidelity: t.string(),
+    challengeKey: t.string(),
+    challengeTitle: t.string(),
+    challengeDescription: t.string(),
+    artifactKind: t.string(),
+    artifactData: t.string(),
+    caption: t.string(),
+    durationSeconds: t.u32(),
     investment: t.u32(),
     committed: t.bool(),
+    startedAt: t.timestamp(),
     createdAt: t.timestamp(),
     updatedAt: t.timestamp(),
   },
 );
 
-const prototypeReaction = table(
-  { name: "prototype_reaction" },
+const groupVote = table(
+  { name: "group_vote" },
   {
     id: t.u64().primaryKey().autoInc(),
     roomId: t.u64().index("btree"),
+    stage: t.string().index("btree"),
+    topic: t.string().index("btree"),
     playerIdentity: t.identity().index("btree"),
-    reaction: t.string(),
+    choice: t.string(),
     updatedAt: t.timestamp(),
   },
 );
@@ -181,12 +188,19 @@ const pilotSimulation = table(
   { name: "pilot_simulation" },
   {
     roomId: t.u64().primaryKey(),
-    successSignal: t.string(),
-    outcome: t.string(),
-    readinessBonus: t.u32(),
+    feedbackTitle: t.string(),
+    feedbackDescription: t.string(),
+    optionA: t.string(),
+    optionADescription: t.string(),
+    optionALearning: t.string(),
+    optionB: t.string(),
+    optionBDescription: t.string(),
+    optionBLearning: t.string(),
+    optionC: t.string(),
+    optionCDescription: t.string(),
+    optionCLearning: t.string(),
     decision: t.string(),
-    revision: t.string(),
-    resolved: t.bool(),
+    learning: t.string(),
     completed: t.bool(),
     createdAt: t.timestamp(),
     updatedAt: t.timestamp(),
@@ -197,6 +211,7 @@ const marketingPlan = table(
   { name: "marketing_plan" },
   {
     roomId: t.u64().primaryKey(),
+    optionKey: t.string(),
     audience: t.string(),
     valuePromise: t.string(),
     channel: t.string(),
@@ -219,7 +234,6 @@ const salesResult = table(
     roomId: t.u64().primaryKey(),
     remainingCredits: t.u32(),
     marketingInvestment: t.u32(),
-    readinessBonus: t.u32(),
     multiplier: t.u32(),
     simulatedSales: t.u32(),
     finalRunway: t.u32(),
@@ -342,7 +356,7 @@ const spacetimedb = schema({
   stageCost,
   economyTransaction,
   projectPrototype,
-  prototypeReaction,
+  groupVote,
   pilotSimulation,
   marketingPlan,
   salesResult,
@@ -442,14 +456,14 @@ export const project_prototypes = spacetimedb.view(
   },
 );
 
-export const prototype_reactions = spacetimedb.view(
-  { name: "prototype_reactions", public: true },
-  t.array(prototypeReaction.rowType),
+export const room_group_votes = spacetimedb.view(
+  { name: "room_group_votes", public: true },
+  t.array(groupVote.rowType),
   (ctx) => {
     const rows = [];
     for (const membership of ctx.db.player.identity.filter(ctx.sender)) {
       if (!membership.active) continue;
-      rows.push(...ctx.db.prototypeReaction.roomId.filter(membership.roomId));
+      rows.push(...ctx.db.groupVote.roomId.filter(membership.roomId));
     }
     return rows;
   },
@@ -691,14 +705,6 @@ function normalizeJourneySummary(summary: string) {
   const normalized = summary.trim().replace(/\s+/g, " ");
   if (normalized.length < 10 || normalized.length > 400) {
     throw new SenderError("O manifesto deve ter entre 10 e 400 caracteres.");
-  }
-  return normalized;
-}
-
-function normalizeStageField(label: string, value: string, max = 180) {
-  const normalized = value.trim().replace(/\s+/g, " ");
-  if (normalized.length < 2 || normalized.length > max) {
-    throw new SenderError(`${label} deve ter entre 2 e ${max} caracteres.`);
   }
   return normalized;
 }
@@ -1082,9 +1088,9 @@ export const submit_contribution = spacetimedb.reducer(
   },
 );
 
-export const redraw_card = spacetimedb.reducer(
-  { roomId: t.u64() },
-  (ctx, { roomId }) => {
+export const vote_card_change = spacetimedb.reducer(
+  { roomId: t.u64(), support: t.bool() },
+  (ctx, { roomId, support }) => {
     const currentRoom = ctx.db.room.id.find(roomId);
     const economy = ctx.db.roomEconomy.roomId.find(roomId);
     if (
@@ -1095,23 +1101,28 @@ export const redraw_card = spacetimedb.reducer(
     ) {
       throw new SenderError("A carta não pode ser trocada nesta etapa.");
     }
-    if (!currentRoom.ownerIdentity.isEqual(ctx.sender)) {
-      throw new SenderError("Apenas o anfitrião pode confirmar esta despesa.");
-    }
     if (economy.balance < CARD_REDRAW_COST) {
       throw new SenderError("O projeto não possui 500 créditos disponíveis.");
     }
 
+    const eligiblePlayers = Array.from(
+      ctx.db.player.roomId.filter(roomId),
+    ).filter((item) => item.active && item.online);
+    if (!eligiblePlayers.some((item) => item.identity.isEqual(ctx.sender))) {
+      throw new SenderError("Você precisa estar online nesta sala para votar.");
+    }
     const hasContribution = Array.from(
       ctx.db.contribution.roomId.filter(roomId),
     ).some((item) => item.stage === currentRoom.currentStage);
-    const prototypeCommitted =
+    const prototypeStarted =
       currentRoom.currentStage === "PROTOTYPE" &&
-      Boolean(ctx.db.projectPrototype.roomId.find(roomId)?.committed);
+      Boolean(ctx.db.projectPrototype.roomId.find(roomId));
     const pilotStarted =
       currentRoom.currentStage === "PILOT" &&
-      Boolean(ctx.db.pilotSimulation.roomId.find(roomId)?.resolved);
-    if (hasContribution || prototypeCommitted || pilotStarted) {
+      Array.from(ctx.db.groupVote.roomId.filter(roomId)).some(
+        (item) => item.stage === "PILOT" && item.topic === "PILOT_RESPONSE",
+      );
+    if (hasContribution || prototypeStarted || pilotStarted) {
       throw new SenderError(
         "A carta foi bloqueada porque a equipe já começou esta etapa.",
       );
@@ -1124,10 +1135,58 @@ export const redraw_card = spacetimedb.reducer(
       throw new SenderError("A troca de carta desta etapa já foi utilizada.");
     }
 
+    const existingVote = Array.from(
+      ctx.db.groupVote.roomId.filter(roomId),
+    ).find(
+      (item) =>
+        item.stage === currentRoom.currentStage &&
+        item.topic === "CARD_CHANGE" &&
+        item.playerIdentity.isEqual(ctx.sender),
+    );
+    if (!support) {
+      if (existingVote) ctx.db.groupVote.id.delete(existingVote.id);
+      return;
+    }
+    if (existingVote) {
+      ctx.db.groupVote.id.update({
+        ...existingVote,
+        choice: "YES",
+        updatedAt: ctx.timestamp,
+      });
+    } else {
+      ctx.db.groupVote.insert({
+        id: 0n,
+        roomId,
+        stage: currentRoom.currentStage,
+        topic: "CARD_CHANGE",
+        playerIdentity: ctx.sender,
+        choice: "YES",
+        updatedAt: ctx.timestamp,
+      });
+    }
+    const supportingVotes = Array.from(
+      ctx.db.groupVote.roomId.filter(roomId),
+    ).filter(
+      (item) =>
+        item.stage === currentRoom.currentStage &&
+        item.topic === "CARD_CHANGE" &&
+        item.choice === "YES" &&
+        eligiblePlayers.some((player) =>
+          player.identity.isEqual(item.playerIdentity),
+        ),
+    ).length;
+    const requiredVotes = Math.floor(eligiblePlayers.length / 2) + 1;
+    if (supportingVotes < requiredVotes) return;
+
+    const activeCard = ctx.db.card.id.find(activeDraw.cardId);
+    if (!activeCard) {
+      throw new SenderError("A carta atual não foi encontrada.");
+    }
     const drawIndex = activeDraw.drawIndex + 1;
-    const replacement = cardForRoomStage(
+    const replacement = replacementCardForRoomStage(
       roomId.toString(),
       currentRoom.currentStage,
+      activeCard.imagePath,
       drawIndex,
     );
     if (!ctx.db.card.id.find(replacement.id)) {
@@ -1176,409 +1235,606 @@ export const redraw_card = spacetimedb.reducer(
   },
 );
 
-export const commit_project_prototype = spacetimedb.reducer(
-  {
-    roomId: t.u64(),
-    personSituation: t.string(),
-    firstAction: t.string(),
-    keyInteraction: t.string(),
-    evidence: t.string(),
-    fidelity: t.string(),
+export const refresh_redrawn_card = spacetimedb.reducer(
+  { roomId: t.u64() },
+  (ctx, { roomId }) => {
+    const currentRoom = ctx.db.room.id.find(roomId);
+    if (!currentRoom || currentRoom.status !== "ACTIVE") return;
+    const member = Array.from(ctx.db.player.roomId.filter(roomId)).some(
+      (item) => item.active && item.identity.isEqual(ctx.sender),
+    );
+    if (!member) {
+      throw new SenderError("Você não participa desta sala.");
+    }
+    const activeDraw = Array.from(ctx.db.cardDraw.roomId.filter(roomId)).find(
+      (item) => item.stage === currentRoom.currentStage && item.active,
+    );
+    if (!activeDraw || activeDraw.drawIndex === 0) return;
+    const originalDraw = Array.from(ctx.db.cardDraw.roomId.filter(roomId)).find(
+      (item) => item.stage === currentRoom.currentStage && item.drawIndex === 0,
+    );
+    const originalCard = originalDraw
+      ? ctx.db.card.id.find(originalDraw.cardId)
+      : undefined;
+    const discardedCard =
+      originalCard ?? ctx.db.card.id.find(activeDraw.cardId);
+    if (!discardedCard) return;
+    const replacement = replacementCardForRoomStage(
+      roomId.toString(),
+      currentRoom.currentStage,
+      discardedCard.imagePath,
+      activeDraw.drawIndex,
+    );
+    if (activeDraw.cardId === replacement.id) return;
+    if (!ctx.db.card.id.find(replacement.id)) {
+      ctx.db.card.insert({
+        id: replacement.id,
+        stage: replacement.stage,
+        title: replacement.title,
+        lens: replacement.lens,
+        imagePath: replacement.imagePath,
+        altText: replacement.altText,
+        provocation: replacement.provocation,
+      });
+    }
+    ctx.db.cardDraw.id.update({
+      ...activeDraw,
+      cardId: replacement.id,
+      reason: "REDRAW",
+    });
   },
-  (ctx, input) => {
-    const currentRoom = ctx.db.room.id.find(input.roomId);
-    const economy = ctx.db.roomEconomy.roomId.find(input.roomId);
+);
+
+export const start_prototype_activity = spacetimedb.reducer(
+  { roomId: t.u64() },
+  (ctx, { roomId }) => {
+    const currentRoom = ctx.db.room.id.find(roomId);
+    const economy = ctx.db.roomEconomy.roomId.find(roomId);
     if (
       !currentRoom ||
       currentRoom.status !== "ACTIVE" ||
       currentRoom.currentStage !== "PROTOTYPE" ||
       !economy
     ) {
-      throw new SenderError("A etapa de protótipo não está ativa.");
-    }
-    if (!currentRoom.ownerIdentity.isEqual(ctx.sender)) {
-      throw new SenderError("O anfitrião é o escriba deste protótipo.");
-    }
-    if (!(input.fidelity in PROTOTYPE_FIDELITIES)) {
-      throw new SenderError("Escolha uma fidelidade válida.");
-    }
-    const fidelity = input.fidelity as PrototypeFidelity;
-    const fidelityDefinition = PROTOTYPE_FIDELITIES[fidelity];
-    const values = {
-      personSituation: normalizeStageField(
-        "Pessoa e situação",
-        input.personSituation,
-      ),
-      firstAction: normalizeStageField("Primeira ação", input.firstAction),
-      keyInteraction: normalizeStageField(
-        "Interação principal",
-        input.keyInteraction,
-      ),
-      evidence: normalizeStageField("Evidência observável", input.evidence),
-    };
-    const existing = ctx.db.projectPrototype.roomId.find(input.roomId);
-    if (existing?.committed && existing.fidelity !== fidelity) {
-      throw new SenderError(
-        "A fidelidade não pode mudar depois do investimento.",
-      );
-    }
-
-    if (!existing?.committed) {
-      if (economy.balance < fidelityDefinition.cost) {
-        throw new SenderError(
-          "O projeto não possui créditos para esta fidelidade.",
-        );
-      }
-      const balanceAfter = economy.balance - fidelityDefinition.cost;
-      ctx.db.roomEconomy.roomId.update({
-        ...economy,
-        balance: balanceAfter,
-        nextSequence: economy.nextSequence + 1,
-        updatedAt: ctx.timestamp,
-      });
-      ctx.db.economyTransaction.insert({
-        id: 0n,
-        roomId: input.roomId,
-        stage: "PROTOTYPE",
-        delta: -fidelityDefinition.cost,
-        balanceAfter,
-        sequence: economy.nextSequence,
-        reason: "PROTOTYPE_INVESTMENT",
-        eventKey: `prototype:${input.roomId}`,
-        label: `Protótipo ${fidelityDefinition.label}`,
-        createdAt: ctx.timestamp,
-      });
-    }
-
-    if (existing) {
-      ctx.db.projectPrototype.roomId.update({
-        ...existing,
-        ...values,
-        fidelity,
-        investment: fidelityDefinition.cost,
-        committed: true,
-        updatedAt: ctx.timestamp,
-      });
-    } else {
-      ctx.db.projectPrototype.insert({
-        roomId: input.roomId,
-        ...values,
-        fidelity,
-        investment: fidelityDefinition.cost,
-        committed: true,
-        createdAt: ctx.timestamp,
-        updatedAt: ctx.timestamp,
-      });
-    }
-
-    const summary = `${values.personSituation}. ${values.firstAction}; ${values.keyInteraction}. Evidência: ${values.evidence}.`;
-    const contributionRow = Array.from(
-      ctx.db.contribution.roomId.filter(input.roomId),
-    ).find((item) => item.stage === "PROTOTYPE" && item.kind === "MAIN");
-    if (contributionRow) {
-      ctx.db.contribution.id.update({
-        ...contributionRow,
-        content: summary,
-        updatedAt: ctx.timestamp,
-      });
-    } else {
-      ctx.db.contribution.insert({
-        id: 0n,
-        roomId: input.roomId,
-        stage: "PROTOTYPE",
-        authorIdentity: ctx.sender,
-        kind: "MAIN",
-        content: summary,
-        createdAt: ctx.timestamp,
-        updatedAt: ctx.timestamp,
-      });
-    }
-    const session = Array.from(
-      ctx.db.stageSession.roomId.filter(input.roomId),
-    ).find((item) => item.stage === "PROTOTYPE");
-    if (session) {
-      ctx.db.stageSession.id.update({
-        ...session,
-        phase: "READY",
-        updatedAt: ctx.timestamp,
-      });
-    }
-  },
-);
-
-export const react_to_prototype = spacetimedb.reducer(
-  { roomId: t.u64(), reaction: t.string() },
-  (ctx, { roomId, reaction }) => {
-    const currentRoom = ctx.db.room.id.find(roomId);
-    if (
-      !currentRoom ||
-      currentRoom.status !== "ACTIVE" ||
-      currentRoom.currentStage !== "PROTOTYPE"
-    ) {
-      throw new SenderError("A etapa de protótipo não está ativa.");
-    }
-    if (!["CLEAR", "RISKY", "MISSING"].includes(reaction)) {
-      throw new SenderError("Escolha uma reação válida.");
+      throw new SenderError("A atividade de protótipo não está disponível.");
     }
     const membership = Array.from(ctx.db.player.roomId.filter(roomId)).find(
       (item) => item.active && item.identity.isEqual(ctx.sender),
     );
     if (!membership) throw new SenderError("Você não pertence a esta sala.");
-    const existing = Array.from(
-      ctx.db.prototypeReaction.roomId.filter(roomId),
-    ).find((item) => item.playerIdentity.isEqual(ctx.sender));
-    if (existing) {
-      ctx.db.prototypeReaction.id.update({
-        ...existing,
-        reaction,
+    if (ctx.db.projectPrototype.roomId.find(roomId)) return;
+    const challenge = prototypeChallengeForSeed(economy.seed);
+    ctx.db.projectPrototype.insert({
+      roomId,
+      challengeKey: challenge.key,
+      challengeTitle: challenge.title,
+      challengeDescription: challenge.description,
+      artifactKind: "",
+      artifactData: "",
+      caption: "",
+      durationSeconds: PROTOTYPE_BASE_SECONDS,
+      investment: 0,
+      committed: false,
+      startedAt: ctx.timestamp,
+      createdAt: ctx.timestamp,
+      updatedAt: ctx.timestamp,
+    });
+    const session = Array.from(ctx.db.stageSession.roomId.filter(roomId)).find(
+      (item) => item.stage === "PROTOTYPE",
+    );
+    if (session)
+      ctx.db.stageSession.id.update({
+        ...session,
+        phase: "ACTIVITY",
         updatedAt: ctx.timestamp,
       });
-    } else {
-      ctx.db.prototypeReaction.insert({
-        id: 0n,
-        roomId,
-        playerIdentity: ctx.sender,
-        reaction,
-        updatedAt: ctx.timestamp,
-      });
-    }
   },
 );
 
-export const resolve_pilot = spacetimedb.reducer(
-  { roomId: t.u64(), successSignal: t.string() },
-  (ctx, { roomId, successSignal }) => {
-    const currentRoom = ctx.db.room.id.find(roomId);
-    const economy = ctx.db.roomEconomy.roomId.find(roomId);
-    const prototype = ctx.db.projectPrototype.roomId.find(roomId);
+export const submit_prototype_artifact = spacetimedb.reducer(
+  {
+    roomId: t.u64(),
+    artifactKind: t.string(),
+    artifactData: t.string(),
+    caption: t.string(),
+  },
+  (ctx, input) => {
+    const currentRoom = ctx.db.room.id.find(input.roomId);
+    const prototype = ctx.db.projectPrototype.roomId.find(input.roomId);
     if (
       !currentRoom ||
       currentRoom.status !== "ACTIVE" ||
-      currentRoom.currentStage !== "PILOT" ||
-      !economy ||
-      !prototype?.committed
+      currentRoom.currentStage !== "PROTOTYPE" ||
+      !prototype ||
+      prototype.committed
     ) {
-      throw new SenderError("O piloto ainda não pode ser resolvido.");
+      throw new SenderError("O protótipo não pode mais ser alterado.");
     }
-    if (!currentRoom.ownerIdentity.isEqual(ctx.sender)) {
-      throw new SenderError("Apenas o anfitrião pode iniciar o teste.");
+    const membership = Array.from(
+      ctx.db.player.roomId.filter(input.roomId),
+    ).find((item) => item.active && item.identity.isEqual(ctx.sender));
+    if (!membership) throw new SenderError("Você não pertence a esta sala.");
+    if (!["DRAWING", "IMAGE", "AUDIO"].includes(input.artifactKind)) {
+      throw new SenderError("Escolha desenho, imagem ou áudio.");
     }
-    const existing = ctx.db.pilotSimulation.roomId.find(roomId);
-    if (existing?.resolved) return;
-    const fidelity = prototype.fidelity as PrototypeFidelity;
-    const outcome = resolvePilotOutcome(economy.seed, fidelity);
-    const readinessBonus = pilotReadinessBonus(outcome);
-    ctx.db.pilotSimulation.insert({
+    const validMedia =
+      (input.artifactKind === "AUDIO" &&
+        input.artifactData.startsWith("data:audio/")) ||
+      (input.artifactKind !== "AUDIO" &&
+        input.artifactData.startsWith("data:image/"));
+    if (
+      !validMedia ||
+      input.artifactData.length < 32 ||
+      input.artifactData.length > 900_000
+    ) {
+      throw new SenderError(
+        "O arquivo precisa ser uma imagem ou áudio de até 650 KB.",
+      );
+    }
+    const caption = input.caption.trim().replace(/\s+/g, " ").slice(0, 120);
+    ctx.db.projectPrototype.roomId.update({
+      ...prototype,
+      artifactKind: input.artifactKind,
+      artifactData: input.artifactData,
+      caption,
+      updatedAt: ctx.timestamp,
+    });
+  },
+);
+
+export const vote_prototype_ready = spacetimedb.reducer(
+  { roomId: t.u64(), ready: t.bool() },
+  (ctx, { roomId, ready }) => {
+    const currentRoom = ctx.db.room.id.find(roomId);
+    const prototype = ctx.db.projectPrototype.roomId.find(roomId);
+    if (
+      !currentRoom ||
+      currentRoom.currentStage !== "PROTOTYPE" ||
+      !prototype?.artifactData ||
+      prototype.committed
+    ) {
+      throw new SenderError("Registre um protótipo antes de votar.");
+    }
+    const eligiblePlayers = Array.from(
+      ctx.db.player.roomId.filter(roomId),
+    ).filter((item) => item.active && item.online);
+    if (!eligiblePlayers.some((item) => item.identity.isEqual(ctx.sender))) {
+      throw new SenderError("Você precisa estar online nesta sala para votar.");
+    }
+    const existingVote = Array.from(
+      ctx.db.groupVote.roomId.filter(roomId),
+    ).find(
+      (item) =>
+        item.topic === "PROTOTYPE_READY" &&
+        item.playerIdentity.isEqual(ctx.sender),
+    );
+    if (!ready) {
+      if (existingVote) ctx.db.groupVote.id.delete(existingVote.id);
+      return;
+    }
+    if (existingVote) {
+      ctx.db.groupVote.id.update({
+        ...existingVote,
+        choice: "READY",
+        updatedAt: ctx.timestamp,
+      });
+    } else {
+      ctx.db.groupVote.insert({
+        id: 0n,
+        roomId,
+        stage: "PROTOTYPE",
+        topic: "PROTOTYPE_READY",
+        playerIdentity: ctx.sender,
+        choice: "READY",
+        updatedAt: ctx.timestamp,
+      });
+    }
+    const readyVotes = Array.from(
+      ctx.db.groupVote.roomId.filter(roomId),
+    ).filter(
+      (item) =>
+        item.topic === "PROTOTYPE_READY" &&
+        item.choice === "READY" &&
+        eligiblePlayers.some((player) =>
+          player.identity.isEqual(item.playerIdentity),
+        ),
+    ).length;
+    if (readyVotes < Math.floor(eligiblePlayers.length / 2) + 1) return;
+    ctx.db.projectPrototype.roomId.update({
+      ...prototype,
+      committed: true,
+      updatedAt: ctx.timestamp,
+    });
+    ctx.db.contribution.insert({
+      id: 0n,
       roomId,
-      successSignal: normalizeStageField("Sinal observável", successSignal),
-      outcome,
-      readinessBonus,
-      decision: "",
-      revision: "",
-      resolved: true,
-      completed: false,
+      stage: "PROTOTYPE",
+      authorIdentity: ctx.sender,
+      kind: "MAIN",
+      content: `${prototype.challengeTitle}: ${prototype.caption || "artefato compartilhado criado pela equipe"}.`,
+      createdAt: ctx.timestamp,
+      updatedAt: ctx.timestamp,
+    });
+    const session = Array.from(ctx.db.stageSession.roomId.filter(roomId)).find(
+      (item) => item.stage === "PROTOTYPE",
+    );
+    if (session)
+      ctx.db.stageSession.id.update({
+        ...session,
+        phase: "READY",
+        updatedAt: ctx.timestamp,
+      });
+  },
+);
+
+export const finish_prototype_activity = spacetimedb.reducer(
+  { roomId: t.u64() },
+  (ctx, { roomId }) => {
+    const currentRoom = ctx.db.room.id.find(roomId);
+    const prototype = ctx.db.projectPrototype.roomId.find(roomId);
+    if (
+      !currentRoom ||
+      currentRoom.currentStage !== "PROTOTYPE" ||
+      !prototype?.artifactData
+    ) {
+      throw new SenderError("Registre um protótipo antes de concluir.");
+    }
+    if (prototype.committed) return;
+    const endingAt =
+      prototype.startedAt.microsSinceUnixEpoch +
+      BigInt(prototype.durationSeconds) * 1_000_000n;
+    if (ctx.timestamp.microsSinceUnixEpoch < endingAt) {
+      throw new SenderError(
+        "O tempo ainda está correndo. A equipe pode votar em pronto.",
+      );
+    }
+    const membership = Array.from(ctx.db.player.roomId.filter(roomId)).find(
+      (item) => item.active && item.identity.isEqual(ctx.sender),
+    );
+    if (!membership) throw new SenderError("Você não pertence a esta sala.");
+    ctx.db.projectPrototype.roomId.update({
+      ...prototype,
+      committed: true,
+      updatedAt: ctx.timestamp,
+    });
+    ctx.db.contribution.insert({
+      id: 0n,
+      roomId,
+      stage: "PROTOTYPE",
+      authorIdentity: ctx.sender,
+      kind: "MAIN",
+      content: `${prototype.challengeTitle}: ${prototype.caption || "artefato compartilhado criado pela equipe"}.`,
+      createdAt: ctx.timestamp,
+      updatedAt: ctx.timestamp,
+    });
+    const session = Array.from(ctx.db.stageSession.roomId.filter(roomId)).find(
+      (item) => item.stage === "PROTOTYPE",
+    );
+    if (session)
+      ctx.db.stageSession.id.update({
+        ...session,
+        phase: "READY",
+        updatedAt: ctx.timestamp,
+      });
+  },
+);
+
+export const vote_prototype_extension = spacetimedb.reducer(
+  { roomId: t.u64(), support: t.bool() },
+  (ctx, { roomId, support }) => {
+    const currentRoom = ctx.db.room.id.find(roomId);
+    const prototype = ctx.db.projectPrototype.roomId.find(roomId);
+    const economy = ctx.db.roomEconomy.roomId.find(roomId);
+    if (
+      !currentRoom ||
+      currentRoom.currentStage !== "PROTOTYPE" ||
+      !prototype ||
+      prototype.committed ||
+      !economy
+    ) {
+      throw new SenderError("Não é possível aumentar o tempo agora.");
+    }
+    if (prototype.investment >= PROTOTYPE_EXTENSION_COST)
+      throw new SenderError(
+        "A equipe já comprou o tempo extra desta atividade.",
+      );
+    if (economy.balance < PROTOTYPE_EXTENSION_COST)
+      throw new SenderError("O projeto não possui 500 créditos disponíveis.");
+    const eligiblePlayers = Array.from(
+      ctx.db.player.roomId.filter(roomId),
+    ).filter((item) => item.active && item.online);
+    if (!eligiblePlayers.some((item) => item.identity.isEqual(ctx.sender)))
+      throw new SenderError("Você precisa estar online nesta sala para votar.");
+    const existingVote = Array.from(
+      ctx.db.groupVote.roomId.filter(roomId),
+    ).find(
+      (item) =>
+        item.topic === "PROTOTYPE_EXTENSION" &&
+        item.playerIdentity.isEqual(ctx.sender),
+    );
+    if (!support) {
+      if (existingVote) ctx.db.groupVote.id.delete(existingVote.id);
+      return;
+    }
+    if (existingVote)
+      ctx.db.groupVote.id.update({
+        ...existingVote,
+        choice: "YES",
+        updatedAt: ctx.timestamp,
+      });
+    else
+      ctx.db.groupVote.insert({
+        id: 0n,
+        roomId,
+        stage: "PROTOTYPE",
+        topic: "PROTOTYPE_EXTENSION",
+        playerIdentity: ctx.sender,
+        choice: "YES",
+        updatedAt: ctx.timestamp,
+      });
+    const votes = Array.from(ctx.db.groupVote.roomId.filter(roomId)).filter(
+      (item) =>
+        item.topic === "PROTOTYPE_EXTENSION" &&
+        item.choice === "YES" &&
+        eligiblePlayers.some((player) =>
+          player.identity.isEqual(item.playerIdentity),
+        ),
+    ).length;
+    if (votes < Math.floor(eligiblePlayers.length / 2) + 1) return;
+    const balanceAfter = economy.balance - PROTOTYPE_EXTENSION_COST;
+    ctx.db.projectPrototype.roomId.update({
+      ...prototype,
+      durationSeconds: prototype.durationSeconds + PROTOTYPE_EXTENSION_SECONDS,
+      investment: prototype.investment + PROTOTYPE_EXTENSION_COST,
+      updatedAt: ctx.timestamp,
+    });
+    ctx.db.roomEconomy.roomId.update({
+      ...economy,
+      balance: balanceAfter,
+      nextSequence: economy.nextSequence + 1,
+      updatedAt: ctx.timestamp,
+    });
+    ctx.db.economyTransaction.insert({
+      id: 0n,
+      roomId,
+      stage: "PROTOTYPE",
+      delta: -PROTOTYPE_EXTENSION_COST,
+      balanceAfter,
+      sequence: economy.nextSequence,
+      reason: "PROTOTYPE_INVESTMENT",
+      eventKey: `prototype-extension:${roomId}`,
+      label: "30 segundos extras de protótipo",
+      createdAt: ctx.timestamp,
+    });
+  },
+);
+
+export const vote_pilot_response = spacetimedb.reducer(
+  { roomId: t.u64(), choice: t.string() },
+  (ctx, { roomId, choice }) => {
+    const currentRoom = ctx.db.room.id.find(roomId);
+    const economy = ctx.db.roomEconomy.roomId.find(roomId);
+    if (!currentRoom || currentRoom.currentStage !== "PILOT" || !economy)
+      throw new SenderError("A etapa de piloto não está ativa.");
+    let pilot = ctx.db.pilotSimulation.roomId.find(roomId);
+    if (!pilot) {
+      const feedback = pilotFeedbackForSeed(economy.seed);
+      pilot = ctx.db.pilotSimulation.insert({
+        roomId,
+        feedbackTitle: feedback.title,
+        feedbackDescription: feedback.description,
+        optionA: feedback.options[0].title,
+        optionADescription: feedback.options[0].description,
+        optionALearning: feedback.options[0].learning,
+        optionB: feedback.options[1].title,
+        optionBDescription: feedback.options[1].description,
+        optionBLearning: feedback.options[1].learning,
+        optionC: feedback.options[2].title,
+        optionCDescription: feedback.options[2].description,
+        optionCLearning: feedback.options[2].learning,
+        decision: "",
+        learning: "",
+        completed: false,
+        createdAt: ctx.timestamp,
+        updatedAt: ctx.timestamp,
+      });
+    }
+    if (pilot.completed) return;
+    const option =
+      choice === "A"
+        ? { title: pilot.optionA, learning: pilot.optionALearning }
+        : choice === "B"
+          ? { title: pilot.optionB, learning: pilot.optionBLearning }
+          : choice === "C"
+            ? { title: pilot.optionC, learning: pilot.optionCLearning }
+            : undefined;
+    if (!option) throw new SenderError("Escolha uma resposta válida.");
+    const eligiblePlayers = Array.from(
+      ctx.db.player.roomId.filter(roomId),
+    ).filter((item) => item.active && item.online);
+    if (!eligiblePlayers.some((item) => item.identity.isEqual(ctx.sender)))
+      throw new SenderError("Você precisa estar online nesta sala para votar.");
+    const existingVote = Array.from(
+      ctx.db.groupVote.roomId.filter(roomId),
+    ).find(
+      (item) =>
+        item.topic === "PILOT_RESPONSE" &&
+        item.playerIdentity.isEqual(ctx.sender),
+    );
+    if (existingVote)
+      ctx.db.groupVote.id.update({
+        ...existingVote,
+        choice,
+        updatedAt: ctx.timestamp,
+      });
+    else
+      ctx.db.groupVote.insert({
+        id: 0n,
+        roomId,
+        stage: "PILOT",
+        topic: "PILOT_RESPONSE",
+        playerIdentity: ctx.sender,
+        choice,
+        updatedAt: ctx.timestamp,
+      });
+    const votes = Array.from(ctx.db.groupVote.roomId.filter(roomId)).filter(
+      (item) =>
+        item.topic === "PILOT_RESPONSE" &&
+        item.choice === choice &&
+        eligiblePlayers.some((player) =>
+          player.identity.isEqual(item.playerIdentity),
+        ),
+    ).length;
+    if (votes < Math.floor(eligiblePlayers.length / 2) + 1) return;
+    ctx.db.pilotSimulation.roomId.update({
+      ...pilot,
+      decision: option.title,
+      learning: option.learning,
+      completed: true,
+      updatedAt: ctx.timestamp,
+    });
+    ctx.db.contribution.insert({
+      id: 0n,
+      roomId,
+      stage: "PILOT",
+      authorIdentity: ctx.sender,
+      kind: "MAIN",
+      content: `${pilot.feedbackTitle} Resposta escolhida: ${option.title}.`,
       createdAt: ctx.timestamp,
       updatedAt: ctx.timestamp,
     });
     const session = Array.from(ctx.db.stageSession.roomId.filter(roomId)).find(
       (item) => item.stage === "PILOT",
     );
-    if (session) {
-      ctx.db.stageSession.id.update({
-        ...session,
-        phase: "RESULT",
-        updatedAt: ctx.timestamp,
-      });
-    }
-  },
-);
-
-export const commit_pilot_decision = spacetimedb.reducer(
-  { roomId: t.u64(), decision: t.string(), revision: t.string() },
-  (ctx, { roomId, decision, revision }) => {
-    const currentRoom = ctx.db.room.id.find(roomId);
-    const pilot = ctx.db.pilotSimulation.roomId.find(roomId);
-    if (
-      !currentRoom ||
-      currentRoom.currentStage !== "PILOT" ||
-      !pilot?.resolved
-    ) {
-      throw new SenderError("Revele o resultado do piloto primeiro.");
-    }
-    if (!currentRoom.ownerIdentity.isEqual(ctx.sender)) {
-      throw new SenderError("Apenas o anfitrião registra a decisão do grupo.");
-    }
-    if (!["KEEP", "ADAPT", "REBUILD"].includes(decision)) {
-      throw new SenderError("Escolha manter, adaptar ou refazer.");
-    }
-    const normalizedRevision =
-      decision === "KEEP"
-        ? revision.trim().replace(/\s+/g, " ").slice(0, 180)
-        : normalizeStageField("Revisão", revision);
-    ctx.db.pilotSimulation.roomId.update({
-      ...pilot,
-      decision,
-      revision: normalizedRevision,
-      completed: true,
-      updatedAt: ctx.timestamp,
-    });
-
-    const summary = `${pilot.successSignal}. Resultado: ${pilot.outcome}. Decisão: ${decision}${normalizedRevision ? ` — ${normalizedRevision}` : ""}.`;
-    const contributionRow = Array.from(
-      ctx.db.contribution.roomId.filter(roomId),
-    ).find((item) => item.stage === "PILOT" && item.kind === "MAIN");
-    if (contributionRow) {
-      ctx.db.contribution.id.update({
-        ...contributionRow,
-        content: summary,
-        updatedAt: ctx.timestamp,
-      });
-    } else {
-      ctx.db.contribution.insert({
-        id: 0n,
-        roomId,
-        stage: "PILOT",
-        authorIdentity: ctx.sender,
-        kind: "MAIN",
-        content: summary,
-        createdAt: ctx.timestamp,
-        updatedAt: ctx.timestamp,
-      });
-    }
-    const session = Array.from(ctx.db.stageSession.roomId.filter(roomId)).find(
-      (item) => item.stage === "PILOT",
-    );
-    if (session) {
+    if (session)
       ctx.db.stageSession.id.update({
         ...session,
         phase: "READY",
         updatedAt: ctx.timestamp,
       });
-    }
   },
 );
 
-export const commit_marketing_plan = spacetimedb.reducer(
-  {
-    roomId: t.u64(),
-    audience: t.string(),
-    valuePromise: t.string(),
-    channel: t.string(),
-    callToAction: t.string(),
-    investment: t.u32(),
-  },
-  (ctx, input) => {
-    const currentRoom = ctx.db.room.id.find(input.roomId);
-    const economy = ctx.db.roomEconomy.roomId.find(input.roomId);
+export const vote_marketing_plan = spacetimedb.reducer(
+  { roomId: t.u64(), choice: t.string() },
+  (ctx, { roomId, choice }) => {
+    const currentRoom = ctx.db.room.id.find(roomId);
+    const economy = ctx.db.roomEconomy.roomId.find(roomId);
+    const option = marketingLaunchOption(choice);
     if (
       !currentRoom ||
-      currentRoom.status !== "ACTIVE" ||
       currentRoom.currentStage !== "MARKETING" ||
-      !economy
-    ) {
-      throw new SenderError("A etapa de marketing não está ativa.");
-    }
-    if (!currentRoom.ownerIdentity.isEqual(ctx.sender)) {
-      throw new SenderError("Apenas o anfitrião confirma o plano.");
-    }
-    if (
-      !MARKETING_AUDIENCES.includes(input.audience as MarketingAudience) ||
-      !MARKETING_CHANNELS.includes(input.channel as MarketingChannel)
-    ) {
-      throw new SenderError("Escolha público e canal válidos.");
-    }
-    if (input.investment % 500 !== 0) {
-      throw new SenderError("O investimento deve usar incrementos de 500.");
-    }
+      !economy ||
+      !option
+    )
+      throw new SenderError("Escolha uma carta de lançamento válida.");
+    if (ctx.db.marketingPlan.roomId.find(roomId)?.committed) return;
     const available = Math.max(0, economy.balance - economy.reservedBalance);
-    if (input.investment > available) {
+    if (option.investment > available)
       throw new SenderError(
-        "Preserve a reserva necessária para a operação de vendas.",
+        "Esta carta usaria a reserva necessária para Vendas.",
       );
-    }
-    const existing = ctx.db.marketingPlan.roomId.find(input.roomId);
-    if (existing?.committed) return;
-
-    const audience = input.audience as MarketingAudience;
-    const channel = input.channel as MarketingChannel;
+    const eligiblePlayers = Array.from(
+      ctx.db.player.roomId.filter(roomId),
+    ).filter((item) => item.active && item.online);
+    if (!eligiblePlayers.some((item) => item.identity.isEqual(ctx.sender)))
+      throw new SenderError("Você precisa estar online nesta sala para votar.");
+    const existingVote = Array.from(
+      ctx.db.groupVote.roomId.filter(roomId),
+    ).find(
+      (item) =>
+        item.topic === "MARKETING_PLAN" &&
+        item.playerIdentity.isEqual(ctx.sender),
+    );
+    if (existingVote)
+      ctx.db.groupVote.id.update({
+        ...existingVote,
+        choice,
+        updatedAt: ctx.timestamp,
+      });
+    else
+      ctx.db.groupVote.insert({
+        id: 0n,
+        roomId,
+        stage: "MARKETING",
+        topic: "MARKETING_PLAN",
+        playerIdentity: ctx.sender,
+        choice,
+        updatedAt: ctx.timestamp,
+      });
+    const votes = Array.from(ctx.db.groupVote.roomId.filter(roomId)).filter(
+      (item) =>
+        item.topic === "MARKETING_PLAN" &&
+        item.choice === choice &&
+        eligiblePlayers.some((player) =>
+          player.identity.isEqual(item.playerIdentity),
+        ),
+    ).length;
+    if (votes < Math.floor(eligiblePlayers.length / 2) + 1) return;
     const response = marketResponseForSeed(economy.seed);
     const responseResult = effectiveMarketMultiplier(
       response,
-      audience,
-      channel,
+      option.audience,
+      option.channel,
     );
-    const balanceAfter = economy.balance - input.investment;
-    const nextSequence = economy.nextSequence + (input.investment > 0 ? 1 : 0);
+    const balanceAfter = economy.balance - option.investment;
     ctx.db.roomEconomy.roomId.update({
       ...economy,
       balance: balanceAfter,
-      nextSequence,
+      nextSequence: economy.nextSequence + (option.investment > 0 ? 1 : 0),
       updatedAt: ctx.timestamp,
     });
-    if (input.investment > 0) {
+    if (option.investment > 0)
       ctx.db.economyTransaction.insert({
         id: 0n,
-        roomId: input.roomId,
+        roomId,
         stage: "MARKETING",
-        delta: -input.investment,
+        delta: -option.investment,
         balanceAfter,
         sequence: economy.nextSequence,
         reason: "MARKETING_INVESTMENT",
-        eventKey: `marketing:${input.roomId}`,
-        label: "Investimento de marketing",
+        eventKey: `marketing:${roomId}`,
+        label: `Carta de lançamento: ${option.label}`,
         createdAt: ctx.timestamp,
       });
-    }
-    const values = {
-      audience,
-      valuePromise: normalizeStageField(
-        "Promessa de valor",
-        input.valuePromise,
-      ),
-      channel,
-      callToAction: normalizeStageField(
-        "Chamada para ação",
-        input.callToAction,
-      ),
-      investment: input.investment,
+    ctx.db.marketingPlan.insert({
+      roomId,
+      optionKey: option.key,
+      audience: option.audience,
+      valuePromise: option.valuePromise,
+      channel: option.channel,
+      callToAction: option.callToAction,
+      investment: option.investment,
       responseTitle: response.title,
       responseDescription: response.description,
       baseMultiplier: response.baseMultiplier,
       matched: responseResult.matched,
       effectiveMultiplier: responseResult.multiplier,
       committed: true,
-    };
-    ctx.db.marketingPlan.insert({
-      roomId: input.roomId,
-      ...values,
       createdAt: ctx.timestamp,
       updatedAt: ctx.timestamp,
     });
-
-    const summary = `${values.valuePromise} Público: ${values.audience}; canal: ${values.channel}; ação: ${values.callToAction}.`;
     ctx.db.contribution.insert({
       id: 0n,
-      roomId: input.roomId,
+      roomId,
       stage: "MARKETING",
       authorIdentity: ctx.sender,
       kind: "MAIN",
-      content: summary,
+      content: `${option.label}: ${option.valuePromise} ${option.callToAction}`,
       createdAt: ctx.timestamp,
       updatedAt: ctx.timestamp,
     });
-    const session = Array.from(
-      ctx.db.stageSession.roomId.filter(input.roomId),
-    ).find((item) => item.stage === "MARKETING");
-    if (session) {
+    const session = Array.from(ctx.db.stageSession.roomId.filter(roomId)).find(
+      (item) => item.stage === "MARKETING",
+    );
+    if (session)
       ctx.db.stageSession.id.update({
         ...session,
         phase: "READY",
         updatedAt: ctx.timestamp,
       });
-    }
   },
 );
-
 export const open_voting = spacetimedb.reducer(
   { roomId: t.u64() },
   (ctx, { roomId }) => {
@@ -1793,9 +2049,10 @@ export const advance_stage = spacetimedb.reducer(
     const currentRoom = ctx.db.room.id.find(roomId);
     const economy = ctx.db.roomEconomy.roomId.find(roomId);
     if (!currentRoom) throw new SenderError("Sala não encontrada.");
-    if (!currentRoom.ownerIdentity.isEqual(ctx.sender)) {
-      throw new SenderError("Apenas o anfitrião pode avançar a etapa.");
-    }
+    const membership = Array.from(ctx.db.player.roomId.filter(roomId)).find(
+      (item) => item.active && item.identity.isEqual(ctx.sender),
+    );
+    if (!membership) throw new SenderError("Você não pertence a esta sala.");
     if (currentRoom.status !== "ACTIVE") {
       throw new SenderError("A jornada não está ativa.");
     }
@@ -1903,11 +2160,11 @@ export const advance_stage = spacetimedb.reducer(
 
     const phase =
       nextStage === "PROTOTYPE"
-        ? "BUILD"
+        ? "CHALLENGE"
         : nextStage === "PILOT"
-          ? "TEST"
+          ? "FEEDBACK"
           : nextStage === "MARKETING"
-            ? "PLAN"
+            ? "CHOOSING"
             : nextStage === "SALES"
               ? "RESULT"
               : "CONTRIBUTING";
@@ -1919,6 +2176,29 @@ export const advance_stage = spacetimedb.reducer(
       createdAt: ctx.timestamp,
       updatedAt: ctx.timestamp,
     });
+
+    if (nextStage === "PILOT" && !ctx.db.pilotSimulation.roomId.find(roomId)) {
+      const feedback = pilotFeedbackForSeed(economy.seed);
+      ctx.db.pilotSimulation.insert({
+        roomId,
+        feedbackTitle: feedback.title,
+        feedbackDescription: feedback.description,
+        optionA: feedback.options[0].title,
+        optionADescription: feedback.options[0].description,
+        optionALearning: feedback.options[0].learning,
+        optionB: feedback.options[1].title,
+        optionBDescription: feedback.options[1].description,
+        optionBLearning: feedback.options[1].learning,
+        optionC: feedback.options[2].title,
+        optionCDescription: feedback.options[2].description,
+        optionCLearning: feedback.options[2].learning,
+        decision: "",
+        learning: "",
+        completed: false,
+        createdAt: ctx.timestamp,
+        updatedAt: ctx.timestamp,
+      });
+    }
 
     let balance = economy.balance;
     let sequence = economy.nextSequence;
@@ -1980,7 +2260,6 @@ export const advance_stage = spacetimedb.reducer(
     if (nextStage === "SALES") {
       reservedBalance = 0;
       const marketing = ctx.db.marketingPlan.roomId.find(roomId);
-      const pilot = ctx.db.pilotSimulation.roomId.find(roomId);
       if (!marketing?.committed) {
         throw new SenderError("O plano de marketing não foi confirmado.");
       }
@@ -1988,14 +2267,12 @@ export const advance_stage = spacetimedb.reducer(
       const calculation = calculateSalesResult({
         remainingCredits,
         marketingInvestment: marketing.investment,
-        readinessBonus: pilot?.readinessBonus ?? 0,
         multiplier: marketing.effectiveMultiplier,
       });
       ctx.db.salesResult.insert({
         roomId,
         remainingCredits,
         marketingInvestment: marketing.investment,
-        readinessBonus: pilot?.readinessBonus ?? 0,
         multiplier: marketing.effectiveMultiplier,
         simulatedSales: calculation.simulatedSales,
         finalRunway: calculation.finalRunway,

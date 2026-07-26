@@ -36,23 +36,26 @@ import {
 // Import all reducer arg schemas
 import AdvanceStageReducer from "./advance_stage_reducer";
 import CastVoteReducer from "./cast_vote_reducer";
-import CommitMarketingPlanReducer from "./commit_marketing_plan_reducer";
-import CommitPilotDecisionReducer from "./commit_pilot_decision_reducer";
-import CommitProjectPrototypeReducer from "./commit_project_prototype_reducer";
 import CreateRoomReducer from "./create_room_reducer";
 import EndJourneyReducer from "./end_journey_reducer";
+import FinishPrototypeActivityReducer from "./finish_prototype_activity_reducer";
 import JoinRoomReducer from "./join_room_reducer";
 import LeaveRoomReducer from "./leave_room_reducer";
 import OpenVotingReducer from "./open_voting_reducer";
-import ReactToPrototypeReducer from "./react_to_prototype_reducer";
-import RedrawCardReducer from "./redraw_card_reducer";
-import ResolvePilotReducer from "./resolve_pilot_reducer";
+import RefreshRedrawnCardReducer from "./refresh_redrawn_card_reducer";
 import ResolveStageReducer from "./resolve_stage_reducer";
 import SetProfileReducer from "./set_profile_reducer";
 import SetReadyReducer from "./set_ready_reducer";
 import StartGameReducer from "./start_game_reducer";
+import StartPrototypeActivityReducer from "./start_prototype_activity_reducer";
 import SubmitContributionReducer from "./submit_contribution_reducer";
+import SubmitPrototypeArtifactReducer from "./submit_prototype_artifact_reducer";
 import UpdateJourneyReducer from "./update_journey_reducer";
+import VoteCardChangeReducer from "./vote_card_change_reducer";
+import VoteMarketingPlanReducer from "./vote_marketing_plan_reducer";
+import VotePilotResponseReducer from "./vote_pilot_response_reducer";
+import VotePrototypeExtensionReducer from "./vote_prototype_extension_reducer";
+import VotePrototypeReadyReducer from "./vote_prototype_ready_reducer";
 
 // Import all procedure arg schemas
 
@@ -64,12 +67,12 @@ import MemberRoomsRow from "./member_rooms_table";
 import OwnVotesRow from "./own_votes_table";
 import PilotSimulationsRow from "./pilot_simulations_table";
 import ProjectPrototypesRow from "./project_prototypes_table";
-import PrototypeReactionsRow from "./prototype_reactions_table";
 import RoomCardDrawsRow from "./room_card_draws_table";
 import RoomContributionStatusRow from "./room_contribution_status_table";
 import RoomDecisionsRow from "./room_decisions_table";
 import RoomEconomiesRow from "./room_economies_table";
 import RoomEconomyTransactionsRow from "./room_economy_transactions_table";
+import RoomGroupVotesRow from "./room_group_votes_table";
 import RoomJourneysRow from "./room_journeys_table";
 import RoomPlayersRow from "./room_players_table";
 import RoomStageCostsRow from "./room_stage_costs_table";
@@ -138,13 +141,6 @@ const tablesSchema = __schema({
     constraints: [
     ],
   }, ProjectPrototypesRow),
-  prototype_reactions: __table({
-    name: 'prototype_reactions',
-    indexes: [
-    ],
-    constraints: [
-    ],
-  }, PrototypeReactionsRow),
   room_card_draws: __table({
     name: 'room_card_draws',
     indexes: [
@@ -180,6 +176,13 @@ const tablesSchema = __schema({
     constraints: [
     ],
   }, RoomEconomyTransactionsRow),
+  room_group_votes: __table({
+    name: 'room_group_votes',
+    indexes: [
+    ],
+    constraints: [
+    ],
+  }, RoomGroupVotesRow),
   room_journeys: __table({
     name: 'room_journeys',
     indexes: [
@@ -235,23 +238,26 @@ const tablesSchema = __schema({
 const reducersSchema = __reducers(
   __reducerSchema("advance_stage", AdvanceStageReducer),
   __reducerSchema("cast_vote", CastVoteReducer),
-  __reducerSchema("commit_marketing_plan", CommitMarketingPlanReducer),
-  __reducerSchema("commit_pilot_decision", CommitPilotDecisionReducer),
-  __reducerSchema("commit_project_prototype", CommitProjectPrototypeReducer),
   __reducerSchema("create_room", CreateRoomReducer),
   __reducerSchema("end_journey", EndJourneyReducer),
+  __reducerSchema("finish_prototype_activity", FinishPrototypeActivityReducer),
   __reducerSchema("join_room", JoinRoomReducer),
   __reducerSchema("leave_room", LeaveRoomReducer),
   __reducerSchema("open_voting", OpenVotingReducer),
-  __reducerSchema("react_to_prototype", ReactToPrototypeReducer),
-  __reducerSchema("redraw_card", RedrawCardReducer),
-  __reducerSchema("resolve_pilot", ResolvePilotReducer),
+  __reducerSchema("refresh_redrawn_card", RefreshRedrawnCardReducer),
   __reducerSchema("resolve_stage", ResolveStageReducer),
   __reducerSchema("set_profile", SetProfileReducer),
   __reducerSchema("set_ready", SetReadyReducer),
   __reducerSchema("start_game", StartGameReducer),
+  __reducerSchema("start_prototype_activity", StartPrototypeActivityReducer),
   __reducerSchema("submit_contribution", SubmitContributionReducer),
+  __reducerSchema("submit_prototype_artifact", SubmitPrototypeArtifactReducer),
   __reducerSchema("update_journey", UpdateJourneyReducer),
+  __reducerSchema("vote_card_change", VoteCardChangeReducer),
+  __reducerSchema("vote_marketing_plan", VoteMarketingPlanReducer),
+  __reducerSchema("vote_pilot_response", VotePilotResponseReducer),
+  __reducerSchema("vote_prototype_extension", VotePrototypeExtensionReducer),
+  __reducerSchema("vote_prototype_ready", VotePrototypeReadyReducer),
 );
 
 /** The schema information for all procedures in this module. This is defined the same way as the procedures would have been defined in the server. */

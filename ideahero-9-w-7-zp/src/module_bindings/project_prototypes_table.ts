@@ -12,13 +12,16 @@ import {
 
 export default __t.row({
   roomId: __t.u64().primaryKey().name("room_id"),
-  personSituation: __t.string().name("person_situation"),
-  firstAction: __t.string().name("first_action"),
-  keyInteraction: __t.string().name("key_interaction"),
-  evidence: __t.string(),
-  fidelity: __t.string(),
+  challengeKey: __t.string().name("challenge_key"),
+  challengeTitle: __t.string().name("challenge_title"),
+  challengeDescription: __t.string().name("challenge_description"),
+  artifactKind: __t.string().name("artifact_kind"),
+  artifactData: __t.string().name("artifact_data"),
+  caption: __t.string(),
+  durationSeconds: __t.u32().name("duration_seconds"),
   investment: __t.u32(),
   committed: __t.bool(),
+  startedAt: __t.timestamp().name("started_at"),
   createdAt: __t.timestamp().name("created_at"),
   updatedAt: __t.timestamp().name("updated_at"),
 });
