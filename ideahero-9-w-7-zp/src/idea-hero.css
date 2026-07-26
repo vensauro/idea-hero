@@ -786,7 +786,37 @@ h1 {
 }
 
 .result-page {
+  display: flex;
+  flex-direction: column;
   width: min(calc(100% - 2rem), 1080px);
+}
+
+.result-topbar {
+  order: 0;
+}
+
+.result-hero {
+  order: 1;
+}
+
+.final-runway-summary {
+  order: 2;
+}
+
+.manifest-editor {
+  order: 3;
+}
+
+.result-footer {
+  order: 4;
+}
+
+.document-heading {
+  order: 5;
+}
+
+.journey-document {
+  order: 6;
 }
 
 .result-topbar {
