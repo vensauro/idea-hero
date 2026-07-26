@@ -10,7 +10,6 @@ import { useReducer } from "spacetimedb/react";
 import { reducers } from "./module_bindings";
 import type {
   Card,
-  CardDraw,
   Decision,
   EconomyTransaction,
   GroupVote,
@@ -26,7 +25,7 @@ import type {
   StageCost,
   VisibleContribution,
 } from "./module_bindings/types";
-import { BrandLogo, InspirationCard } from "./experience";
+import { BrandLogo } from "./experience";
 import { JourneySummary } from "./JourneySummary";
 import { formatCredits } from "./runway-format";
 import {
@@ -459,7 +458,6 @@ type RunwayFinalStageProps = {
   decisions: readonly Decision[];
   currentPlayer: Player;
   card?: Card;
-  draw?: CardDraw;
   economy: RoomEconomy;
   stageCosts: readonly StageCost[];
   transactions: readonly EconomyTransaction[];
@@ -481,7 +479,6 @@ export function RunwayFinalStage(props: RunwayFinalStageProps) {
     decisions,
     currentPlayer,
     card,
-    draw,
     economy,
     stageCosts,
     transactions,
@@ -506,11 +503,6 @@ export function RunwayFinalStage(props: RunwayFinalStageProps) {
     (stage === "PILOT" && pilot?.completed) ||
     (stage === "MARKETING" && marketing?.committed) ||
     (stage === "SALES" && Boolean(sales));
-  const cardLocked =
-    (stage === "PROTOTYPE" && Boolean(prototype)) ||
-    (stage === "PILOT" &&
-      topicVotes(groupVotes, "PILOT_RESPONSE", players).length > 0);
-
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, [room.stageIndex]);
@@ -576,27 +568,15 @@ export function RunwayFinalStage(props: RunwayFinalStageProps) {
         transactions={transactions}
       />
 
-      <section className="stage-layout runway-stage-layout">
-        <article className="stage-intro">
+      <section className="runway-stage-flow">
+        <header className="runway-stage-heading">
           <p className="kicker">
             Etapa {room.stageIndex + 1} de 8 · {STAGE_LABELS[stage]}
           </p>
           <h1>{STAGE_TITLES[stage]}</h1>
-          <InspirationCard card={card} stageLabel={STAGE_LABELS[stage]} />
-          {stage !== "MARKETING" && stage !== "SALES" && (
-            <CardChangeButton
-              room={room}
-              draw={draw}
-              economy={economy}
-              locked={Boolean(cardLocked)}
-              players={players}
-              currentPlayer={currentPlayer}
-              groupVotes={groupVotes}
-            />
-          )}
-        </article>
+        </header>
 
-        <article className="contribution-panel runway-stage-panel">
+        <div className="runway-stage-activity">
           {stage === "PROTOTYPE" && (
             <PrototypeStage
               room={room}
@@ -671,7 +651,7 @@ export function RunwayFinalStage(props: RunwayFinalStageProps) {
             </aside>
           )}
           {error && <p className="error-message">{error}</p>}
-        </article>
+        </div>
       </section>
     </main>
   );

@@ -1230,7 +1230,6 @@ function GameBoard({
         decisions={decisions}
         currentPlayer={currentPlayer}
         card={stageCard}
-        draw={stageDraw}
         economy={economy}
         stageCosts={stageCosts}
         transactions={economyTransactions}
