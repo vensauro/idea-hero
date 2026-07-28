@@ -1,0 +1,62 @@
+[
+  {
+    "stage": "SCENARIO",
+    "imagePrompt": "Surreal digital painting in 4:3 aspect ratio depicting a silent subterranean library entwined with glowing turquoise tree roots. Bookshelves made of weathered drift bark curve along cavern walls. A gentle tide of luminescent violet water laps at the marble floor, reflecting glowing jellyfish floating between book stacks. Soft ethereal lighting, deep navy and cyan palette with golden accents. Original visual art with no text, no letters, no logo, no watermark, no frame, no collage borders.",
+    "creativeSeed": "A subterranean library built into the roots of a giant glowing bioluminescent tree where ocean tides whisper secrets."
+  },
+  {
+    "stage": "SCENARIO",
+    "imagePrompt": "Whimsical dreamlike illustration in 4:3 aspect ratio showing an expansive specular salt flat reflecting a deep magenta twilight sky. Massive geometric paper cranes float effortlessly overhead, casting crisp silhouettes of living songbirds onto the mirrored ground below. Pastel lavender, amber, and deep indigo color scheme. Warm melancholic mood. Original visual art with no text, no letters, no logo, no watermark, no frame, no collage borders.",
+    "creativeSeed": "An endless salt flat under a twilight sky where giant floating origami cranes cast shadows of real birds."
+  },
+  {
+    "stage": "PROBLEM",
+    "imagePrompt": "Atmospheric surreal concept art in 4:3 aspect ratio of a deep red sandstone canyon filled with an overwhelming labyrinth woven from reflective dark bronze magnetic tape ribbons. A solitary tiny figure in a yellow raincoat stands at the entrance holding a small lantern. Dusty orange, warm amber, and shadowy brown hues. Misty lighting. Original visual art with no text, no letters, no logo, no watermark, no frame, no collage borders.",
+    "creativeSeed": "A massive maze made entirely of tangled, unspooled glowing cassette tapes inside a foggy desert canyon."
+  },
+  {
+    "stage": "PROBLEM",
+    "imagePrompt": "Poetic fantasy artwork in 4:3 aspect ratio featuring a giant cracked brass hourglass partially submerged in a snowy mountain tundra during an aurora borealis. Instead of sand, glowing pearl-like bubbles of warm golden light float upward from the bottom chamber into the cold night air. Deep cobalt blue, icy teal, and radiant gold color palette. Original visual art with no text, no letters, no logo, no watermark, no frame, no collage borders.",
+    "creativeSeed": "A giant hourglass buried in snow where time flows upward as rising bubbles of frozen light."
+  },
+  {
+    "stage": "INSIGHT",
+    "imagePrompt": "Mythological tabletop card illustration in 4:3 aspect ratio showing a gentle giant tailor sitting on a cloud, stitching a tear in the dark velvet cosmos with a beam of blinding gold sunlight as thread. Constellations scatter like shimmering silver sequins across the dark blue void. Deep midnight blues, stellar purples, and radiant warm yellow light. Original visual art with no text, no letters, no logo, no watermark, no frame, no collage borders.",
+    "creativeSeed": "A tailor carefully sewing a rift in the starry sky using a needle made of pure sunlight."
+  },
+  {
+    "stage": "INSIGHT",
+    "imagePrompt": "Lyrical surreal artwork in 4:3 aspect ratio focused on a hand holding an ornate vintage pocket compass. The needle is made of glowing emerald light, pointing upward toward a miniature floating island hovering overhead, covered in vibrant orange and vermilion autumn trees dropping radiant leaves. Warm copper, forest green, and fiery amber palette. Soft focus background. Original visual art with no text, no letters, no logo, no watermark, no frame, no collage borders.",
+    "creativeSeed": "An antique brass compass whose needle points to a floating island of glowing autumn trees in mid-air."
+  },
+  {
+    "stage": "SOLUTION",
+    "imagePrompt": "Majestic dreamscape painting in 4:3 aspect ratio featuring an arching suspension bridge composed entirely of solid prismatic light strands, spanning across a vast abyss between two snow-capped granite peaks above a fluffy sea of sunset-lit clouds. Coral pink, warm peach, brilliant violet, and gold hues. Epic panoramic atmosphere. Original visual art with no text, no letters, no logo, no watermark, no frame, no collage borders.",
+    "creativeSeed": "A bridge woven from living rainbow light connecting two sheer mountain peaks above an ocean of clouds."
+  },
+  {
+    "stage": "SOLUTION",
+    "imagePrompt": "Intricate clockwork fantasy art in 4:3 aspect ratio depicting an automaton hummingbird crafted from polished oak and brass gears, hovering over dark earth while dropping a luminous quartz seed that immediately sprouts translucent glass blossoms glowing with interior fireflies. Rich mahogany, moss green, and soft amber lighting. Highly detailed card art style. Original visual art with no text, no letters, no logo, no watermark, no frame, no collage borders.",
+    "creativeSeed": "A mechanical wooden bird planting glowing crystal seeds into rich dark soil, sprouting tiny glass flowers."
+  },
+  {
+    "stage": "PROTOTYPE",
+    "imagePrompt": "Whimsical architectural illustration in 4:3 aspect ratio of a cozy wooden cottage miniature suspended inside a massive glass incandescent lightbulb. Tiny delicate white origami windmills spin along the tungsten filament inside, casting warm radiant sunbeams. Deep evening atmosphere, warm honey yellows, charcoal grey, and soft glowing orange. Original visual art with no text, no letters, no logo, no watermark, no frame, no collage borders.",
+    "creativeSeed": "A house built inside a giant suspended lightbulb, with tiny paper windmills generating electricity on the filament."
+  },
+  {
+    "stage": "PILOT",
+    "imagePrompt": "Surreal painterly illustration in 4:3 aspect ratio featuring a white brick lighthouse standing on a grassy floating asteroid, shining a beam of light that propels a tiny glowing paper sailboat across an upside-down ocean of swirling sapphire cloud-waves in deep space. Indigo, ultramarine, and glowing pale cream color scheme. Cinematic balance. Original visual art with no text, no letters, no logo, no watermark, no frame, no collage borders.",
+    "creativeSeed": "A solitary lighthouse launching a small paper boat into a sky made of liquid sapphire waves."
+  },
+  {
+    "stage": "MARKETING",
+    "imagePrompt": "Vibrant poetic artwork in 4:3 aspect ratio showing an artist's hands drawing glowing chalk patterns on a cobblestone plaza at dusk. The colorful chalk swirls lift off the stone surface, transforming into a cloud of glowing glass butterflies that swarm toward an astonished audience. Rich magenta, turquoise, warm ochre, and violet tones. Soft ambient twilight glow. Original visual art with no text, no letters, no logo, no watermark, no frame, no collage borders.",
+    "creativeSeed": "A street painter whose chalk drawings blossom into real 3D butterflies flying into the crowd."
+  },
+  {
+    "stage": "SALES",
+    "imagePrompt": "Atmospheric fairytale illustration in 4:3 aspect ratio depicting a hooded merchant sitting behind an antique wooden stall covered in glowing glass jars containing miniature swirling fogs and sunbeams. A customer trades a shimmering golden key for one jar. Warm terracotta, deep forest moss, and glittering gold highlights. Intimate lighting. Original visual art with no text, no letters, no logo, no watermark, no frame, no collage borders.",
+    "creativeSeed": "A merchant exchanging glass jars filled with captured morning mist for glowing golden keys."
+  }
+]

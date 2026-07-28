@@ -1,0 +1,62 @@
+[
+  {
+    "stage": "SCENARIO",
+    "imagePrompt": "Surreal tabletop card illustration in 4:3 aspect ratio depicting an inverted mountain range hovering in a twilight indigo sky, where bioluminescent azure waterfalls flow upward into swirling pastel cloud banks. Miniature antique brass compasses float gently among glowing dandelion seeds. Dreamlike lighting, soft painterly texture, rich cerulean and violet tones, high fantasy atmosphere, no readable text, no letters, no logos, no watermarks, no frames.",
+    "creativeSeed": "A floating archipelago where time flows backwards, causing rivers to rise into glowing clouds."
+  },
+  {
+    "stage": "SCENARIO",
+    "imagePrompt": "A whimsical tabletop card art piece with 4:3 aspect ratio showing a colossal sleeping tortoise made of translucent rose quartz, whose carapace is hollowed into an ancient mossy library filled with miniature glowing paper lanterns. Lush ferns and ivy drape over golden bookshelf arches. Warm emerald and amber lighting, painterly surrealism, no readable text, no letters, no logos, no frames, no borders.",
+    "creativeSeed": "An abandoned overgrown library carved into the shell of a giant sleeping quartz tortoise."
+  },
+  {
+    "stage": "PROBLEM",
+    "imagePrompt": "Surreal card art in 4:3 aspect ratio featuring a massive hourglass filled with a chaotic knot of glowing crimson and amber glass threads instead of sand. Small iron keys hang suspended inside the glass bulb, impossible to reach. Moody shadows, dramatic chiaroscuro lighting, deep magenta and copper palette, evocative and mysterious atmosphere, no text, no characters, no logos, no watermark.",
+    "creativeSeed": "A tangled maze constructed entirely of glowing stained-glass threads caught in a giant hourglass."
+  },
+  {
+    "stage": "PROBLEM",
+    "imagePrompt": "Artistic surreal tabletop card artwork in 4:3 aspect ratio displaying a spiral staircase crafted from translucent melting tallow candle wax, suspended in a dark obsidian void. Fading golden flames flicker at the edge of each disintegrating step. Atmospheric smoke wisps, cool cobalt and warm flickering orange contrast, poetic and melancholic visual, no readable text, no logos, no frame.",
+    "creativeSeed": "An endless stairway made of melting wax candles that slowly dissolves beneath tiny footsteps."
+  },
+  {
+    "stage": "INSIGHT",
+    "imagePrompt": "Poetic surrealist card illustration in 4:3 aspect ratio showing a giant glass bulb enclosure constructed from living blooming cherry blossom twigs. Inside, bright silver light ignites, transforming flower petals into a swarm of delicate origami cranes taking flight. Ethereal pastel pink and glowing white color palette, magical realism, fine painterly detail, no text, no logos, no watermarks, no frames.",
+    "creativeSeed": "A lightbulb made of woven cherry blossom branches bursting into a flock of luminescent origami birds."
+  },
+  {
+    "stage": "INSIGHT",
+    "imagePrompt": "Surreal tabletop fantasy card image in 4:3 aspect ratio depicting a giant keyhole hovering in a starry midnight sky over quiet sand dunes. Through the floating keyhole, a vibrant tropical coral reef with glowing jellyfish and turquoise water is visible. Deep ultramarine night sky contrasted with warm golden sand and teal aquatic glow, dreamlike composition, no text, no logos, no watermark, no frame.",
+    "creativeSeed": "A keyhole floating in a calm desert night sky, revealing a lush underwater ocean world inside."
+  },
+  {
+    "stage": "SOLUTION",
+    "imagePrompt": "Digital dreamlike card artwork in 4:3 aspect ratio illustrating a vast canyon under a celestial nebula where glowing golden musical notes physically lock together to form a sturdy arched bridge. Sparks of light fly as the melody solidifies into polished brass pathways. Rich cosmic violet, gold, and deep navy color scheme, whimsical engineering theme, no text, no letters, no logos, no frame.",
+    "creativeSeed": "A giant mechanical bridge assembling itself out of floating musical notes across a starry canyon."
+  },
+  {
+    "stage": "SOLUTION",
+    "imagePrompt": "Surreal card illustration in 4:3 aspect ratio featuring an oversized luminous brass needle carrying a thread of pure starlight, stitching a snowy winter forest directly to a golden autumn meadow. Soft mist rises where the two seasons meet along a shimmering seam. Warm oak orange and icy blue color contrast, poetic artistic style, no readable text, no logos, no watermarks, no frames.",
+    "creativeSeed": "A glowing golden needle sewing together two different seasons across a dramatic landscape border."
+  },
+  {
+    "stage": "PROTOTYPE",
+    "imagePrompt": "Artistic tabletop card style in 4:3 aspect ratio depicting a hand-assembled prototype creature: a giant delicate butterfly built from copper watch gears, semi-transparent parchment wings, and sprouting green willow shoots. It rests on a rustic wooden craftsman workbench surrounded by magnifying glasses. Earthy bronze, mint green, and parchment tones, warm studio lighting, no text, no logos, no watermark.",
+    "creativeSeed": "A complex mechanical butterfly constructed from clockwork gears, translucent paper, and living vines."
+  },
+  {
+    "stage": "PILOT",
+    "imagePrompt": "Surreal tabletop card illustration in 4:3 aspect ratio depicting a fragile folded paper boat navigating gentle night ocean waves under the beam of a miniature rustic lighthouse built on a peaceful floating sea turtle's shell. A glowing full moon illuminates the mist. Soft navy blue, seafoam green, and pale yellow light tones, serene and adventurous mood, no text, no logos, no frame.",
+    "creativeSeed": "A tiny paper sailboat guided by a lighthouse mounted on the shell of a floating sea turtle."
+  },
+  {
+    "stage": "MARKETING",
+    "imagePrompt": "Dreamlike artistic card painting in 4:3 aspect ratio depicting an open-air wooden theater stage in an alpine meadow at dusk. An ornate brass projector beams vibrant turquoise and coral constellations onto low-hanging rain clouds, painting giant radiant mythical sky-creatures. Dramatic lighting, deep sapphire, coral, and gold palette, poetic wonder, no text, no logos, no watermark, no frame.",
+    "creativeSeed": "A mysterious theater stage where a projector throws glowing colorful constellations into night clouds."
+  },
+  {
+    "stage": "SALES",
+    "imagePrompt": "Surreal tabletop card artwork in 4:3 aspect ratio showing a massive antique carved stone balance scale in equilibrium atop a cloud peak. On one side sits a radiant amber crystal glowing like a mini sun; on the other rests a delicate feather woven from silver starlight. Radiant golden hour sunlight, ethereal clouds, rich ochre and celestial silver colors, high atmosphere, no text, no logos, no frame.",
+    "creativeSeed": "An ancient stone scale balancing a glowing sun crystal against a feather made of woven starlight."
+  }
+]

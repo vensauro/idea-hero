@@ -1,0 +1,62 @@
+[
+  {
+    "stage": "SCENARIO",
+    "imagePrompt": "Poetic surrealist 4:3 tabletop card illustration of a sunken wooden library glowing gently underwater. Schools of translucent bioluminescent fish swim between floating open books whose pages ripple like delicate coral reefs. Deep indigo and warm golden light. High detail, dreamy painterly texture, no text, no letters, no watermark, no frame.",
+    "creativeSeed": "Connecting the vastness of oceanic depth with a quiet library setting to represent submerged knowledge."
+  },
+  {
+    "stage": "SCENARIO",
+    "imagePrompt": "Surreal digital painting in a 4:3 aspect ratio depicting an archipelagic city suspended above pink clouds. Each island rests atop a giant glowing glass hourglass, filled with sparkling golden sand flowing upwards. Sunset pastel colors of magenta, peach, and soft teal. Atmospheric, whimsical art style, no text, no logo, no watermark.",
+    "creativeSeed": "Using an impossible levitating city made of glass hourglasses to symbolize fragile temporal ecosystems."
+  },
+  {
+    "stage": "PROBLEM",
+    "imagePrompt": "Atmospheric surreal card artwork in 4:3 ratio showing a towering labyrinth constructed from overgrown brass french horns and rusted cello necks. Thorns of copper wire bind the keys together, trapping mist within the bell ends. Crimson, ochre, and dark charcoal palette. Evocative storybook illustration, no readable text, no logo.",
+    "creativeSeed": "Representing systemic friction through giant tangled musical instruments trying to play a single note."
+  },
+  {
+    "stage": "PROBLEM",
+    "imagePrompt": "A poignant surrealist scene in 4:3 ratio featuring a lonely figure in a coat carefully holding a delicate white porcelain spoon. Balanced on the spoon is a microscopic, highly detailed autumn forest shedding glowing orange leaves in a windstorm. Cool slate gray and fiery amber tones. Fine oil painting texture, no letters, no watermark.",
+    "creativeSeed": "Visualizing cognitive overload as a person balancing an entire autumn forest on a porcelain spoon."
+  },
+  {
+    "stage": "INSIGHT",
+    "imagePrompt": "Dreamlike 4:3 card art showing a dark, stormy cumulus cloud floating in void space. Cut clean through the center of the dark cloud is a giant sharp keyhole shape, through which a bright sunlit meadow with wildflowers is clearly visible. Deep storm blues contrasting with vibrant emerald green and gold sunlight. Lush painterly style, no frame, no text.",
+    "creativeSeed": "Framing sudden clarity as a keyhole cutting through a stormy cloud to reveal a sunny meadow."
+  },
+  {
+    "stage": "INSIGHT",
+    "imagePrompt": "A surprising visual metaphor in 4:3 aspect ratio depicting a dark basalt cavern where cluster-geodes of glowing vintage filament bulbs grow naturally out of raw granite. Warm incandescent amber light reflecting off damp slate rocks and quiet puddles. Rich fantasy concept art, highly detailed, no letters, no logos, no watermark.",
+    "creativeSeed": "Merging geology and illumination by having light bulbs sprout like glowing crystals from granite rocks."
+  },
+  {
+    "stage": "SOLUTION",
+    "imagePrompt": "Poetic fantasy illustration in 4:3 ratio of a colossal stone canyon spanned by a bridge woven from thick ribbons of liquid golden light. A small traveller walks across safely, leaving glowing footsteps on the solid light. Palette of deep midnight violet and brilliant warm gold. Cinematic surreal art, no text, no watermark, no border.",
+    "creativeSeed": "Symbolizing harmonious repair through a floating bridge woven entirely out of golden light beams."
+  },
+  {
+    "stage": "SOLUTION",
+    "imagePrompt": "A whimsical surreal 4:3 card illustration showing an intricate brass clockwork heart sitting on a velvet cloth. From between the rotating gears and cogs, fresh fragrant lavender stems and wild ivy blossom dynamically. Warm antique brass tones mixed with vivid purple and sage green. Detailed digital oil painting, no letters, no watermark.",
+    "creativeSeed": "Representing perfect integration as a mechanical clockwork heart blooming with living lavender flowers."
+  },
+  {
+    "stage": "PROTOTYPE",
+    "imagePrompt": "Dreamy cosmic artwork in a 4:3 ratio displaying hands made of soft stardust folding a giant paper crane out of glowing celestial charts. Lines of light and stars form the creases of the geometric bird. Deep space cobalt blue, silver, and ethereal white palette. Poetic illustration, no readable text, no watermark, no frame.",
+    "creativeSeed": "Portraying iterative creation as an origami crane folding itself out of constellation star maps."
+  },
+  {
+    "stage": "PILOT",
+    "imagePrompt": "A charming miniature surreal scene in 4:3 aspect ratio showing a tiny folded paper boat sailing inside a giant ceramic teacup. The tea forms turbulent ocean waves with foamy spray under a miniature storm cloud suspended above the cup. Rich mahogany, cream, and stormy grey colors. Intricate painterly style, no text, no watermark.",
+    "creativeSeed": "Illustrating initial real-world testing as a tiny paper sailboat navigating a treacherous teacup storm."
+  },
+  {
+    "stage": "MARKETING",
+    "imagePrompt": "Surreal tabletop card illustration in 4:3 aspect ratio featuring an ancient stone lighthouse on a cliff edge. Instead of a single beam, its lens radiates vibrant swirls of aurora borealis across the night sky, drawing floating glowing origami birds towards it. Palette of emerald, neon violet, and deep night blue. Atmospheric, magical art style, no text, no watermark.",
+    "creativeSeed": "Visualizing captivating resonance as a lighthouse broadcasting colorful aurora borealis waves instead of light."
+  },
+  {
+    "stage": "SALES",
+    "imagePrompt": "A quiet human moment depicted in a 4:3 surreal art style where two masked figures exchange glowing glass orbs over an antique wooden table. One orb holds a tiny bright rainbow, the other holds a swirling golden snowstorm. Warm candlelight, deep shadows, rich terracotta and gold colors. Painterly texture, no text, no logo, no watermark.",
+    "creativeSeed": "Depicting value exchange as two figures trading glowing glass spheres containing miniature weather systems."
+  }
+]

@@ -1344,6 +1344,7 @@ function GameBoard({
         players={players}
         contributions={contributions}
         decisions={decisions}
+        stageOutcomes={stageOutcomes}
         currentPlayer={currentPlayer}
         card={stageCard}
         economy={economy}
@@ -1617,10 +1618,10 @@ function GameBoard({
             <div>
               <p className="kicker">
                 {phase === "VOTING"
-                  ? "Escolha individual"
+                  ? "✦ Escolha individual"
                   : phase === "REVIEW"
-                    ? "Decisão coletiva"
-                    : "Sua contribuição"}
+                    ? "★ Decisão coletiva"
+                    : "✦ Sua contribuição"}
               </p>
               <h2>
                 {phase === "VOTING"
@@ -1636,44 +1637,6 @@ function GameBoard({
                 : `${contributingPlayers.length}/${participatingPlayers.length} enviadas`}
             </span>
           </div>
-
-          {collaborative && phase !== "REVIEW" && (
-            <div
-              className="participant-progress"
-              aria-label="Progresso do grupo"
-            >
-              {participatingPlayers.map((player) => {
-                const complete =
-                  phase === "VOTING"
-                    ? activeStageVotes.some((item) =>
-                        sameIdentity(item.voterIdentity, player.identity),
-                      )
-                    : contributingPlayers.some((item) =>
-                        sameIdentity(item.identity, player.identity),
-                      );
-                return (
-                  <span
-                    className={complete ? "is-complete" : ""}
-                    key={player.id.toString()}
-                  >
-                    <b aria-hidden="true">
-                      {AVATAR_GLYPHS[player.avatarId] ?? "✦"}
-                    </b>
-                    {player.displayName}
-                    <small>
-                      {complete
-                        ? phase === "VOTING"
-                          ? "votou"
-                          : "enviou"
-                        : phase === "VOTING"
-                          ? "escolhendo"
-                          : "criando"}
-                    </small>
-                  </span>
-                );
-              })}
-            </div>
-          )}
 
           {phase === "CONTRIBUTING" && (
             <>
@@ -1749,6 +1712,44 @@ function GameBoard({
                 </div>
               )}
             </>
+          )}
+
+          {collaborative && phase !== "REVIEW" && (
+            <div
+              className="participant-progress"
+              aria-label="Progresso do grupo"
+            >
+              {participatingPlayers.map((player) => {
+                const complete =
+                  phase === "VOTING"
+                    ? activeStageVotes.some((item) =>
+                        sameIdentity(item.voterIdentity, player.identity),
+                      )
+                    : contributingPlayers.some((item) =>
+                        sameIdentity(item.identity, player.identity),
+                      );
+                return (
+                  <span
+                    className={complete ? "is-complete" : ""}
+                    key={player.id.toString()}
+                  >
+                    <b aria-hidden="true">
+                      {AVATAR_GLYPHS[player.avatarId] ?? "✦"}
+                    </b>
+                    {player.displayName}
+                    <small>
+                      {complete
+                        ? phase === "VOTING"
+                          ? "votou"
+                          : "enviou"
+                        : phase === "VOTING"
+                          ? "escolhendo"
+                          : "criando"}
+                    </small>
+                  </span>
+                );
+              })}
+            </div>
           )}
 
           {phase === "VOTING" && (

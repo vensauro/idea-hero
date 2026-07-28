@@ -23,6 +23,7 @@ import type {
   RoomEconomy,
   SalesResult,
   StageCost,
+  StageOutcome,
   VisibleContribution,
 } from "./module_bindings/types";
 import { BrandLogo } from "./experience";
@@ -474,6 +475,7 @@ type RunwayFinalStageProps = {
   players: Player[];
   contributions: VisibleContribution[];
   decisions: readonly Decision[];
+  stageOutcomes: readonly StageOutcome[];
   currentPlayer: Player;
   card?: Card;
   economy: RoomEconomy;
@@ -495,6 +497,7 @@ export function RunwayFinalStage(props: RunwayFinalStageProps) {
     players,
     contributions,
     decisions,
+    stageOutcomes,
     currentPlayer,
     card,
     economy,
@@ -578,6 +581,7 @@ export function RunwayFinalStage(props: RunwayFinalStageProps) {
         contributions={contributions}
         players={players}
         decisions={decisions}
+        outcomes={stageOutcomes}
       />
 
       <RunwayWallet

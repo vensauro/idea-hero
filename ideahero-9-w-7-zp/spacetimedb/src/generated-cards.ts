@@ -4,147 +4,363 @@
  */
 export const GENERATED_CARD_CATALOG = [
   {
-    id: "64fb8d9b-2e47-4ca3-8483-501225b96683",
+    id: "cd474a25-2a1e-4016-89f4-30251eb2dad6",
     stage: "SCENARIO",
-    title: "Arquipélago de Engrenagens Luminosas",
-    lens: "Ritmos não lineares",
-    imagePath:
-      "/cards/generated/surreal-deck-2026-07-28-v4/01-64fb8d9b-2e47-4ca3-8483-501225b96683.png",
-    altText:
-      "Pintura digital surrealista de uma ilha flutuante formada por grandes engrenagens de latão e peças de relojaria reluzentes sob um céu azul-índigo. Quedas d'água de luz dourada escorrem pelas bordas metálicas até nuvens v",
-    provocation:
-      "Como a sua organização responderia a um cenário em que as etapas do processo ou os ritmos de mercado deixassem de ser lineares?",
-  },
-  {
-    id: "4d570d7c-f67f-4c2a-a4e7-62574a4fa5c2",
-    stage: "SCENARIO",
-    title: "Floresta Suspensa em Cristal",
+    title: "Pontes de Nuvens Fossilizadas",
     lens: "Perspectiva Invertida",
     imagePath:
-      "/cards/generated/surreal-deck-2026-07-28-v4/02-4d570d7c-f67f-4c2a-a4e7-62574a4fa5c2.png",
+      "/cards/generated/august-deck/01-cd474a25-2a1e-4016-89f4-30251eb2dad6.png",
     altText:
-      "Uma caverna subterrânea repleta de grandes cristais cianos brilhantes, onde pinheiros verdes-esmeralda crescem para baixo a partir do teto rochoso. Esporos cintilantes flutuam em uma atmosfera magenta, e um lago calmo no",
+      "Ilustração surrealista de grandes nuvens brancas e petrificadas dispostas como pedras de travessia sobre um oceano roxo. A superfície da água exibe ondulações com galáxias estreladas e brilho bioluminescente suave.",
     provocation:
-      "E se as premissas e regras fundamentais do nosso setor fossem completamente invertidas no futuro?",
+      "Como podemos avançar com segurança em um cenário onde as estruturas de apoio são feitas de elementos antes tidos como intangíveis?",
   },
   {
-    id: "9a24d99e-9f45-4a57-92d9-cfeb8fc0052a",
+    id: "502aece9-5841-40e0-98e7-e8d13110780b",
+    stage: "SCENARIO",
+    title: "A Biblioteca da Floresta Eterna",
+    lens: "Preservação Orgânica",
+    imagePath:
+      "/cards/generated/august-deck/02-502aece9-5841-40e0-98e7-e8d13110780b.png",
+    altText:
+      "Ilustração onírica de uma floresta infinita de sequoias gigantes cujos troncos ocos abrigam salões de biblioteca luminosos, com páginas flutuantes de origami brilhantes sob iluminação em tons esmeralda e âmbar.",
+    provocation:
+      "Se as informações do seu projeto fossem armazenadas em um ecossistema vivo e duradouro, como o conhecimento seria descoberto e compartilhado no futuro?",
+  },
+  {
+    id: "404fae93-e18b-4471-a44e-ad134f6da2c6",
+    stage: "SCENARIO",
+    title: "O Eco das Dunas Turquesa",
+    lens: "Ressonância sutil",
+    imagePath:
+      "/cards/generated/august-deck/03-404fae93-e18b-4471-a44e-ad134f6da2c6.png",
+    altText:
+      "Ilustração em tons pastel de dunas de areia turquesa sob duas luas pálidas, com sinos de vento de vidro brotando da areia como tulipas.",
+    provocation:
+      "Como podemos criar soluções que tragam harmonia e prosperem em ambientes aparentemente improváveis?",
+  },
+  {
+    id: "20f3b153-75c5-45b6-b66e-77dcdefe7c69",
+    stage: "SCENARIO",
+    title: "Vagão Flutuante Entre Sementes",
+    lens: "Transição Poética",
+    imagePath:
+      "/cards/generated/august-deck/04-20f3b153-75c5-45b6-b66e-77dcdefe7c69.png",
+    altText:
+      "Ilustração surreal em atmosfera azul-noite exibindo um compartimento vintage de trem feito de latão, flutuando sem gravidade. O interior do vagão é iluminado por uma luz dourada e aquecida, enquanto grandes sementes lumi",
+    provocation:
+      "De que maneira podemos criar uma experiência acolhedora e estável para os clientes enquanto navegamos por cenários de grande incerteza?",
+  },
+  {
+    id: "73696a34-e407-4ba7-bbc3-18d6d3cdf7a3",
     stage: "PROBLEM",
-    title: "Brilho Preso no Emaranhado",
-    lens: "Obstrução",
+    title: "O Emaranhado Luminoso Inextricável",
+    lens: "Complexidade Sistêmica",
     imagePath:
-      "/cards/generated/surreal-deck-2026-07-28-v4/03-9a24d99e-9f45-4a57-92d9-cfeb8fc0052a.png",
+      "/cards/generated/august-deck/05-73696a34-e407-4ba7-bbc3-18d6d3cdf7a3.png",
     altText:
-      "Uma grande esfera de fios de seda coloridos e emaranhados flutua em um ambiente escuro de veludo. Dentro do emaranhado, minúsculas constelações reluzentes soltam faíscas douradas que caem sobre um chão de pedra.",
+      "Ilustração de um nó gigante e intrincado de fio dourado brilhante pairando sobre uma praça de obsidiana rachada, com figuras sombrias ao fundo contemplando a cena em iluminação azul-petróleo e dourada.",
     provocation:
-      "Qual grande potencial ou solução valiosa está atualmente preso em uma teia de processos burocráticos ou emaranhados?",
+      "Qual nó em nosso processo parece impossível de desatar, mas esconde grande valor se encontrarmos a ponta certa?",
   },
   {
-    id: "3d89fb5b-f5dc-4e55-9b82-2967b994c822",
+    id: "4a6b33e8-02d0-4fb6-99b8-2601e752a89d",
     stage: "PROBLEM",
-    title: "A Fragilidade das Estruturas",
-    lens: "Vulnerabilidade estrutural",
+    title: "O Brilho Preso no Gelo",
+    lens: "Resiliência Ameaçada",
     imagePath:
-      "/cards/generated/surreal-deck-2026-07-28-v4/04-3d89fb5b-f5dc-4e55-9b82-2967b994c822.png",
+      "/cards/generated/august-deck/06-4a6b33e8-02d0-4fb6-99b8-2601e752a89d.png",
     altText:
-      "Ilustração surrealista de uma longa ponte feita de pássaros de papel branco dobrado sobre um abismo profundo. Uma chuva espessa de tinta preta cai da tempestade, derretendo as estruturas delicadas de origami em poças esc",
+      "Uma gaiola delicada feita de cristais de gelo derretido paira sobre um abismo escuro. No interior da gaiola, brilha uma pequena e intensa brasa acesa, enquanto gotas de água derretida caem refletindo pontos de luz.",
     provocation:
-      "Quais elementos do nosso problema atual parecem sólidos, mas são frágeis demais para suportar pressões externas?",
+      "Qual valor ou ideia essencial do nosso projeto corre o risco de se apagar por estar preso a uma estrutura instável?",
   },
   {
-    id: "2600c0eb-7aa4-40be-8519-4d3fd2f5ccec",
+    id: "70c51e17-d78c-4488-b5c5-a226c800f8f7",
+    stage: "PROBLEM",
+    title: "A Encruzilhada Nebulosa",
+    lens: "Decisão Fragmentada",
+    imagePath:
+      "/cards/generated/august-deck/07-70c51e17-d78c-4488-b5c5-a226c800f8f7.png",
+    altText:
+      "Ponte antiga de pedra sobre um cânion profundo e coberto por névoa densa, dividindo-se no meio em cinco arcos curvos que desaparecem no nevoeiro, em tons de cinza-claro e ocre.",
+    provocation:
+      "O desafio que enfrentamos é realmente um único problema ou ele está se dividindo em várias ramificações incertas?",
+  },
+  {
+    id: "a2190018-a29f-49e8-abeb-c379ada63713",
+    stage: "PROBLEM",
+    title: "O Fluxo Invertido do Tempo",
+    lens: "Inversão de fluxo",
+    imagePath:
+      "/cards/generated/august-deck/08-a2190018-a29f-49e8-abeb-c379ada63713.png",
+    altText:
+      "Uma ampulheta gigante de mármore sobre um deserto de sal sob céu de tons carvão e lavanda, com grãos de areia luminosos subindo verticalmente em direção a nuvens escuras de tempestade.",
+    provocation:
+      "Qual etapa do nosso problema está funcionando na direção oposta ao que seria natural ou esperado?",
+  },
+  {
+    id: "6e5b1cbc-b72d-4beb-bca4-42be56647194",
     stage: "INSIGHT",
-    title: "Luz que Ganha Vida",
-    lens: "Renovação Orgânica",
+    title: "O Farol dos Vaga-Lumes",
+    lens: "Escala e Eficiência",
     imagePath:
-      "/cards/generated/surreal-deck-2026-07-28-v4/05-2600c0eb-7aa4-40be-8519-4d3fd2f5ccec.png",
+      "/cards/generated/august-deck/09-6e5b1cbc-b72d-4beb-bca4-42be56647194.png",
     altText:
-      "Pintura surreal de uma lâmpada de vidro transparente gigante sobre terra escura em um prado noturno. A lâmpada está rachada e, de seu interior, brotam plantas em tons pastel e trepadeiras bioluminescentes que emitem um b",
+      "Ilustração de um farol de pedra em um penhasco ao anoitecer sob céu azul-escuro. No topo, um feixe de luz dourada é gerado por um pequeno pote de vaga-lumes.",
     provocation:
-      "O que em nosso conceito tradicional precisa se quebrar para dar lugar a uma solução genuinamente viva e inovadora?",
+      "Como uma solução pequena e não convencional pode gerar um grande impacto no seu desafio?",
   },
   {
-    id: "ee9a1723-f98d-4a72-9019-163ffd9e693a",
+    id: "0cce4480-6ebb-4c7b-9b0d-5c5a3db66694",
     stage: "INSIGHT",
-    title: "Harmonia dos Extremos",
-    lens: "Equilíbrio de Opostos",
+    title: "O Segredo Transparente",
+    lens: "Transparência Reveladora",
     imagePath:
-      "/cards/generated/surreal-deck-2026-07-28-v4/06-ee9a1723-f98d-4a72-9019-163ffd9e693a.png",
+      "/cards/generated/august-deck/10-0cce4480-6ebb-4c7b-9b0d-5c5a3db66694.png",
     altText:
-      "Ilustração de uma chave de gelo translúcida girando na fechadura de um portal feito de chamas vivas e alaranjadas de fogueira. A geada se espalha pelas bordas do portal de fogo no cenário de uma floresta escura de pinhei",
+      "Uma chave de vidro transparente é inserida em uma grande fechadura de cobre antigo, revelando uma cidade em miniatura brilhante com tons de azul e ciano dentro do mecanismo.",
     provocation:
-      "Que forças aparentemente incompatíveis poderiam se unir para desbloquear a solução do nosso desafio?",
+      "Que detalhes ou estruturas ocultas no seu desafio atual poderiam revelar grandes oportunidades se fossem observados com total clareza?",
   },
   {
-    id: "4461613a-089c-4452-9153-1783297e00ee",
+    id: "96c202b9-cad8-4f65-ac3d-f5a9cbf81c81",
+    stage: "INSIGHT",
+    title: "A Forma Oculta na Sombra",
+    lens: "Potencial Latente",
+    imagePath:
+      "/cards/generated/august-deck/11-96c202b9-cad8-4f65-ac3d-f5a9cbf81c81.png",
+    altText:
+      "Uma pedra rústica sobre uma mesa de madeira projeta, na parede de terracota, a sombra com a forma de um tsuru de origami voando.",
+    provocation:
+      "Qual elemento simples da sua realidade atual esconde um impacto surpreendente se projetado de outra maneira?",
+  },
+  {
+    id: "60798679-3ea1-40ab-aca8-c4e7f51cc420",
+    stage: "INSIGHT",
+    title: "Escada de Luz Prismática",
+    lens: "Refração Criativa",
+    imagePath:
+      "/cards/generated/august-deck/12-60798679-3ea1-40ab-aca8-c4e7f51cc420.png",
+    altText:
+      "Ilustração em estilo pintura surrealista de um prisma triangular de cristal flutuando no ar. O prisma captura um feixe de luz do luar e o refrata em degraus de uma escada física feita de cores pastel radiantes que sobem ",
+    provocation:
+      "Como podemos decompor um recurso simples em uma jornada gradual e estruturada de valor para o cliente?",
+  },
+  {
+    id: "fe68f0e5-64c7-439d-bfa6-a0c96a346cb3",
     stage: "SOLUTION",
-    title: "A Revelação do Amanhã",
-    lens: "Mudança de Fase",
+    title: "Ponte Viva de Seiva Dourada",
+    lens: "Conectividade Orgânica",
     imagePath:
-      "/cards/generated/surreal-deck-2026-07-28-v4/07-4461613a-089c-4452-9153-1783297e00ee.png",
+      "/cards/generated/august-deck/13-fe68f0e5-64c7-439d-bfa6-a0c96a346cb3.png",
     altText:
-      "Uma ilustração surrealista em proporção 4:3 com um gigantesco zíper metálico se abrindo no meio de um céu noturno e estrelado. A abertura do zíper revela uma paisagem matinal brilhante, com luz dourada do sol, nuvens bra",
+      "Ilustração poética de uma ponte feita de raízes trançadas de mangue, iluminadas por seiva âmbar brilhante. A ponte atravessa um rio calmo ao amanhecer, envolta por névoa suave e tons verde-musgo e mel.",
     provocation:
-      "De que maneira nossa solução pode criar uma transição simples que revele instantaneamente um cenário completamente novo e positivo?",
+      "Como nossa solução pode unir partes distintas de forma orgânica, fortalecendo-se continuamente com os próprios recursos do ecossistema?",
   },
   {
-    id: "514f79c9-10f1-41e6-928f-7cc9a0c1afd7",
+    id: "234f21eb-e533-47db-b0db-dffcaca1945d",
     stage: "SOLUTION",
-    title: "Vitrais de Luz Líquida",
-    lens: "Fluidez Estrutural",
+    title: "Girassol Mecânico de Tempestades",
+    lens: "Conversão de ameaças",
     imagePath:
-      "/cards/generated/surreal-deck-2026-07-28-v4/08-514f79c9-10f1-41e6-928f-7cc9a0c1afd7.png",
+      "/cards/generated/august-deck/14-234f21eb-e533-47db-b0db-dffcaca1945d.png",
     altText:
-      "Interior de um templo antigo de pedra com altas janelas em arco feitas de água fluindo na vertical. A luz do sol atravessa o líquido, projetando padrões brilhantes em arco-íris sobre o chão de mármore preto polido e pila",
+      "Um girassol mecânico feito de latão e bronze em um campo verdejante, atraindo nuvens de tempestade escuras para seu centro e dissipando-as em um céu claro.",
     provocation:
-      "Como podemos transformar uma estrutura rígida da nossa proposta em um componente fluido que gere novos efeitos positivos?",
+      "Como podemos capturar os maiores problemas do nosso cenário e convertê-los em soluções diretas?",
   },
   {
-    id: "bc91f992-23d7-4a1a-929e-ba877872cb3e",
+    id: "ca795f7b-4f9d-4004-a5c0-1da7cb711468",
+    stage: "SOLUTION",
+    title: "Unindo Ilhas Distantes",
+    lens: "Conexão Improvável",
+    imagePath:
+      "/cards/generated/august-deck/15-ca795f7b-4f9d-4004-a5c0-1da7cb711468.png",
+    altText:
+      "Uma grande agulha prateada no ar costura duas ilhas de terra flutuantes utilizando uma fita brilhante de aurora boreal nas cores verde e magenta, diante de um céu cósmico escuro.",
+    provocation:
+      "De que maneira podemos conectar dois processos ou conceitos opostos para criar uma solução integrada e fluida?",
+  },
+  {
+    id: "95629b11-0de5-4c6d-b15d-c30376fe540d",
+    stage: "SOLUTION",
+    title: "Coletor de Luz Estelar",
+    lens: "Captação Invertida",
+    imagePath:
+      "/cards/generated/august-deck/16-95629b11-0de5-4c6d-b15d-c30376fe540d.png",
+    altText:
+      "Um guarda-chuva vintage decorado repousa virado para cima em um campo de grama escura e aveludada. Estrelas cadentes brilhantes caem do céu noturno e se acumulam no interior do guarda-chuva como um líquido dourado e cint",
+    provocation:
+      "Como nossa solução pode inverter sua estrutura atual para capturar e acumular oportunidades que hoje passam despercebidas?",
+  },
+  {
+    id: "02bcd3c2-debd-44d6-b2f8-7a4cfaa6b3dd",
     stage: "PROTOTYPE",
-    title: "Baleia Sinfônica de Madeira",
-    lens: "Recomposição de Peças",
+    title: "Mecânica da Leveza",
+    lens: "Mecanismos Visíveis",
     imagePath:
-      "/cards/generated/surreal-deck-2026-07-28-v4/09-bc91f992-23d7-4a1a-929e-ba877872cb3e.png",
+      "/cards/generated/august-deck/17-02bcd3c2-debd-44d6-b2f8-7a4cfaa6b3dd.png",
     altText:
-      "Pintura em estilo fantasia mostrando uma baleia majestosa construída com corpos de violino em mogno polido, aberturas em F e cravelhas de violoncelo. Ela navega por um mar de poeira de nebulosa nas cores rosa e pêssego, ",
+      "Uma bancada de artesão iluminada pela luz de uma vela, exibindo um beija-flor mecânico em fase de construção. O corpo do pássaro é feito de carvalho entalhado, revelando engrenagens internas de latão e asas delicadas de ",
     provocation:
-      "Como podemos reaproveitar e combinar componentes de diferentes origens para montar um protótipo rápido da nossa ideia?",
+      "Quais materiais simples ou componentes básicos podemos combinar para testar o funcionamento principal da nossa solução?",
   },
   {
-    id: "e20c99fa-d440-4abb-a7b0-d29f36f85f85",
+    id: "dcae8a75-d8f9-4344-92f4-412d7fea4f98",
+    stage: "PROTOTYPE",
+    title: "Colcha de Climas Radiantes",
+    lens: "Conexão Modular",
+    imagePath:
+      "/cards/generated/august-deck/18-dcae8a75-d8f9-4344-92f4-412d7fea4f98.png",
+    altText:
+      "Uma grande colcha de retalhos sobre uma superfície de veludo escuro, onde cada quadrado costurado exibe um fenômeno meteorológico brilhante, como raios, neve caindo e chuva sob o sol.",
+    provocation:
+      "Como podemos integrar diferentes módulos ou partes independentes em um único protótipo funcional?",
+  },
+  {
+    id: "9e2ccc46-6358-4945-8d0a-8b5ca4029bd1",
+    stage: "PROTOTYPE",
+    title: "Tempestade na Palma da Mão",
+    lens: "Controle de escala",
+    imagePath:
+      "/cards/generated/august-deck/19-9e2ccc46-6358-4945-8d0a-8b5ca4029bd1.png",
+    altText:
+      "Uma mão segura uma esfera de vidro transparente contendo uma pequena nuvem de tempestade em espiral, com uma delicada manivela de prata fixa na base, em tons de cinza e prata com iluminação suave.",
+    provocation:
+      "Como podemos criar um modelo em pequena escala para simular o funcionamento de uma ideia complexa?",
+  },
+  {
+    id: "b01578d0-f56c-49c1-a5a0-12b5b2b4c51e",
+    stage: "PROTOTYPE",
+    title: "Navegação em Mares Estelares",
+    lens: "Prototipagem poética",
+    imagePath:
+      "/cards/generated/august-deck/20-b01578d0-f56c-49c1-a5a0-12b5b2b4c51e.png",
+    altText:
+      "Pintura conceitual de um pequeno barco de origami equipado com válvulas retrô incandescentes, navegando sobre um mapa antigo azul-escuro onde constelações formam ondas. A imagem utiliza uma paleta em tons de índigo e âmb",
+    provocation:
+      "Como podemos combinar materiais simples e elementos funcionais para testar a viabilidade da nossa ideia de forma rápida?",
+  },
+  {
+    id: "46992dfb-4ffb-4178-a01d-7d1893c83f95",
     stage: "PILOT",
-    title: "Luz Líquida no Deserto",
-    lens: "Inversão de Recursos",
+    title: "O Primeiro Canteiro Luminoso",
+    lens: "Foco e Experimentação",
     imagePath:
-      "/cards/generated/surreal-deck-2026-07-28-v4/10-e20c99fa-d440-4abb-a7b0-d29f36f85f85.png",
+      "/cards/generated/august-deck/21-46992dfb-4ffb-4178-a01d-7d1893c83f95.png",
     altText:
-      "Ilustração surrealista em proporção 4:3 de um farol clássico vermelho e branco fincado em dunas infinitas de areia dourada sob um céu azul-cobalto limpo. Do topo do farol, em vez de luz, sai um jato contínuo e curvo de á",
+      "Uma figura encapuzada está ajoelhada em um pequeno canteiro de terra no meio de uma vasta floresta escura. Ela planta sementes que emitem uma luz azul suave no solo fértil, sob forte contraste entre sombras profundas e p",
     provocation:
-      "Como podemos inverter a função principal da nossa solução para gerar um valor completamente inesperado durante a fase de teste piloto?",
+      "Qual é o menor teste controlado que podemos realizar agora para validar nossa ideia em um ambiente real?",
   },
   {
-    id: "01e98fd4-ed50-486a-8d6b-c8053f6f1909",
+    id: "9dd7b13a-54f8-4c8b-9d44-b184191e6042",
+    stage: "PILOT",
+    title: "O Primeiro Salto ao Vento",
+    lens: "Coragem do Protótipo",
+    imagePath:
+      "/cards/generated/august-deck/22-9dd7b13a-54f8-4c8b-9d44-b184191e6042.png",
+    altText:
+      "Ilustração digital em estilo lúdico com um avião de papel branco voando a partir do topo de um penhasco de pedra em direção a um céu dourado com nuvens suaves.",
+    provocation:
+      "Qual é o experimento mais simples e leve que podemos lançar hoje para testar nossa ideia na prática?",
+  },
+  {
+    id: "90e9c5ff-280d-4df4-aeea-b9ef8902c461",
+    stage: "PILOT",
+    title: "O Portal para o Inesperado",
+    lens: "Transição",
+    imagePath:
+      "/cards/generated/august-deck/23-90e9c5ff-280d-4df4-aeea-b9ef8902c461.png",
+    altText:
+      "Uma porta de madeira esculpida isolada no meio de um vasto campo verde ao anoitecer, entreaberta e projetando um feixe radiante de luz dourada sobre a grama.",
+    provocation:
+      "Qual é o menor teste que podemos abrir hoje para revelar o potencial oculto da nossa solução?",
+  },
+  {
+    id: "c09af3b0-eb60-4772-a2d8-113cbed6c735",
+    stage: "PILOT",
+    title: "Mergulho no Desconhecido",
+    lens: "Salto de fé",
+    imagePath:
+      "/cards/generated/august-deck/24-c09af3b0-eb60-4772-a2d8-113cbed6c735.png",
+    altText:
+      "Ilustração surrealista em tons pastéis de laranja, rosa e azul, mostrando um trapiche de madeira estendendo-se pelo céu aberto, de onde uma figura salta em mergulho em direção a um denso mar de nuvens iluminado pelo pôr ",
+    provocation:
+      "Qual é a hipótese mais arriscada da nossa solução que precisamos testar na prática antes do lançamento definitivo?",
+  },
+  {
+    id: "281aeb1c-7868-4742-a98f-3580e08b37a5",
     stage: "MARKETING",
-    title: "Vilas Flutuantes de Luz",
-    lens: "Alcance Emocional",
+    title: "Revoada de Mensagens Luminosas",
+    lens: "Comunicação Expansiva",
     imagePath:
-      "/cards/generated/surreal-deck-2026-07-28-v4/11-01e98fd4-ed50-486a-8d6b-c8053f6f1909.png",
+      "/cards/generated/august-deck/25-281aeb1c-7868-4742-a98f-3580e08b37a5.png",
     altText:
-      "Pintura poética de dezenas de lanternas de papel em tom coral quentinho flutuando sobre um lago calmo e envoado ao amanhecer, com pequenas casas iluminadas suspensas abaixo delas refletindo na água.",
+      "Ilustração de dezenas de passarinhos de origami translúcidos e brilhantes voando para cima a partir de uma cidadezinha de paralelepípedos no crepúsculo, deixando rastros de faíscas sutis de luz no céu roxo.",
     provocation:
-      "Como nossa campanha de marketing pode levar uma sensação de acolhimento e pertencimento de forma leve até o público?",
+      "Como podemos espalhar a mensagem da nossa marca de forma leve e impactante para encantar o público de maneira viral?",
   },
   {
-    id: "fa5210e4-d394-41ca-b1ed-09fad4785586",
-    stage: "SALES",
-    title: "A Metamorfose do Valor",
-    lens: "Conversão de valor",
+    id: "6a9acf1b-cd69-4e93-aefa-c4ac5f64684b",
+    stage: "MARKETING",
+    title: "Sinfonia do Horizonte",
+    lens: "Propagação Harmônica",
     imagePath:
-      "/cards/generated/surreal-deck-2026-07-28-v4/12-fa5210e4-d394-41ca-b1ed-09fad4785586.png",
+      "/cards/generated/august-deck/26-6a9acf1b-cd69-4e93-aefa-c4ac5f64684b.png",
     altText:
-      "Uma imponente ampulheta de madeira em uma clareira coberta de musgo. Moedas douradas reluzentes caem da parte superior e, ao passar pelo gargalo estreito, transformam-se em borboletas amarelas que voam no compartimento i",
+      "Uma gigante caixa de música de latão sobre uma colina de grama, emitindo anéis concêntricos de luz dourada que se espalham pelo céu noturno em tons de azul-cobalto.",
     provocation:
-      "Como podemos demonstrar ao cliente que o dinheiro investido se transforma em um benefício vivo e de impacto contínuo?",
+      "Como podemos transformar nossa mensagem de marketing em uma onda de impacto que alcance as pessoas de maneira memorável e expansiva?",
+  },
+  {
+    id: "9db6f097-9dd1-479d-811a-f02d2f81821a",
+    stage: "MARKETING",
+    title: "Arte que Ganha Vida",
+    lens: "Encantamento",
+    imagePath:
+      "/cards/generated/august-deck/27-9db6f097-9dd1-479d-811a-f02d2f81821a.png",
+    altText:
+      "Ilustração surrealista de um cavalete de pintura em uma rua de paralelepípedos iluminada por uma iluminação quente de poste. Pinceladas de tinta a óleo colorida se soltam da tela e se transformam em borboletas iridescent",
+    provocation:
+      "Como podemos transformar a mensagem da nossa campanha em uma experiência viva que se espalha além dos canais tradicionais?",
+  },
+  {
+    id: "34d96997-16c8-4246-b05d-897cd0ecd31a",
+    stage: "SALES",
+    title: "Mercado de Memórias Luminosas",
+    lens: "Valor Emocional",
+    imagePath:
+      "/cards/generated/august-deck/28-34d96997-16c8-4246-b05d-897cd0ecd31a.png",
+    altText:
+      "Pintura digital surrealista de uma barraca em um mercado noturno ao ar livre, decorada com potes de vidro contendo cenas luminosas e espiraladas. Um pote reluzente é entregue sobre um balcão de madeira em troca de moedas",
+    provocation:
+      "Como podemos empacotar o valor emocional do nosso produto para tornar a sua proposta de venda irresistível e tangível?",
+  },
+  {
+    id: "9fab73ca-babd-4fcf-ac2b-b06667d611ec",
+    stage: "SALES",
+    title: "O Peso do Inestimável",
+    lens: "Percepção de Valor",
+    imagePath:
+      "/cards/generated/august-deck/29-9fab73ca-babd-4fcf-ac2b-b06667d611ec.png",
+    altText:
+      "Balança de latão ornamentada sobre fundo escuro sob iluminação etérea. Em um prato repousa uma única gota de água brilhante, enquanto o outro equilibra um pequeno saco de veludo transbordando poeira estelar reluzente.",
+    provocation:
+      "Como podemos demonstrar que um detalhe aparentemente simples da nossa oferta possui um valor imensurável para o cliente?",
+  },
+  {
+    id: "982422b0-d54e-4e20-bebb-768dbb3134a9",
+    stage: "SALES",
+    title: "Passagens Para o Extraordinário",
+    lens: "Troca de valor",
+    imagePath:
+      "/cards/generated/august-deck/30-982422b0-d54e-4e20-bebb-768dbb3134a9.png",
+    altText:
+      "Ilustração de um condutor misterioso segurando uma lanterna reluzente em uma plataforma de trem à noite. Ele recebe bilhetes brilhantes no formato de lua crescente de passageiros invisíveis, sob o contraste de poeira gal",
+    provocation:
+      "Como podemos transformar a etapa final da venda em um ritual marcante e valioso para o cliente?",
   },
 ] as const;

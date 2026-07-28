@@ -49,13 +49,13 @@ export function JourneySummary({
   contributions,
   players,
   decisions,
-  outcomes,
+  outcomes = [],
 }: {
   room: Room;
   contributions: readonly VisibleContribution[];
   players: readonly Player[];
   decisions: readonly Decision[];
-  outcomes: readonly StageOutcome[];
+  outcomes?: readonly StageOutcome[];
 }) {
   return (
     <aside className="journey-summary" aria-labelledby="journey-summary-title">
