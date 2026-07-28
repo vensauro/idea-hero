@@ -1,0 +1,115 @@
+{
+  "run": "surreal-deck-2026-07-28-v4",
+  "completed": 12,
+  "requested": 12,
+  "cards": [
+    {
+      "id": "64fb8d9b-2e47-4ca3-8483-501225b96683",
+      "stage": "SCENARIO",
+      "title": "Arquipélago de Engrenagens Luminosas",
+      "lens": "Ritmos não lineares",
+      "imagePath": "/cards/generated/surreal-deck-2026-07-28-v4/01-64fb8d9b-2e47-4ca3-8483-501225b96683.png",
+      "altText": "Pintura digital surrealista de uma ilha flutuante formada por grandes engrenagens de latão e peças de relojaria reluzentes sob um céu azul-índigo. Quedas d'água de luz dourada escorrem pelas bordas metálicas até nuvens v",
+      "provocation": "Como a sua organização responderia a um cenário em que as etapas do processo ou os ritmos de mercado deixassem de ser lineares?"
+    },
+    {
+      "id": "4d570d7c-f67f-4c2a-a4e7-62574a4fa5c2",
+      "stage": "SCENARIO",
+      "title": "Floresta Suspensa em Cristal",
+      "lens": "Perspectiva Invertida",
+      "imagePath": "/cards/generated/surreal-deck-2026-07-28-v4/02-4d570d7c-f67f-4c2a-a4e7-62574a4fa5c2.png",
+      "altText": "Uma caverna subterrânea repleta de grandes cristais cianos brilhantes, onde pinheiros verdes-esmeralda crescem para baixo a partir do teto rochoso. Esporos cintilantes flutuam em uma atmosfera magenta, e um lago calmo no",
+      "provocation": "E se as premissas e regras fundamentais do nosso setor fossem completamente invertidas no futuro?"
+    },
+    {
+      "id": "9a24d99e-9f45-4a57-92d9-cfeb8fc0052a",
+      "stage": "PROBLEM",
+      "title": "Brilho Preso no Emaranhado",
+      "lens": "Obstrução",
+      "imagePath": "/cards/generated/surreal-deck-2026-07-28-v4/03-9a24d99e-9f45-4a57-92d9-cfeb8fc0052a.png",
+      "altText": "Uma grande esfera de fios de seda coloridos e emaranhados flutua em um ambiente escuro de veludo. Dentro do emaranhado, minúsculas constelações reluzentes soltam faíscas douradas que caem sobre um chão de pedra.",
+      "provocation": "Qual grande potencial ou solução valiosa está atualmente preso em uma teia de processos burocráticos ou emaranhados?"
+    },
+    {
+      "id": "3d89fb5b-f5dc-4e55-9b82-2967b994c822",
+      "stage": "PROBLEM",
+      "title": "A Fragilidade das Estruturas",
+      "lens": "Vulnerabilidade estrutural",
+      "imagePath": "/cards/generated/surreal-deck-2026-07-28-v4/04-3d89fb5b-f5dc-4e55-9b82-2967b994c822.png",
+      "altText": "Ilustração surrealista de uma longa ponte feita de pássaros de papel branco dobrado sobre um abismo profundo. Uma chuva espessa de tinta preta cai da tempestade, derretendo as estruturas delicadas de origami em poças esc",
+      "provocation": "Quais elementos do nosso problema atual parecem sólidos, mas são frágeis demais para suportar pressões externas?"
+    },
+    {
+      "id": "2600c0eb-7aa4-40be-8519-4d3fd2f5ccec",
+      "stage": "INSIGHT",
+      "title": "Luz que Ganha Vida",
+      "lens": "Renovação Orgânica",
+      "imagePath": "/cards/generated/surreal-deck-2026-07-28-v4/05-2600c0eb-7aa4-40be-8519-4d3fd2f5ccec.png",
+      "altText": "Pintura surreal de uma lâmpada de vidro transparente gigante sobre terra escura em um prado noturno. A lâmpada está rachada e, de seu interior, brotam plantas em tons pastel e trepadeiras bioluminescentes que emitem um b",
+      "provocation": "O que em nosso conceito tradicional precisa se quebrar para dar lugar a uma solução genuinamente viva e inovadora?"
+    },
+    {
+      "id": "ee9a1723-f98d-4a72-9019-163ffd9e693a",
+      "stage": "INSIGHT",
+      "title": "Harmonia dos Extremos",
+      "lens": "Equilíbrio de Opostos",
+      "imagePath": "/cards/generated/surreal-deck-2026-07-28-v4/06-ee9a1723-f98d-4a72-9019-163ffd9e693a.png",
+      "altText": "Ilustração de uma chave de gelo translúcida girando na fechadura de um portal feito de chamas vivas e alaranjadas de fogueira. A geada se espalha pelas bordas do portal de fogo no cenário de uma floresta escura de pinhei",
+      "provocation": "Que forças aparentemente incompatíveis poderiam se unir para desbloquear a solução do nosso desafio?"
+    },
+    {
+      "id": "4461613a-089c-4452-9153-1783297e00ee",
+      "stage": "SOLUTION",
+      "title": "A Revelação do Amanhã",
+      "lens": "Mudança de Fase",
+      "imagePath": "/cards/generated/surreal-deck-2026-07-28-v4/07-4461613a-089c-4452-9153-1783297e00ee.png",
+      "altText": "Uma ilustração surrealista em proporção 4:3 com um gigantesco zíper metálico se abrindo no meio de um céu noturno e estrelado. A abertura do zíper revela uma paisagem matinal brilhante, com luz dourada do sol, nuvens bra",
+      "provocation": "De que maneira nossa solução pode criar uma transição simples que revele instantaneamente um cenário completamente novo e positivo?"
+    },
+    {
+      "id": "514f79c9-10f1-41e6-928f-7cc9a0c1afd7",
+      "stage": "SOLUTION",
+      "title": "Vitrais de Luz Líquida",
+      "lens": "Fluidez Estrutural",
+      "imagePath": "/cards/generated/surreal-deck-2026-07-28-v4/08-514f79c9-10f1-41e6-928f-7cc9a0c1afd7.png",
+      "altText": "Interior de um templo antigo de pedra com altas janelas em arco feitas de água fluindo na vertical. A luz do sol atravessa o líquido, projetando padrões brilhantes em arco-íris sobre o chão de mármore preto polido e pila",
+      "provocation": "Como podemos transformar uma estrutura rígida da nossa proposta em um componente fluido que gere novos efeitos positivos?"
+    },
+    {
+      "id": "bc91f992-23d7-4a1a-929e-ba877872cb3e",
+      "stage": "PROTOTYPE",
+      "title": "Baleia Sinfônica de Madeira",
+      "lens": "Recomposição de Peças",
+      "imagePath": "/cards/generated/surreal-deck-2026-07-28-v4/09-bc91f992-23d7-4a1a-929e-ba877872cb3e.png",
+      "altText": "Pintura em estilo fantasia mostrando uma baleia majestosa construída com corpos de violino em mogno polido, aberturas em F e cravelhas de violoncelo. Ela navega por um mar de poeira de nebulosa nas cores rosa e pêssego, ",
+      "provocation": "Como podemos reaproveitar e combinar componentes de diferentes origens para montar um protótipo rápido da nossa ideia?"
+    },
+    {
+      "id": "e20c99fa-d440-4abb-a7b0-d29f36f85f85",
+      "stage": "PILOT",
+      "title": "Luz Líquida no Deserto",
+      "lens": "Inversão de Recursos",
+      "imagePath": "/cards/generated/surreal-deck-2026-07-28-v4/10-e20c99fa-d440-4abb-a7b0-d29f36f85f85.png",
+      "altText": "Ilustração surrealista em proporção 4:3 de um farol clássico vermelho e branco fincado em dunas infinitas de areia dourada sob um céu azul-cobalto limpo. Do topo do farol, em vez de luz, sai um jato contínuo e curvo de á",
+      "provocation": "Como podemos inverter a função principal da nossa solução para gerar um valor completamente inesperado durante a fase de teste piloto?"
+    },
+    {
+      "id": "01e98fd4-ed50-486a-8d6b-c8053f6f1909",
+      "stage": "MARKETING",
+      "title": "Vilas Flutuantes de Luz",
+      "lens": "Alcance Emocional",
+      "imagePath": "/cards/generated/surreal-deck-2026-07-28-v4/11-01e98fd4-ed50-486a-8d6b-c8053f6f1909.png",
+      "altText": "Pintura poética de dezenas de lanternas de papel em tom coral quentinho flutuando sobre um lago calmo e envoado ao amanhecer, com pequenas casas iluminadas suspensas abaixo delas refletindo na água.",
+      "provocation": "Como nossa campanha de marketing pode levar uma sensação de acolhimento e pertencimento de forma leve até o público?"
+    },
+    {
+      "id": "fa5210e4-d394-41ca-b1ed-09fad4785586",
+      "stage": "SALES",
+      "title": "A Metamorfose do Valor",
+      "lens": "Conversão de valor",
+      "imagePath": "/cards/generated/surreal-deck-2026-07-28-v4/12-fa5210e4-d394-41ca-b1ed-09fad4785586.png",
+      "altText": "Uma imponente ampulheta de madeira em uma clareira coberta de musgo. Moedas douradas reluzentes caem da parte superior e, ao passar pelo gargalo estreito, transformam-se em borboletas amarelas que voam no compartimento i",
+      "provocation": "Como podemos demonstrar ao cliente que o dinheiro investido se transforma em um benefício vivo e de impacto contínuo?"
+    }
+  ]
+}

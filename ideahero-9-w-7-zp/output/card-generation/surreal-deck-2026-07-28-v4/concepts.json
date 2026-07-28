@@ -1,0 +1,62 @@
+[
+  {
+    "stage": "SCENARIO",
+    "imagePrompt": "A surreal digital painting in a 4:3 aspect ratio depicting a floating island made of giant brass gears and glowing bronze clockwork parts in a twilight indigo sky. Waterfalls of golden liquid light spill over the metallic edges into soft violet clouds below. A quiet observatory sits atop the central cog. No readable text, no letters, no logos, no watermarks, no frames, no collage borders.",
+    "creativeSeed": "A floating archipelago made entirely of glowing clockwork gears where time flows sideways."
+  },
+  {
+    "stage": "SCENARIO",
+    "imagePrompt": "A poetic 4:3 tabletop card artwork showing a subterranean cavern filled with towering glowing cyan crystals, where lush emerald pine trees grow downward from the rocky cavern roof. Microscopic shimmering spores float through the humid magenta atmosphere. A calm pool of glass-like liquid reflects the inverted forest. No readable text, no letters, no logos, no watermarks, no frames, no collage borders.",
+    "creativeSeed": "An upside-down forest growing from the translucent ceiling of a vast underground crystal cavern."
+  },
+  {
+    "stage": "PROBLEM",
+    "imagePrompt": "A dreamlike 4:3 visual showing a massive sphere of tangled multicolored silk thread hovering in a dark velvet room. Trapped within the threads are miniature glowing celestial constellations trying to break free, casting soft golden sparks onto a stone floor. A subtle feeling of melancholy and obstruction. No readable text, no letters, no logos, no watermarks, no frames, no collage borders.",
+    "creativeSeed": "A tangled ball of iridescent yarn trapping tiny constellation stars that cannot escape."
+  },
+  {
+    "stage": "PROBLEM",
+    "imagePrompt": "A dramatic surrealist 4:3 card illustration of a long fragile bridge woven entirely from white folded paper birds. The bridge spans a deep chasm under a storm where thick charcoal-colored ink rain falls, slowly softening and melting the delicate origami structures into rich black pools. No readable text, no letters, no logos, no watermarks, no frames, no collage borders.",
+    "creativeSeed": "A bridge made of paper origami cranes dissolving under a heavy rain of dark ink."
+  },
+  {
+    "stage": "INSIGHT",
+    "imagePrompt": "An enchanting 4:3 surreal painting of an oversized clear glass lightbulb resting on dark soil. The glass is cracked open, and inside, brilliant pastel flora and bioluminescent vines bloom outwards, emitting a warm amber glow that illuminates the surrounding night meadow. No readable text, no letters, no logos, no watermarks, no frames, no collage borders.",
+    "creativeSeed": "A lightbulb cracked open to reveal a blooming luminous garden inside instead of a filament."
+  },
+  {
+    "stage": "INSIGHT",
+    "imagePrompt": "A striking 4:3 concept art illustration depicting a personified translucent ice key turning inside a keyhole formed by swirling bright orange campfire flames. Frost creeps along the edges of the fire doorway, creating a paradox of heat and extreme cold in a dark pine forest setting. No readable text, no letters, no logos, no watermarks, no frames, no collage borders.",
+    "creativeSeed": "A giant key carved from ice unlocking a doorway made entirely of dancing orange campfire flames."
+  },
+  {
+    "stage": "SOLUTION",
+    "imagePrompt": "A poetic 4:3 surreal illustration showing a gigantic metallic zipper mid-action across a dark starry night sky. As the zipper pulls open, it reveals a bright morning landscape filled with golden sunlight, fluffy white clouds, and rolling green hills underneath the dark cosmos. No readable text, no letters, no logos, no watermarks, no frames, no collage borders.",
+    "creativeSeed": "A giant floating zipper unzipping the night sky to reveal a sunny morning underneath."
+  },
+  {
+    "stage": "SOLUTION",
+    "imagePrompt": "A breathtaking 4:3 card art showing the interior of an ancient stone temple where the tall arched windows are made of flowing, suspended vertical liquid water. Sunlight filters through the liquid, casting shimmering rainbow patterns across polished black marble floors and quiet stone pillars. No readable text, no letters, no logos, no watermarks, no frames, no collage borders.",
+    "creativeSeed": "A cathedral where the stained glass windows are made of liquid waterfalls casting rainbow shadows."
+  },
+  {
+    "stage": "PROTOTYPE",
+    "imagePrompt": "A detailed 4:3 fantasy painting of a majestic sky-whale crafted from polished mahogany violin bodies, f-holes, and cello pegs. The instrument-whale glides smoothly through a pink and peach sea of nebula dust, leaving behind glowing musical notes made of light. No readable text, no letters, no logos, no watermarks, no frames, no collage borders.",
+    "creativeSeed": "A mechanical wooden whale assembled from patchwork violin bodies sailing through a sea of cloud dust."
+  },
+  {
+    "stage": "PILOT",
+    "imagePrompt": "A surreal 4:3 tabletop illustration featuring a classic red and white lighthouse planted in endless golden sand dunes under a clear cobalt sky. Instead of a beam of light, its lantern room shoots a continuous, curving jet of clear turquoise water into the desert air. No readable text, no letters, no logos, no watermarks, no frames, no collage borders.",
+    "creativeSeed": "A solitary lighthouse standing in the middle of a calm desert beaming water instead of light."
+  },
+  {
+    "stage": "MARKETING",
+    "imagePrompt": "A serene 4:3 poetic painting of dozens of warm coral paper lanterns floating above a calm misty lake at dawn. Each lantern carries a tiny illuminated fairytale house suspended beneath it, creating soft glowing reflections on the still water surface. No readable text, no letters, no logos, no watermarks, no frames, no collage borders.",
+    "creativeSeed": "A flock of glowing paper lanterns carrying miniature glowing houses across a serene misty lake."
+  },
+  {
+    "stage": "SALES",
+    "imagePrompt": "A magical 4:3 card illustration of a towering wooden hourglass sitting in a lush mossy glade. Shiny golden coins trickle down from the upper chamber, but as they pass through the narrow neck, they transform into fluttering yellow butterflies that fill the lower chamber with life. No readable text, no letters, no logos, no watermarks, no frames, no collage borders.",
+    "creativeSeed": "A giant hourglass where glowing golden coins fall and transform into fluttering yellow butterflies."
+  }
+]

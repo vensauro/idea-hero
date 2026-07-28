@@ -64,11 +64,11 @@ const BASE_CARD_CATALOG = [
       "O que se torna óbvio quando você muda radicalmente de perspectiva?",
   },
   {
-    id: "09d3bfc2-879d-41fc-86aa-008c98b098aa",
+    id: "09d3bfc2-8797-41fc-86aa-008c98b098aa",
     stage: "SOLUTION",
     title: "Cidade em movimento",
     lens: "Possibilidade",
-    imagePath: "/cards/09d3bfc2-879d-41fc-86aa-008c98b098aa.webp",
+    imagePath: "/cards/09d3bfc2-8797-41fc-86aa-008c98b098aa.webp",
     altText:
       "Uma rua futurista em cores neon mistura arquitetura, natureza e caminhos líquidos.",
     provocation: "Como seria a solução se ela já fizesse parte da paisagem?",
