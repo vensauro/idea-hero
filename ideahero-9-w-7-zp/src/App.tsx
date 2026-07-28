@@ -22,6 +22,8 @@ import type {
   RoomEconomy,
   SalesResult,
   StageCost,
+  StageAssignment,
+  StageOutcome,
   StageSession,
   VisibleContribution,
   Vote,
@@ -44,6 +46,7 @@ import {
 import {
   buildRoomInviteUrl,
   clearRoomInviteUrl,
+  extractRoomCode,
   roomCodeFromUrl,
 } from "./room-invite";
 import { createRoomWithAvailableCode } from "./room-code";
@@ -292,6 +295,12 @@ function App() {
   const [stageSessions, stageSessionsReady] = useTable(
     tables.room_stage_sessions,
   );
+  const [stageAssignments, stageAssignmentsReady] = useTable(
+    tables.room_stage_assignments,
+  );
+  const [stageOutcomes, stageOutcomesReady] = useTable(
+    tables.room_stage_outcomes,
+  );
   const [votes, votesReady] = useTable(tables.own_votes);
   const [voteStatuses, voteStatusesReady] = useTable(tables.room_vote_status);
   const [decisions, decisionsReady] = useTable(tables.room_decisions);
@@ -383,6 +392,8 @@ function App() {
     !cardsReady ||
     !cardDrawsReady ||
     !stageSessionsReady ||
+    !stageAssignmentsReady ||
+    !stageOutcomesReady ||
     !votesReady ||
     !voteStatusesReady ||
     !decisionsReady ||
@@ -443,6 +454,12 @@ function App() {
   const roomVoteStatuses = voteStatuses.filter(
     (item) => item.roomId === currentRoom.id,
   );
+  const roomStageAssignments = stageAssignments.filter(
+    (item) => item.roomId === currentRoom.id,
+  );
+  const roomStageOutcomes = stageOutcomes.filter(
+    (item) => item.roomId === currentRoom.id,
+  );
 
   if (currentRoom.status === "LOBBY") {
     return (
@@ -497,6 +514,8 @@ function App() {
       cards={cards}
       cardDraws={cardDraws}
       stageSessions={stageSessions}
+      stageAssignments={roomStageAssignments}
+      stageOutcomes={roomStageOutcomes}
       votes={votes}
       voteStatuses={roomVoteStatuses}
       decisions={decisions}
@@ -780,14 +799,37 @@ function RoomEntry({
               Código da sala
               <input
                 value={joinCode}
-                onChange={(event) =>
-                  setJoinCode(event.target.value.toLowerCase())
-                }
+                onChange={(event) => {
+                  const raw = event.target.value;
+                  const extracted = extractRoomCode(raw);
+                  if (extracted) {
+                    setJoinCode(extracted);
+                  } else {
+                    const isUrlLike =
+                      /^(https?:\/\/|www\.|\/|\?|[a-z0-9-]+\.[a-z]{2,})/i.test(
+                        raw.trim(),
+                      ) ||
+                      raw.includes("://") ||
+                      raw.includes("?");
+                    setJoinCode(
+                      isUrlLike
+                        ? raw.toLowerCase()
+                        : raw.toLowerCase().slice(0, 24),
+                    );
+                  }
+                }}
+                onPaste={(event) => {
+                  const pastedText = event.clipboardData.getData("text");
+                  const extracted = extractRoomCode(pastedText);
+                  if (extracted) {
+                    event.preventDefault();
+                    setJoinCode(extracted);
+                  }
+                }}
                 placeholder="ideia-abc123"
                 minLength={4}
-                maxLength={24}
                 pattern="[a-z0-9-]{4,24}"
-                title="Use de 4 a 24 letras, números ou hífens"
+                title="Use de 4 a 24 letras, números ou hífens (ou cole o link da sala)"
                 autoComplete="off"
                 autoCapitalize="none"
                 spellCheck={false}
@@ -814,6 +856,24 @@ function RoomEntry({
             {error}
           </p>
         )}
+
+        <div style={{ marginTop: "1.25rem", textAlign: "center" }}>
+          <a
+            href="/admin"
+            className="admin-link-btn"
+            style={{
+              fontSize: "0.85rem",
+              opacity: 0.85,
+              color: "#a78bfa",
+              textDecoration: "underline",
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "0.4rem",
+            }}
+          >
+            ⚙️ Painel de Administração de Cartas
+          </a>
+        </div>
       </section>
     </main>
   );
@@ -1026,6 +1086,8 @@ function GameBoard({
   cards,
   cardDraws,
   stageSessions,
+  stageAssignments,
+  stageOutcomes,
   votes,
   voteStatuses,
   decisions,
@@ -1050,6 +1112,8 @@ function GameBoard({
   cards: readonly Card[];
   cardDraws: readonly CardDraw[];
   stageSessions: readonly StageSession[];
+  stageAssignments: readonly StageAssignment[];
+  stageOutcomes: readonly StageOutcome[];
   votes: readonly Vote[];
   voteStatuses: VoteStatus[];
   decisions: readonly Decision[];
@@ -1092,6 +1156,18 @@ function GameBoard({
     (item) => item.roomId === room.id && item.stage === stage,
   );
   const phase = stageSession?.phase ?? "CONTRIBUTING";
+  const usesUnion = stageSession?.resolution === "UNION";
+  const currentAssignments = stageAssignments
+    .filter((item) => item.stage === stage)
+    .slice()
+    .sort((left, right) => left.position - right.position);
+  const ownAssignment = currentAssignments.find((item) =>
+    sameIdentity(item.playerIdentity, currentPlayer.identity),
+  );
+  const stageOutcome = stageOutcomes.find((item) => item.stage === stage);
+  const assignedPrompt = ownAssignment?.actionPrompt ?? content.prompt;
+  const assignedPlaceholder =
+    ownAssignment?.actionPlaceholder ?? guidance.placeholder;
   const collaborative = COLLABORATIVE_STAGES.has(stage);
   const stageVotes = votes.filter(
     (item) => item.roomId === room.id && item.stage === stage,
@@ -1103,7 +1179,8 @@ function GameBoard({
   const ownContribution = stageContributions.find(
     (item) =>
       item.authorIdentity &&
-      sameIdentity(item.authorIdentity, currentPlayer.identity),
+      sameIdentity(item.authorIdentity, currentPlayer.identity) &&
+      item.actionKey === (ownAssignment?.actionKey ?? "MAIN"),
   );
   const ownVote = stageVotes.find((item) =>
     sameIdentity(item.voterIdentity, currentPlayer.identity),
@@ -1114,22 +1191,30 @@ function GameBoard({
       )
     : undefined;
   const onlinePlayers = players.filter((item) => item.online);
-  const contributingPlayers = onlinePlayers.filter((player) =>
+  const participatingPlayers =
+    currentAssignments.length === 0
+      ? onlinePlayers
+      : onlinePlayers.filter((player) =>
+          currentAssignments.some((assignment) =>
+            sameIdentity(assignment.playerIdentity, player.identity),
+          ),
+        );
+  const contributingPlayers = participatingPlayers.filter((player) =>
     stageContributionStatuses.some((item) =>
       sameIdentity(item.authorIdentity, player.identity),
     ),
   );
   const activeStageVotes = stageVoteStatuses.filter((vote) =>
-    onlinePlayers.some((player) =>
+    participatingPlayers.some((player) =>
       sameIdentity(vote.voterIdentity, player.identity),
     ),
   );
   const groupReady =
-    onlinePlayers.length > 0 &&
-    contributingPlayers.length === onlinePlayers.length;
+    participatingPlayers.length > 0 &&
+    contributingPlayers.length === participatingPlayers.length;
   const allVoted =
-    onlinePlayers.length > 0 &&
-    onlinePlayers.every((player) =>
+    participatingPlayers.length > 0 &&
+    participatingPlayers.every((player) =>
       activeStageVotes.some((item) =>
         sameIdentity(item.voterIdentity, player.identity),
       ),
@@ -1240,6 +1325,7 @@ function GameBoard({
         cards={cards}
         cardDraws={cardDraws}
         decisions={decisions}
+        stageOutcomes={stageOutcomes}
         journey={journeys.find((item) => item.roomId === room.id)}
         currentPlayer={currentPlayer}
         economy={economy}
@@ -1309,6 +1395,7 @@ function GameBoard({
         contributions={contributions}
         players={players}
         decisions={decisions}
+        outcomes={stageOutcomes}
       />
 
       <RunwayWallet
@@ -1353,11 +1440,14 @@ function GameBoard({
           </section>
           {collaborative && (
             <div className="phase-ribbon" aria-label="Fase da decisão coletiva">
-              {COLLABORATIVE_PHASES.map((item, index) => {
-                const phaseIndex = COLLABORATIVE_PHASES.indexOf(
-                  phase as (typeof COLLABORATIVE_PHASES)[number],
-                );
-                const labels = ["Criar", "Escolher", "Revelar"];
+              {(usesUnion
+                ? (["CONTRIBUTING", "REVIEW"] as const)
+                : COLLABORATIVE_PHASES
+              ).map((item, index, phases) => {
+                const phaseIndex = phases.findIndex((value) => value === phase);
+                const labels = usesUnion
+                  ? ["Criar", "Unir"]
+                  : ["Criar", "Escolher", "Revelar"];
                 return (
                   <span
                     key={item}
@@ -1420,7 +1510,13 @@ function GameBoard({
                       : "A escolha já faz parte da memória coletiva. O anfitrião pode levar o grupo à próxima etapa."}
                 </span>
               </div>
-              {isHost && phase === "CONTRIBUTING" && (
+              {usesUnion && phase === "CONTRIBUTING" && (
+                <p className="waiting-note">
+                  Cada pessoa recebeu uma acao diferente. Quando todas chegarem,
+                  o resultado do grupo sera montado automaticamente.
+                </p>
+              )}
+              {isHost && phase === "CONTRIBUTING" && !usesUnion && (
                 <button
                   className="primary-button"
                   disabled={!groupReady || actionPending}
@@ -1531,13 +1627,13 @@ function GameBoard({
                   ? "Qual proposta deve guiar esta etapa?"
                   : phase === "REVIEW"
                     ? "O grupo escolheu um caminho"
-                    : content.prompt}
+                    : assignedPrompt}
               </h2>
             </div>
             <span>
               {phase === "VOTING"
-                ? `${activeStageVotes.length}/${onlinePlayers.length} votos`
-                : `${contributingPlayers.length}/${onlinePlayers.length} enviadas`}
+                ? `${activeStageVotes.length}/${participatingPlayers.length} votos`
+                : `${contributingPlayers.length}/${participatingPlayers.length} enviadas`}
             </span>
           </div>
 
@@ -1546,7 +1642,7 @@ function GameBoard({
               className="participant-progress"
               aria-label="Progresso do grupo"
             >
-              {onlinePlayers.map((player) => {
+              {participatingPlayers.map((player) => {
                 const complete =
                   phase === "VOTING"
                     ? activeStageVotes.some((item) =>
@@ -1581,6 +1677,12 @@ function GameBoard({
 
           {phase === "CONTRIBUTING" && (
             <>
+              {usesUnion && ownAssignment && (
+                <aside className="assigned-action" aria-label="Sua acao">
+                  <strong>{ownAssignment.actionTitle}</strong>
+                  <span>{ownAssignment.actionPrompt}</span>
+                </aside>
+              )}
               <form onSubmit={saveContribution} className="contribution-form">
                 <label className="sr-only" htmlFor="contribution">
                   Sua contribuição
@@ -1589,7 +1691,7 @@ function GameBoard({
                   id="contribution"
                   value={draft}
                   onChange={(event) => setDraft(event.target.value)}
-                  placeholder={guidance.placeholder}
+                  placeholder={assignedPlaceholder}
                   minLength={2}
                   maxLength={280}
                   required
@@ -1681,6 +1783,24 @@ function GameBoard({
                   );
                 })}
               </div>
+            </section>
+          )}
+
+          {phase === "REVIEW" && usesUnion && stageOutcome && (
+            <section
+              className="decision-reveal union-reveal"
+              aria-live="polite"
+            >
+              <span className="decision-star" aria-hidden="true">
+                ✦
+              </span>
+              <p className="kicker">Composicao do grupo</p>
+              <div className="union-result">
+                {stageOutcome.summary.split("\n").map((entry, index) => (
+                  <p key={`${entry}-${index}`}>{entry}</p>
+                ))}
+              </div>
+              <p>{stageOutcome.sourceCount} pecas reunidas na mesma ideia.</p>
             </section>
           )}
 
@@ -1802,6 +1922,7 @@ function JourneyResult({
   cards,
   cardDraws,
   decisions,
+  stageOutcomes,
   journey,
   currentPlayer,
   economy,
@@ -1816,6 +1937,7 @@ function JourneyResult({
   cards: readonly Card[];
   cardDraws: readonly CardDraw[];
   decisions: readonly Decision[];
+  stageOutcomes: readonly StageOutcome[];
   journey?: Journey;
   currentPlayer: Player;
   economy: RoomEconomy;
@@ -2005,6 +2127,7 @@ function JourneyResult({
       players,
       contributions: exportableContributions,
       decisions,
+      stageOutcomes,
       cards,
       cardDraws,
     });

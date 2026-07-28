@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   buildRoomInviteUrl,
   clearRoomInviteUrl,
+  extractRoomCode,
   normalizeInviteCode,
   roomCodeFromUrl,
 } from "./room-invite";
@@ -33,4 +34,39 @@ describe("convite de sala", () => {
       ),
     ).toBe("/jogar?utm_source=amigo");
   });
+
+  it("extrai códigos de URLs coladas no input da sala", () => {
+    expect(
+      extractRoomCode("https://ideahero.app/?sala=super-hero-12"),
+    ).toBe("super-hero-12");
+
+    expect(
+      extractRoomCode("http://localhost:5173/jogar?room=minha-sala"),
+    ).toBe("minha-sala");
+
+    expect(
+      extractRoomCode("https://example.com/?codigo=hero-code-42"),
+    ).toBe("hero-code-42");
+
+    expect(
+      extractRoomCode("ideahero.app/?sala=link-direto"),
+    ).toBe("link-direto");
+
+    expect(
+      extractRoomCode("https://ideahero.app/sala/codigo-secreto"),
+    ).toBe("codigo-secreto");
+
+    expect(
+      extractRoomCode("https://ideahero.app/room/sala-galera"),
+    ).toBe("sala-galera");
+
+    expect(
+      extractRoomCode(" SALA-SECRETA "),
+    ).toBe("sala-secreta");
+
+    expect(
+      extractRoomCode("https://google.com"),
+    ).toBeUndefined();
+  });
 });
+
