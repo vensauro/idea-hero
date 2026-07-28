@@ -2,6 +2,7 @@ import type {
   Decision,
   Player,
   Room,
+  StageOutcome,
   VisibleContribution,
 } from "./module_bindings/types";
 
@@ -48,11 +49,13 @@ export function JourneySummary({
   contributions,
   players,
   decisions,
+  outcomes,
 }: {
   room: Room;
   contributions: readonly VisibleContribution[];
   players: readonly Player[];
   decisions: readonly Decision[];
+  outcomes: readonly StageOutcome[];
 }) {
   return (
     <aside className="journey-summary" aria-labelledby="journey-summary-title">
@@ -83,6 +86,9 @@ export function JourneySummary({
           const stageDecision = decisions.find(
             (item) => item.roomId === room.id && item.stage === stage,
           );
+          const stageOutcome = outcomes.find(
+            (item) => item.roomId === room.id && item.stage === stage,
+          );
           const isCurrent = stage === room.currentStage;
           return (
             <section
@@ -97,6 +103,11 @@ export function JourneySummary({
               {stageDecision ? (
                 <p className="journey-decision">
                   ★ {stageDecision.summary} <em>— escolha do grupo</em>
+                </p>
+              ) : stageOutcome ? (
+                <p className="journey-decision">
+                  ✦ {stageOutcome.summary.replace(/\n/g, " · ")}{" "}
+                  <em>— composicao do grupo</em>
                 </p>
               ) : entries.length === 0 ? (
                 <p className="journey-memory-empty">

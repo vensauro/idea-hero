@@ -11,13 +11,14 @@ import {
 } from "spacetimedb";
 
 export default __t.row({
-  id: __t.u64(),
+  id: __t.u64().primaryKey(),
   roomId: __t.u64().name("room_id"),
   stage: __t.string(),
-  authorIdentity: __t.option(__t.identity()).name("author_identity"),
-  kind: __t.string(),
-  content: __t.string(),
-  createdAt: __t.timestamp().name("created_at"),
-  updatedAt: __t.timestamp().name("updated_at"),
+  playerIdentity: __t.identity().name("player_identity"),
   actionKey: __t.string().name("action_key"),
+  actionTitle: __t.string().name("action_title"),
+  actionPrompt: __t.string().name("action_prompt"),
+  actionPlaceholder: __t.string().name("action_placeholder"),
+  position: __t.u8(),
+  createdAt: __t.timestamp().name("created_at"),
 });

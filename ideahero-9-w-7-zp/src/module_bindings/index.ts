@@ -81,7 +81,9 @@ import RoomEconomyTransactionsRow from "./room_economy_transactions_table";
 import RoomGroupVotesRow from "./room_group_votes_table";
 import RoomJourneysRow from "./room_journeys_table";
 import RoomPlayersRow from "./room_players_table";
+import RoomStageAssignmentsRow from "./room_stage_assignments_table";
 import RoomStageCostsRow from "./room_stage_costs_table";
+import RoomStageOutcomesRow from "./room_stage_outcomes_table";
 import RoomStageSessionsRow from "./room_stage_sessions_table";
 import RoomVoteStatusRow from "./room_vote_status_table";
 import SalesResultsRow from "./sales_results_table";
@@ -232,6 +234,13 @@ const tablesSchema = __schema({
     constraints: [
     ],
   }, RoomPlayersRow),
+  room_stage_assignments: __table({
+    name: 'room_stage_assignments',
+    indexes: [
+    ],
+    constraints: [
+    ],
+  }, RoomStageAssignmentsRow),
   room_stage_costs: __table({
     name: 'room_stage_costs',
     indexes: [
@@ -239,6 +248,13 @@ const tablesSchema = __schema({
     constraints: [
     ],
   }, RoomStageCostsRow),
+  room_stage_outcomes: __table({
+    name: 'room_stage_outcomes',
+    indexes: [
+    ],
+    constraints: [
+    ],
+  }, RoomStageOutcomesRow),
   room_stage_sessions: __table({
     name: 'room_stage_sessions',
     indexes: [

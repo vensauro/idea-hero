@@ -47,6 +47,7 @@ const artifact: JourneyArtifactInput = {
       totalVotes: 1,
     },
   ],
+  stageOutcomes: [],
   cards: [{ id: "scenario-1", title: "A praça suspensa", lens: "Encontro" }],
   cardDraws: [{ stage: "SCENARIO", cardId: "scenario-1" }],
 };
@@ -74,5 +75,24 @@ describe("artefato compartilhável da jornada", () => {
     expect(buildJourneyShareText(artifact.journey)).toBe(
       "Cidade que Cuida\n\nUma rede comunitária que transforma cuidado em ação local.\n\nJornada journey-42 criada com IDEA HERO.",
     );
+  });
+
+  it("inclui a composicao de uma etapa unida sem fingir que houve votacao", () => {
+    const markdown = buildJourneyMarkdown({
+      ...artifact,
+      decisions: [],
+      stageOutcomes: [
+        {
+          stage: "SCENARIO",
+          resolution: "UNION",
+          summary: "O lugar: Pracas abertas.\nAs pessoas: Vizinhos colaboram.",
+          sourceCount: 2,
+        },
+      ],
+    });
+
+    expect(markdown).toContain("> **Composicao coletiva:**");
+    expect(markdown).toContain("> O lugar: Pracas abertas.");
+    expect(markdown).not.toContain("> **Escolha do grupo:**");
   });
 });

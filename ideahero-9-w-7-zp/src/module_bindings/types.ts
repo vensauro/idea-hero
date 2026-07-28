@@ -42,6 +42,7 @@ export const Contribution = __t.object("Contribution", {
   content: __t.string(),
   createdAt: __t.timestamp(),
   updatedAt: __t.timestamp(),
+  actionKey: __t.string(),
 });
 export type Contribution = __Infer<typeof Contribution>;
 
@@ -303,8 +304,14 @@ export type RoomJourneys = __Infer<typeof RoomJourneys>;
 export const RoomPlayers = __t.object("RoomPlayers", {});
 export type RoomPlayers = __Infer<typeof RoomPlayers>;
 
+export const RoomStageAssignments = __t.object("RoomStageAssignments", {});
+export type RoomStageAssignments = __Infer<typeof RoomStageAssignments>;
+
 export const RoomStageCosts = __t.object("RoomStageCosts", {});
 export type RoomStageCosts = __Infer<typeof RoomStageCosts>;
+
+export const RoomStageOutcomes = __t.object("RoomStageOutcomes", {});
+export type RoomStageOutcomes = __Infer<typeof RoomStageOutcomes>;
 
 export const RoomStageSessions = __t.object("RoomStageSessions", {});
 export type RoomStageSessions = __Infer<typeof RoomStageSessions>;
@@ -327,6 +334,20 @@ export type SalesResult = __Infer<typeof SalesResult>;
 export const SalesResults = __t.object("SalesResults", {});
 export type SalesResults = __Infer<typeof SalesResults>;
 
+export const StageAssignment = __t.object("StageAssignment", {
+  id: __t.u64(),
+  roomId: __t.u64(),
+  stage: __t.string(),
+  playerIdentity: __t.identity(),
+  actionKey: __t.string(),
+  actionTitle: __t.string(),
+  actionPrompt: __t.string(),
+  actionPlaceholder: __t.string(),
+  position: __t.u8(),
+  createdAt: __t.timestamp(),
+});
+export type StageAssignment = __Infer<typeof StageAssignment>;
+
 export const StageCost = __t.object("StageCost", {
   id: __t.u64(),
   roomId: __t.u64(),
@@ -339,6 +360,17 @@ export const StageCost = __t.object("StageCost", {
 });
 export type StageCost = __Infer<typeof StageCost>;
 
+export const StageOutcome = __t.object("StageOutcome", {
+  id: __t.u64(),
+  roomId: __t.u64(),
+  stage: __t.string(),
+  resolution: __t.string(),
+  summary: __t.string(),
+  sourceCount: __t.u32(),
+  resolvedAt: __t.timestamp(),
+});
+export type StageOutcome = __Infer<typeof StageOutcome>;
+
 export const StageSession = __t.object("StageSession", {
   id: __t.u64(),
   roomId: __t.u64(),
@@ -346,6 +378,7 @@ export const StageSession = __t.object("StageSession", {
   phase: __t.string(),
   createdAt: __t.timestamp(),
   updatedAt: __t.timestamp(),
+  resolution: __t.string(),
 });
 export type StageSession = __Infer<typeof StageSession>;
 
@@ -358,6 +391,7 @@ export const VisibleContribution = __t.object("VisibleContribution", {
   content: __t.string(),
   createdAt: __t.timestamp(),
   updatedAt: __t.timestamp(),
+  actionKey: __t.string(),
 });
 export type VisibleContribution = __Infer<typeof VisibleContribution>;
 

@@ -81,6 +81,27 @@ npm run build
 npm test -- --run
 ```
 
+## Gerar cartas de inspiraÃ§Ã£o com IA
+
+Com `GEMINI_API_KEY` configurada em `.env`, o pipeline cria conceitos visuais
+surpreendentes, gera cada arte 4:3 com o Gemini e, a partir da imagem gerada,
+escreve tÃ­tulo, lente, texto alternativo e provocaÃ§Ã£o em portuguÃªs. Cada run
+completa adiciona as cartas ao catÃ¡logo do cliente e ao catÃ¡logo do
+SpacetimeDB.
+
+```bash
+# valida o fluxo sem fazer chamadas ou gravar arquivos
+npm run cards:dry-run -- --count 12
+
+# cria 12 cartas (o mÃ­nimo Ã© 10)
+npm run cards:generate -- --count 12 --run-name primeira-baralhada
+```
+
+As imagens ficam em `public/cards/generated/<run-name>/` e o manifesto de cada
+execuÃ§Ã£o em `output/card-generation/<run-name>/manifest.json`. Depois de uma
+geraÃ§Ã£o, valide com `npm run spacetime:build` e publique o mÃ³dulo para que as
+novas cartas apareÃ§am em salas novas.
+
 Banco de desenvolvimento: [ideahero-9w7zp no Maincloud](https://spacetimedb.com/ideahero-9w7zp).
 
 ## Próximo marco

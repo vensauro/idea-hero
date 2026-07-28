@@ -345,10 +345,14 @@ function VoteProgress({
   votes,
   required,
   players,
+  label = "na mesma opção",
+  hideInstruction = false,
 }: {
   votes: readonly GroupVote[];
   required: number;
   players: readonly Player[];
+  label?: string;
+  hideInstruction?: boolean;
 }) {
   const onlinePlayers = players.filter((player) => player.online);
   const votesByChoice = new Map<string, GroupVote[]>();
@@ -386,9 +390,9 @@ function VoteProgress({
         })}
       </div>
       <strong>
-        {matchingVotes.length}/{required} na mesma opção
+        {matchingVotes.length}/{required} {label}
       </strong>
-      <p>{majorityInstruction}</p>
+      {!hideInstruction && <p>{majorityInstruction}</p>}
     </div>
   );
 }
@@ -449,7 +453,13 @@ export function CardChangeButton({
         {ownVote ? "Retirar voto de troca" : "Votar para trocar · −500"}
       </button>
       {!unavailable && (
-        <VoteProgress votes={votes} required={required} players={players} />
+        <VoteProgress
+          votes={votes}
+          required={required}
+          players={players}
+          label="votos para trocar"
+          hideInstruction
+        />
       )}
       {locked && (
         <small>A votação fechou quando a equipe começou esta etapa.</small>
@@ -1489,6 +1499,8 @@ function PrototypeStage({
                 votes={readyVotes}
                 required={required}
                 players={players}
+                label="prontos"
+                hideInstruction
               />
               {secondsLeft === 0 && (
                 <button
@@ -1535,6 +1547,8 @@ function PrototypeStage({
               votes={extensionVotes}
               required={required}
               players={players}
+              label="para estender"
+              hideInstruction
             />
           </div>
         )}

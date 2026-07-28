@@ -11,6 +11,8 @@
     "start": "react-router-serve build/server/index.js",
     "preview": "npm run start",
     "test": "vitest run",
+    "cards:generate": "node --env-file=.env scripts/generate-inspiration-cards.mjs",
+    "cards:dry-run": "node --env-file=.env scripts/generate-inspiration-cards.mjs --dry-run",
     "spacetime:build": "spacetime build --module-path spacetimedb",
     "spacetime:generate": "spacetime generate --yes --lang typescript --out-dir src/module_bindings --module-path spacetimedb && prettier --write src/module_bindings",
     "spacetime:publish:local": "spacetime publish ideahero-local --module-path spacetimedb --server local",

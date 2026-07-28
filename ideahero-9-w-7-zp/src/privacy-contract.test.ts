@@ -11,6 +11,8 @@ describe("contrato de privacidade por sala", () => {
       "contribution",
       "card_draw",
       "stage_session",
+      "stage_assignment",
+      "stage_outcome",
       "vote",
       "decision",
       "journey",
@@ -31,6 +33,8 @@ describe("contrato de privacidade por sala", () => {
       "room_players",
       "room_card_draws",
       "room_stage_sessions",
+      "room_stage_assignments",
+      "room_stage_outcomes",
       "visible_contributions",
       "room_contribution_status",
       "own_votes",
@@ -46,7 +50,7 @@ describe("contrato de privacidade por sala", () => {
   it("não envia conteúdo alheio durante contribuição nem escolhas de voto", () => {
     expect(moduleSource).toContain('activeSession?.phase === "CONTRIBUTING"');
     expect(moduleSource).toContain("!item.authorIdentity.isEqual(ctx.sender)");
-    expect(moduleSource).toContain("authorIdentity: hideAuthor ? undefined");
+    expect(moduleSource).toContain("hideAuthor && !isUnionSession ? undefined");
     expect(moduleSource).toContain(
       "ctx.db.vote.voterIdentity.filter(ctx.sender)",
     );

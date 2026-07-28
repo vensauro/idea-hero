@@ -17,4 +17,5 @@ export default __t.row({
   phase: __t.string(),
   createdAt: __t.timestamp().name("created_at"),
   updatedAt: __t.timestamp().name("updated_at"),
+  resolution: __t.string(),
 });

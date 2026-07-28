@@ -1,3 +1,5 @@
+import { GENERATED_CARD_CATALOG } from "./generated-cards";
+
 const BASE_CARD_CATALOG = [
   {
     id: "00a3fd49-a67d-4438-92e8-2dc61ef93b98",
@@ -303,7 +305,10 @@ const CARD_VARIANTS: Record<
   ],
 };
 
-export const CARD_CATALOG = BASE_CARD_CATALOG.flatMap((card) => {
+export const CARD_CATALOG = [
+  ...BASE_CARD_CATALOG,
+  ...GENERATED_CARD_CATALOG,
+].flatMap((card) => {
   const variants = CARD_VARIANTS[card.stage];
   return [
     card,

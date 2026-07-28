@@ -6,6 +6,7 @@ import type {
   Journey,
   Player,
   Room,
+  StageOutcome,
 } from "./module_bindings/types";
 
 const ARTIFACT_STAGES = [
@@ -30,6 +31,10 @@ export type JourneyArtifactInput = {
   decisions: readonly Pick<
     Decision,
     "stage" | "selectedContributionId" | "summary" | "totalVotes"
+  >[];
+  stageOutcomes: readonly Pick<
+    StageOutcome,
+    "stage" | "resolution" | "summary" | "sourceCount"
   >[];
   cards: readonly Pick<Card, "id" | "title" | "lens">[];
   cardDraws: readonly Pick<CardDraw, "stage" | "cardId">[];
@@ -72,6 +77,9 @@ export function buildJourneyMarkdown(input: JourneyArtifactInput) {
   ARTIFACT_STAGES.forEach(([stage, label], index) => {
     const entries = input.contributions.filter((item) => item.stage === stage);
     const decision = input.decisions.find((item) => item.stage === stage);
+    const stageOutcome = input.stageOutcomes.find(
+      (item) => item.stage === stage,
+    );
     const draw = input.cardDraws.find((item) => item.stage === stage);
     const card = draw
       ? input.cards.find((item) => item.id === draw.cardId)
@@ -86,6 +94,15 @@ export function buildJourneyMarkdown(input: JourneyArtifactInput) {
         "",
         `> **Escolha do grupo:** ${cleanText(decision.summary)}`,
         `> ${decision.totalVotes} ${decision.totalVotes === 1 ? "voto" : "votos"}`,
+      );
+    }
+    if (stageOutcome?.resolution === "UNION") {
+      lines.push(
+        "",
+        "> **Composicao coletiva:**",
+        ...stageOutcome.summary
+          .split("\n")
+          .map((entry) => `> ${cleanText(entry)}`),
       );
     }
 
@@ -103,7 +120,7 @@ export function buildJourneyMarkdown(input: JourneyArtifactInput) {
         );
       }
     }
-    if (!decision && supportingEntries.length === 0) {
+    if (!decision && !stageOutcome && supportingEntries.length === 0) {
       lines.push("", "_Etapa sem registro._");
     }
   });

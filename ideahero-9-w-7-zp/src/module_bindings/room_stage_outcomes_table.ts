@@ -11,13 +11,11 @@ import {
 } from "spacetimedb";
 
 export default __t.row({
-  id: __t.u64(),
+  id: __t.u64().primaryKey(),
   roomId: __t.u64().name("room_id"),
   stage: __t.string(),
-  authorIdentity: __t.option(__t.identity()).name("author_identity"),
-  kind: __t.string(),
-  content: __t.string(),
-  createdAt: __t.timestamp().name("created_at"),
-  updatedAt: __t.timestamp().name("updated_at"),
-  actionKey: __t.string().name("action_key"),
+  resolution: __t.string(),
+  summary: __t.string(),
+  sourceCount: __t.u32().name("source_count"),
+  resolvedAt: __t.timestamp().name("resolved_at"),
 });

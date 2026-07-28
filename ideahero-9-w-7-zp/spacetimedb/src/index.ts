@@ -45,6 +45,140 @@ const DRAWING_COLORS = [
   "#a94791",
 ];
 
+type CollaborativeStagePlan = {
+  resolution: "VOTE" | "UNION";
+  actions: readonly {
+    key: string;
+    title: string;
+    prompt: string;
+    placeholder: string;
+  }[];
+};
+
+// This is the only place that decides how the early creative stages work.
+// A session snapshots the resolution and player assignments when it starts, so
+// changing this ruleset never changes a journey already in progress.
+const COLLABORATIVE_STAGE_PLANS: Record<string, CollaborativeStagePlan> = {
+  SCENARIO: {
+    resolution: "UNION",
+    actions: [
+      {
+        key: "PLACE",
+        title: "O lugar",
+        prompt:
+          "Descreva onde essa historia acontece e o que torna esse lugar especial.",
+        placeholder: "Este lugar e...",
+      },
+      {
+        key: "PEOPLE",
+        title: "As pessoas",
+        prompt:
+          "Apresente quem vive esse momento e o que importa para essas pessoas.",
+        placeholder: "Aqui vivem pessoas que...",
+      },
+      {
+        key: "TENSION",
+        title: "A tensao",
+        prompt: "Encontre uma tensao ou mudanca que mexe com esse mundo.",
+        placeholder: "Algo mudou quando...",
+      },
+      {
+        key: "ATMOSPHERE",
+        title: "A atmosfera",
+        prompt:
+          "Diga como esse mundo parece, soa ou faz as pessoas se sentirem.",
+        placeholder: "O clima desse mundo e...",
+      },
+      {
+        key: "RESOURCE",
+        title: "O recurso",
+        prompt: "Aponte algo que esse mundo ja tem e que pode virar uma forca.",
+        placeholder: "Ja existe aqui...",
+      },
+      {
+        key: "FUTURE",
+        title: "O futuro proximo",
+        prompt:
+          "Imagine uma pequena mudanca que pode acontecer em breve nesse mundo.",
+        placeholder: "Nos proximos dias...",
+      },
+    ],
+  },
+  PROBLEM: {
+    resolution: "VOTE",
+    actions: [
+      {
+        key: "PROBLEM",
+        title: "Sua leitura do problema",
+        prompt: "Qual necessidade merece ser resolvida primeiro?",
+        placeholder: "O desafio e que...",
+      },
+    ],
+  },
+  INSIGHT: {
+    resolution: "UNION",
+    actions: [
+      {
+        key: "CAUSE",
+        title: "A causa escondida",
+        prompt: "Investigue uma causa que ajuda a explicar esse problema.",
+        placeholder: "Isso acontece porque...",
+      },
+      {
+        key: "BEHAVIOR",
+        title: "Um comportamento",
+        prompt:
+          "Observe um habito ou comportamento que revela algo importante.",
+        placeholder: "As pessoas costumam...",
+      },
+      {
+        key: "CONTRADICTION",
+        title: "A contradicao",
+        prompt:
+          "Encontre algo que parece contraditorio, mas abre uma oportunidade.",
+        placeholder: "Mesmo que..., as pessoas...",
+      },
+      {
+        key: "RESOURCE",
+        title: "Um recurso esquecido",
+        prompt:
+          "Aponte um recurso, relacao ou capacidade que ainda nao foi aproveitado.",
+        placeholder: "Ja existe uma forca em...",
+      },
+      {
+        key: "SIGNAL",
+        title: "Um sinal de mudanca",
+        prompt: "Descreva um sinal de que esse contexto esta mudando.",
+        placeholder: "Um sinal disso e...",
+      },
+      {
+        key: "OPENING",
+        title: "A abertura",
+        prompt: "Formule uma abertura que possa mudar o rumo da ideia.",
+        placeholder: "Talvez possamos...",
+      },
+    ],
+  },
+  SOLUTION: {
+    resolution: "VOTE",
+    actions: [
+      {
+        key: "SOLUTION",
+        title: "Sua proposta de solucao",
+        prompt: "Que solucao inesperada conecta cenario, problema e insight?",
+        placeholder: "E se criassemos uma forma de...",
+      },
+    ],
+  },
+};
+
+function collaborativeStagePlan(stage: string): CollaborativeStagePlan {
+  const plan = COLLABORATIVE_STAGE_PLANS[stage];
+  if (!plan)
+    throw new SenderError("A etapa colaborativa nao possui uma regra.");
+  return plan;
+}
+
 const profile = table(
   { name: "profile" },
   {
@@ -109,6 +243,8 @@ const contribution = table(
     content: t.string(),
     createdAt: t.timestamp(),
     updatedAt: t.timestamp(),
+    // Existing contributions are the shared action from the original flow.
+    actionKey: t.string().default("MAIN"),
   },
 );
 
@@ -315,6 +451,37 @@ const stageSession = table(
     phase: t.string(),
     createdAt: t.timestamp(),
     updatedAt: t.timestamp(),
+    // VOTE is the migration-safe behavior for sessions created before rulesets.
+    resolution: t.string().default("VOTE"),
+  },
+);
+
+const stageAssignment = table(
+  { name: "stage_assignment" },
+  {
+    id: t.u64().primaryKey().autoInc(),
+    roomId: t.u64().index("btree"),
+    stage: t.string().index("btree"),
+    playerIdentity: t.identity().index("btree"),
+    actionKey: t.string(),
+    actionTitle: t.string(),
+    actionPrompt: t.string(),
+    actionPlaceholder: t.string(),
+    position: t.u8(),
+    createdAt: t.timestamp(),
+  },
+);
+
+const stageOutcome = table(
+  { name: "stage_outcome" },
+  {
+    id: t.u64().primaryKey().autoInc(),
+    roomId: t.u64().index("btree"),
+    stage: t.string().index("btree"),
+    resolution: t.string(),
+    summary: t.string(),
+    sourceCount: t.u32(),
+    resolvedAt: t.timestamp(),
   },
 );
 
@@ -399,6 +566,7 @@ const visibleContribution = t.object("VisibleContribution", {
   content: t.string(),
   createdAt: t.timestamp(),
   updatedAt: t.timestamp(),
+  actionKey: t.string(),
 });
 
 const spacetimedb = schema({
@@ -420,6 +588,8 @@ const spacetimedb = schema({
   card,
   cardDraw,
   stageSession,
+  stageAssignment,
+  stageOutcome,
   vote,
   decision,
   journey,
@@ -623,6 +793,34 @@ export const room_stage_sessions = spacetimedb.view(
   },
 );
 
+export const room_stage_assignments = spacetimedb.view(
+  { name: "room_stage_assignments", public: true },
+  t.array(stageAssignment.rowType),
+  (ctx) => {
+    const assignments = [];
+    for (const membership of ctx.db.player.identity.filter(ctx.sender)) {
+      if (!membership.active) continue;
+      assignments.push(
+        ...ctx.db.stageAssignment.roomId.filter(membership.roomId),
+      );
+    }
+    return assignments;
+  },
+);
+
+export const room_stage_outcomes = spacetimedb.view(
+  { name: "room_stage_outcomes", public: true },
+  t.array(stageOutcome.rowType),
+  (ctx) => {
+    const outcomes = [];
+    for (const membership of ctx.db.player.identity.filter(ctx.sender)) {
+      if (!membership.active) continue;
+      outcomes.push(...ctx.db.stageOutcome.roomId.filter(membership.roomId));
+    }
+    return outcomes;
+  },
+);
+
 export const visible_contributions = spacetimedb.view(
   { name: "visible_contributions", public: true },
   t.array(visibleContribution),
@@ -636,6 +834,7 @@ export const visible_contributions = spacetimedb.view(
       const activeSession = Array.from(
         ctx.db.stageSession.roomId.filter(membership.roomId),
       ).find((item) => item.stage === currentRoom.currentStage);
+      const isUnionSession = activeSession?.resolution === "UNION";
 
       for (const item of ctx.db.contribution.roomId.filter(membership.roomId)) {
         const hiddenFromGroup =
@@ -651,7 +850,8 @@ export const visible_contributions = spacetimedb.view(
           activeSession?.phase === "VOTING";
         visible.push({
           ...item,
-          authorIdentity: hideAuthor ? undefined : item.authorIdentity,
+          authorIdentity:
+            hideAuthor && !isUnionSession ? undefined : item.authorIdentity,
         });
       }
     }
@@ -1056,6 +1256,7 @@ export const start_game = spacetimedb.reducer(
       reason: "INITIAL",
     });
 
+    const firstStagePlan = collaborativeStagePlan(BOARD_STATES[0]);
     ctx.db.stageSession.insert({
       id: 0n,
       roomId,
@@ -1063,7 +1264,27 @@ export const start_game = spacetimedb.reducer(
       phase: "CONTRIBUTING",
       createdAt: ctx.timestamp,
       updatedAt: ctx.timestamp,
+      resolution: firstStagePlan.resolution,
     });
+    roomPlayers
+      .slice()
+      .sort((left, right) => (left.id < right.id ? -1 : 1))
+      .forEach((member, position) => {
+        const action =
+          firstStagePlan.actions[position % firstStagePlan.actions.length];
+        ctx.db.stageAssignment.insert({
+          id: 0n,
+          roomId,
+          stage: BOARD_STATES[0],
+          playerIdentity: member.identity,
+          actionKey: action.key,
+          actionTitle: action.title,
+          actionPrompt: action.prompt,
+          actionPlaceholder: action.placeholder,
+          position,
+          createdAt: ctx.timestamp,
+        });
+      });
   },
 );
 
@@ -1103,6 +1324,17 @@ export const submit_contribution = spacetimedb.reducer(
     );
     if (!currentPlayer) throw new SenderError("Você não pertence a esta sala.");
 
+    const assignments = Array.from(
+      ctx.db.stageAssignment.roomId.filter(roomId),
+    ).filter((item) => item.stage === currentRoom.currentStage);
+    const ownAssignment = assignments.find((item) =>
+      item.playerIdentity.isEqual(ctx.sender),
+    );
+    if (assignments.length > 0 && !ownAssignment) {
+      throw new SenderError("Voce nao recebeu uma acao nesta etapa.");
+    }
+    const actionKey = ownAssignment?.actionKey ?? "MAIN";
+
     const normalized = content.trim().replace(/\s+/g, " ");
     if (normalized.length < 2 || normalized.length > 280) {
       throw new SenderError(
@@ -1115,7 +1347,8 @@ export const submit_contribution = spacetimedb.reducer(
         item.roomId === roomId &&
         item.stage === currentRoom.currentStage &&
         item.authorIdentity.isEqual(ctx.sender) &&
-        item.kind === "MAIN",
+        item.kind === "MAIN" &&
+        item.actionKey === actionKey,
     );
 
     if (existing) {
@@ -1124,17 +1357,75 @@ export const submit_contribution = spacetimedb.reducer(
         content: normalized,
         updatedAt: ctx.timestamp,
       });
-      return;
+    } else {
+      ctx.db.contribution.insert({
+        id: 0n,
+        roomId,
+        stage: currentRoom.currentStage,
+        authorIdentity: ctx.sender,
+        kind: "MAIN",
+        content: normalized,
+        createdAt: ctx.timestamp,
+        updatedAt: ctx.timestamp,
+        actionKey,
+      });
     }
 
-    ctx.db.contribution.insert({
+    if (currentSession?.resolution !== "UNION") return;
+
+    const eligibleAssignments = assignments.filter((assignment) =>
+      Array.from(ctx.db.player.roomId.filter(roomId)).some(
+        (member) =>
+          member.active &&
+          member.online &&
+          member.identity.isEqual(assignment.playerIdentity),
+      ),
+    );
+    const stageContributions = Array.from(
+      ctx.db.contribution.roomId.filter(roomId),
+    ).filter(
+      (item) => item.stage === currentRoom.currentStage && item.kind === "MAIN",
+    );
+    const missingAssignment = eligibleAssignments.find(
+      (assignment) =>
+        !stageContributions.some(
+          (item) =>
+            item.actionKey === assignment.actionKey &&
+            item.authorIdentity.isEqual(assignment.playerIdentity),
+        ),
+    );
+    if (missingAssignment) return;
+
+    const completedAssignments = assignments
+      .slice()
+      .sort((left, right) => left.position - right.position)
+      .flatMap((assignment) => {
+        const response = stageContributions.find(
+          (item) =>
+            item.actionKey === assignment.actionKey &&
+            item.authorIdentity.isEqual(assignment.playerIdentity),
+        );
+        return response ? [{ assignment, response }] : [];
+      });
+    if (completedAssignments.length === 0) return;
+
+    ctx.db.stageOutcome.insert({
       id: 0n,
       roomId,
       stage: currentRoom.currentStage,
-      authorIdentity: ctx.sender,
-      kind: "MAIN",
-      content: normalized,
-      createdAt: ctx.timestamp,
+      resolution: "UNION",
+      summary: completedAssignments
+        .map(
+          ({ assignment, response }) =>
+            `${assignment.actionTitle}: ${response.content}`,
+        )
+        .join("\n"),
+      sourceCount: completedAssignments.length,
+      resolvedAt: ctx.timestamp,
+    });
+    ctx.db.stageSession.id.update({
+      ...currentSession,
+      phase: "REVIEW",
       updatedAt: ctx.timestamp,
     });
   },
@@ -1675,6 +1966,7 @@ export const vote_prototype_ready = spacetimedb.reducer(
       content: `${prototype.challengeTitle}: ${prototype.caption || "artefato compartilhado criado pela equipe"}.`,
       createdAt: ctx.timestamp,
       updatedAt: ctx.timestamp,
+      actionKey: "MAIN",
     });
     const session = Array.from(ctx.db.stageSession.roomId.filter(roomId)).find(
       (item) => item.stage === "PROTOTYPE",
@@ -1731,6 +2023,7 @@ export const finish_prototype_activity = spacetimedb.reducer(
       content: `${prototype.challengeTitle}: ${prototype.caption || "artefato compartilhado criado pela equipe"}.`,
       createdAt: ctx.timestamp,
       updatedAt: ctx.timestamp,
+      actionKey: "MAIN",
     });
     const session = Array.from(ctx.db.stageSession.roomId.filter(roomId)).find(
       (item) => item.stage === "PROTOTYPE",
@@ -1935,6 +2228,7 @@ export const vote_pilot_response = spacetimedb.reducer(
       content: `${pilot.feedbackTitle} Resposta escolhida: ${option.title}.`,
       createdAt: ctx.timestamp,
       updatedAt: ctx.timestamp,
+      actionKey: "MAIN",
     });
     const session = Array.from(ctx.db.stageSession.roomId.filter(roomId)).find(
       (item) => item.stage === "PILOT",
@@ -2056,6 +2350,7 @@ export const vote_marketing_plan = spacetimedb.reducer(
       content: `${option.label}: ${option.valuePromise} ${option.callToAction}`,
       createdAt: ctx.timestamp,
       updatedAt: ctx.timestamp,
+      actionKey: "MAIN",
     });
     const session = Array.from(ctx.db.stageSession.roomId.filter(roomId)).find(
       (item) => item.stage === "MARKETING",
@@ -2086,6 +2381,11 @@ export const open_voting = spacetimedb.reducer(
       (item) =>
         item.roomId === roomId && item.stage === currentRoom.currentStage,
     );
+    if (currentSession?.resolution === "UNION") {
+      throw new SenderError(
+        "Esta etapa une as acoes do grupo e nao usa votacao.",
+      );
+    }
     if (currentSession && currentSession.phase !== "CONTRIBUTING") {
       throw new SenderError("A votação desta etapa não pode ser aberta agora.");
     }
@@ -2097,9 +2397,20 @@ export const open_voting = spacetimedb.reducer(
         item.kind === "MAIN",
     );
     const onlinePlayers = [...ctx.db.player.iter()].filter(
-      (item) => item.roomId === roomId && item.online,
+      (item) => item.roomId === roomId && item.active && item.online,
     );
-    const waitingPlayer = onlinePlayers.find(
+    const assignments = Array.from(
+      ctx.db.stageAssignment.roomId.filter(roomId),
+    ).filter((item) => item.stage === currentRoom.currentStage);
+    const eligiblePlayers =
+      assignments.length === 0
+        ? onlinePlayers
+        : onlinePlayers.filter((player) =>
+            assignments.some((assignment) =>
+              assignment.playerIdentity.isEqual(player.identity),
+            ),
+          );
+    const waitingPlayer = eligiblePlayers.find(
       (currentPlayer) =>
         !contributions.some((item) =>
           item.authorIdentity.isEqual(currentPlayer.identity),
@@ -2125,6 +2436,7 @@ export const open_voting = spacetimedb.reducer(
         phase: "VOTING",
         createdAt: ctx.timestamp,
         updatedAt: ctx.timestamp,
+        resolution: "VOTE",
       });
     }
   },
@@ -2150,8 +2462,25 @@ export const cast_vote = spacetimedb.reducer(
       (item) =>
         item.roomId === roomId && item.stage === currentRoom.currentStage,
     );
+    if (currentSession?.resolution === "UNION") {
+      throw new SenderError(
+        "A uniao desta etapa ja e resolvida pelas acoes enviadas.",
+      );
+    }
     if (!currentSession || currentSession.phase !== "VOTING") {
       throw new SenderError("A votação ainda não está aberta.");
+    }
+
+    const assignments = Array.from(
+      ctx.db.stageAssignment.roomId.filter(roomId),
+    ).filter((item) => item.stage === currentRoom.currentStage);
+    if (
+      assignments.length > 0 &&
+      !assignments.some((assignment) =>
+        assignment.playerIdentity.isEqual(ctx.sender),
+      )
+    ) {
+      throw new SenderError("Voce nao participa da votacao desta etapa.");
     }
 
     const selectedContribution = ctx.db.contribution.id.find(contributionId);
@@ -2211,17 +2540,28 @@ export const resolve_stage = spacetimedb.reducer(
     }
 
     const onlinePlayers = [...ctx.db.player.iter()].filter(
-      (item) => item.roomId === roomId && item.online,
+      (item) => item.roomId === roomId && item.active && item.online,
     );
+    const assignments = Array.from(
+      ctx.db.stageAssignment.roomId.filter(roomId),
+    ).filter((item) => item.stage === currentRoom.currentStage);
+    const eligiblePlayers =
+      assignments.length === 0
+        ? onlinePlayers
+        : onlinePlayers.filter((player) =>
+            assignments.some((assignment) =>
+              assignment.playerIdentity.isEqual(player.identity),
+            ),
+          );
     const stageVotes = [...ctx.db.vote.iter()].filter(
       (item) =>
         item.roomId === roomId &&
         item.stage === currentRoom.currentStage &&
-        onlinePlayers.some((currentPlayer) =>
+        eligiblePlayers.some((currentPlayer) =>
           item.voterIdentity.isEqual(currentPlayer.identity),
         ),
     );
-    const waitingPlayer = onlinePlayers.find(
+    const waitingPlayer = eligiblePlayers.find(
       (currentPlayer) =>
         !stageVotes.some((item) =>
           item.voterIdentity.isEqual(currentPlayer.identity),
@@ -2300,10 +2640,15 @@ export const advance_stage = spacetimedb.reducer(
       const currentDecision = Array.from(
         ctx.db.decision.roomId.filter(roomId),
       ).find((item) => item.stage === currentRoom.currentStage);
+      const currentOutcome = Array.from(
+        ctx.db.stageOutcome.roomId.filter(roomId),
+      ).find((item) => item.stage === currentRoom.currentStage);
       if (
         !currentSession ||
         currentSession.phase !== "REVIEW" ||
-        !currentDecision
+        (currentSession.resolution === "UNION"
+          ? !currentOutcome
+          : !currentDecision)
       ) {
         throw new SenderError(
           "Revele e revise a decisão coletiva antes de avançar.",
@@ -2456,6 +2801,9 @@ export const advance_stage = spacetimedb.reducer(
             : nextStage === "SALES"
               ? "RESULT"
               : "CONTRIBUTING";
+    const nextStagePlan = COLLABORATIVE_STAGES.has(nextStage)
+      ? collaborativeStagePlan(nextStage)
+      : undefined;
     ctx.db.stageSession.insert({
       id: 0n,
       roomId,
@@ -2463,7 +2811,29 @@ export const advance_stage = spacetimedb.reducer(
       phase,
       createdAt: ctx.timestamp,
       updatedAt: ctx.timestamp,
+      resolution: nextStagePlan?.resolution ?? "VOTE",
     });
+    if (nextStagePlan) {
+      Array.from(ctx.db.player.roomId.filter(roomId))
+        .filter((member) => member.active)
+        .sort((left, right) => (left.id < right.id ? -1 : 1))
+        .forEach((member, position) => {
+          const action =
+            nextStagePlan.actions[position % nextStagePlan.actions.length];
+          ctx.db.stageAssignment.insert({
+            id: 0n,
+            roomId,
+            stage: nextStage,
+            playerIdentity: member.identity,
+            actionKey: action.key,
+            actionTitle: action.title,
+            actionPrompt: action.prompt,
+            actionPlaceholder: action.placeholder,
+            position,
+            createdAt: ctx.timestamp,
+          });
+        });
+    }
 
     if (nextStage === "PILOT" && !ctx.db.pilotSimulation.roomId.find(roomId)) {
       const feedback = pilotFeedbackForSeed(economy.seed);
@@ -2561,6 +2931,7 @@ export const advance_stage = spacetimedb.reducer(
         content: `Vendas simuladas: ${calculation.simulatedSales} créditos. Runway final: ${calculation.finalRunway} créditos.`,
         createdAt: ctx.timestamp,
         updatedAt: ctx.timestamp,
+        actionKey: "MAIN",
       });
     }
 
