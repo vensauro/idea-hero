@@ -225,6 +225,48 @@ function AnimatedEventValue({
   return <>{formatCredits(value)}</>;
 }
 
+export function TopbarMoneyChip({ balance }: { balance: number }) {
+  const prevRef = useRef(balance);
+  const [animating, setAnimating] = useState<"deduct" | "credit" | null>(null);
+  const [delta, setDelta] = useState<number | null>(null);
+
+  useEffect(() => {
+    const diff = balance - prevRef.current;
+    if (diff !== 0) {
+      setAnimating(diff < 0 ? "deduct" : "credit");
+      setDelta(diff);
+      const timer = setTimeout(() => {
+        setAnimating(null);
+        setDelta(null);
+      }, 3500);
+      prevRef.current = balance;
+      return () => clearTimeout(timer);
+    }
+  }, [balance]);
+
+  return (
+    <div
+      className={`topbar-timer-chip topbar-money-chip ${
+        animating === "deduct"
+          ? "is-deduct-animating"
+          : animating === "credit"
+            ? "is-credit-animating"
+            : ""
+      }`}
+    >
+      <span className="money-coin-icon">◌</span>
+      <strong className="money-amount">{formatCredits(balance)}</strong>
+      {delta !== null && (
+        <span
+          className={`money-delta-float ${delta < 0 ? "is-minus" : "is-plus"}`}
+        >
+          {delta > 0 ? `+${formatCredits(delta)}` : formatCredits(delta)}
+        </span>
+      )}
+    </div>
+  );
+}
+
 export function EconomyEventOverlay({
   roomId,
   transactions,

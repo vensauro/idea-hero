@@ -58,6 +58,7 @@ import {
   EconomyEventOverlay,
   RunwayFinalStage,
   RunwayWallet,
+  TopbarMoneyChip,
 } from "./runway-experience";
 import { formatCredits } from "./runway-format";
 import { PILOT_FEEDBACK } from "../spacetimedb/src/economy";
@@ -1532,10 +1533,7 @@ function GameBoard({
             </div>
           </details>
           <details className="topbar-chip-menu">
-            <summary className="topbar-icon-chip topbar-money-chip" aria-label="Caixa da sala">
-              <span className="money-coin-icon">◌</span>
-              <span className="money-amount">{formatCredits(economy.balance)}</span>
-            </summary>
+            <TopbarMoneyChip balance={economy.balance} />
             <div className="topbar-dropdown topbar-wallet-dropdown">
               <RunwayWallet
                 economy={economy}
@@ -1789,15 +1787,15 @@ function GameBoard({
                   maxLength={280}
                   required
                 />
-                <VoiceInputButton
-                  stage={stage}
-                  target="contribution"
-                  disabled={saving}
-                  onResult={applyContributionVoice}
-                />
+                <div className="form-input-meta">
+                  <div className="contribution-status" aria-live="polite">
+                    <small>{draft.length}/280</small>
+                    {ownContribution && <span>✓ Sua ideia está segura</span>}
+                  </div>
+                </div>
                 {voiceSuggestion && (
                   <div className="voice-suggestion">
-                    <p>Versao curta sugerida: {voiceSuggestion}</p>
+                    <p>Versão curta sugerida: {voiceSuggestion}</p>
                     <button
                       type="button"
                       className="secondary-button"
@@ -1806,15 +1804,17 @@ function GameBoard({
                         setVoiceSuggestion("");
                       }}
                     >
-                      Usar versao curta
+                      Usar versão curta
                     </button>
                   </div>
                 )}
                 <div className="form-footer">
-                  <div className="contribution-status" aria-live="polite">
-                    <small>{draft.length}/280</small>
-                    {ownContribution && <span>✓ Sua ideia está segura</span>}
-                  </div>
+                  <VoiceInputButton
+                    stage={stage}
+                    target="contribution"
+                    disabled={saving}
+                    onResult={applyContributionVoice}
+                  />
                   <button className="primary-button" disabled={saving}>
                     {saving
                       ? "Salvando…"

@@ -405,7 +405,7 @@ h1 {
 .contribution-panel > .next-stage-button,
 .contribution-panel > .waiting-note,
 .contribution-panel > .error-message {
-  margin-inline: clamp(1.1rem, 4vw, 2rem);
+  margin-inline: 0;
 }
 
 .contribution-panel > .section-heading {
@@ -721,28 +721,31 @@ h1 {
 .participant-progress {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.4rem;
-  margin: 1rem clamp(1.1rem, 4vw, 2rem) 0.65rem;
-  padding: 0.55rem 0.65rem;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0.75rem 0 1.25rem;
+  padding: 0.65rem 0.85rem;
+  border: 2px solid var(--line);
   border-radius: 14px;
-  background: rgba(52, 44, 59, 0.05);
+  background: var(--paper, #fff9ed);
+  box-shadow: 2px 2px 0 rgba(52, 44, 59, 0.12);
 }
 
 .participant-progress > span {
   display: flex;
   align-items: center;
   gap: 0.32rem;
-  padding: 0.3rem 0.45rem;
-  border: 0;
+  padding: 0.3rem 0.6rem;
+  border: 1.5px solid var(--line);
   border-radius: 999px;
-  background: var(--paper);
+  background: #ffffff;
   color: var(--muted);
   font-size: 0.74rem;
   font-weight: 850;
 }
 
 .participant-progress > span.is-complete {
-  background: rgba(53, 183, 189, 0.12);
+  background: var(--lime);
   color: var(--ink);
 }
 
@@ -757,14 +760,15 @@ h1 {
 }
 
 .submission-waiting {
-  display: grid;
-  grid-template-columns: auto 1fr;
-  gap: 0.45rem;
+  display: flex;
   align-items: center;
-  margin: 0.65rem clamp(1.1rem, 4vw, 2rem) 0;
-  padding: 0;
-  border: 0;
-  background: transparent;
+  gap: 0.65rem;
+  margin: 0 0 1rem;
+  padding: 0.75rem 1rem;
+  border: 2px solid var(--line);
+  border-radius: 14px;
+  background: #f4fce8;
+  box-shadow: 2px 2px 0 var(--line);
 }
 
 .submission-waiting > span {
@@ -785,12 +789,83 @@ h1 {
   line-height: 1.45;
 }
 
+.contribution-panel > .contribution-form {
+  margin: 0.85rem 0 1rem;
+  padding: 0;
+  border: 2.5px solid var(--line);
+  border-radius: 18px;
+  background: #ffffff;
+  box-shadow: 4px 4px 0 rgba(52, 44, 59, 0.12);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
 .contribution-form textarea {
-  min-height: 150px;
-  border-width: 2px;
-  background: #fff;
-  font-size: 1rem;
+  width: 100%;
+  min-height: 140px;
+  margin: 0;
+  padding: 1.1rem 1.25rem;
+  border: none;
+  border-bottom: 2px solid rgba(52, 44, 59, 0.12);
+  border-radius: 0;
+  background: #ffffff;
+  font-size: 1.02rem;
   line-height: 1.55;
+  resize: vertical;
+  color: var(--ink);
+}
+
+.contribution-form textarea:focus {
+  outline: none;
+  background: #fffffb;
+}
+
+.form-input-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.5rem 1.1rem 0.2rem;
+  background: #ffffff;
+}
+
+.form-input-meta .contribution-status {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  gap: 0.75rem;
+}
+
+.form-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.85rem;
+  padding: 0.85rem 1.1rem;
+  background: var(--paper, #fff9ed);
+  border-top: 2px solid var(--line);
+}
+
+.form-footer .voice-input-button,
+.form-footer .primary-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 46px;
+  padding: 0.65rem 1.1rem;
+  font-size: 0.9rem;
+  font-weight: 950;
+  border: 2px solid var(--line);
+  border-radius: 999px;
+  box-shadow: 3px 3px 0 var(--line);
+  line-height: 1.2;
+  text-transform: uppercase;
+  letter-spacing: 0.035em;
+}
+
+.form-footer .voice-input-button > span {
+  font-size: 0.9rem;
 }
 
 .contribution-status {
@@ -800,9 +875,17 @@ h1 {
   align-items: center;
 }
 
+.contribution-status small {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.9rem;
+  font-weight: 950;
+  color: var(--ink);
+  letter-spacing: 0.04em;
+}
+
 .contribution-status span {
   color: var(--teal-dark);
-  font-size: 0.78rem;
+  font-size: 0.85rem;
   font-weight: 850;
 }
 
@@ -2436,19 +2519,19 @@ h1 {
 
 .economy-event {
   position: fixed;
-  z-index: 100;
-  top: 22px;
+  z-index: 2000;
+  top: 72px;
   left: 50%;
   display: flex;
   align-items: center;
-  min-width: min(420px, calc(100vw - 32px));
+  min-width: min(440px, calc(100vw - 32px));
   gap: 15px;
   padding: 18px 22px;
   color: #fff;
   background: #273c54;
-  border: 1px solid rgba(255, 255, 255, 0.28);
+  border: 2px solid var(--line);
   border-radius: 22px;
-  box-shadow: 0 24px 70px rgba(11, 27, 44, 0.36);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4), 4px 4px 0 var(--line);
   transform: translateX(-50%);
   animation: economy-arrive 420ms cubic-bezier(0.16, 1, 0.3, 1) both;
 }
@@ -4541,9 +4624,87 @@ h1 {
   border: 1px solid rgba(52, 44, 59, 0.25);
 }
 
-/* Money / Caixa Chip */
+/* Money / Caixa Chip Animations & Floating Delta */
 .topbar-money-chip {
+  position: relative;
   gap: 0.35rem !important;
+  transition: all 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.topbar-money-chip.is-deduct-animating {
+  background: #fff0f2 !important;
+  border-color: var(--pink-dark) !important;
+  box-shadow: 0 0 0 3px rgba(237, 62, 131, 0.3), 2px 2px 0 var(--line) !important;
+  animation: chipPulseDeduct 0.5s ease-in-out 2;
+}
+
+.topbar-money-chip.is-credit-animating {
+  background: #f4fce8 !important;
+  border-color: #4d7c0f !important;
+  box-shadow: 0 0 0 3px rgba(132, 204, 22, 0.35), 2px 2px 0 var(--line) !important;
+  animation: chipPulseCredit 0.5s ease-in-out 2;
+}
+
+@keyframes chipPulseDeduct {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.14); }
+  100% { transform: scale(1); }
+}
+
+@keyframes chipPulseCredit {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.14); }
+  100% { transform: scale(1); }
+}
+
+.money-delta-float {
+  position: absolute;
+  top: -1.4rem;
+  right: -0.3rem;
+  padding: 0.2rem 0.55rem;
+  border: 1.5px solid var(--line);
+  border-radius: 999px;
+  font-size: 0.76rem;
+  font-weight: 950;
+  white-space: nowrap;
+  pointer-events: none;
+  z-index: 10;
+  box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.18);
+  animation: floatUpAndFade 3.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.money-delta-float.is-minus {
+  background: var(--pink);
+  color: #ffffff;
+  border-color: var(--pink-dark);
+}
+
+.money-delta-float.is-plus {
+  background: var(--lime);
+  color: var(--ink);
+  border-color: var(--line);
+}
+
+@keyframes floatUpAndFade {
+  0% {
+    opacity: 0;
+    transform: translateY(10px) scale(0.6);
+  }
+  15% {
+    opacity: 1;
+    transform: translateY(0) scale(1.12);
+  }
+  30% {
+    transform: translateY(-4px) scale(1);
+  }
+  80% {
+    opacity: 1;
+    transform: translateY(-10px);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
 }
 
 .money-coin-icon {
@@ -5698,7 +5859,171 @@ h1 {
   padding: 0;
 }
 
-@media (max-width: 760px) {
+@media (max-width: 540px) {
+  .game-shell {
+    padding-inline: 0 !important;
+    overflow-x: hidden;
+  }
+
+  .stage-layout {
+    width: 100% !important;
+    margin-inline: 0 !important;
+    padding-inline: 0.25rem !important;
+    box-sizing: border-box !important;
+  }
+
+  .stage-intro {
+    padding: 0.25rem !important;
+  }
+
+  .contribution-panel {
+    border-inline: 0 !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+  }
+
+  .game-topbar {
+    width: 100%;
+    margin-bottom: 0.75rem;
+    padding: 0.35rem 0.25rem;
+    gap: 0.25rem;
+    box-sizing: border-box;
+  }
+
+  .game-topbar-left,
+  .game-topbar-right {
+    gap: 0.25rem;
+    min-width: 0;
+  }
+
+  .game-topbar-mark {
+    width: 1.75rem;
+    height: 1.75rem;
+    font-size: 0.8rem;
+    flex-shrink: 0;
+  }
+
+  .topbar-timer-chip {
+    min-height: 34px;
+    padding: 0.3rem 0.5rem;
+    font-size: 0.72rem;
+    flex-shrink: 0;
+  }
+
+  .topbar-timer-chip .timer-icon {
+    width: 1.25rem;
+    height: 1.25rem;
+    font-size: 0.75rem;
+  }
+
+  .topbar-stage-pill {
+    min-height: 34px;
+    padding: 0.3rem 0.5rem;
+    font-size: 0.72rem;
+    max-width: 110px;
+    overflow: hidden;
+  }
+
+  .topbar-stage-pill > span:last-child {
+    display: none;
+  }
+
+  .topbar-icon-chip {
+    min-height: 34px;
+    padding: 0.3rem 0.5rem;
+    font-size: 0.72rem;
+  }
+
+  .topbar-avatar-chip {
+    padding-left: 0.25rem !important;
+  }
+
+  .chip-avatar-bubble {
+    width: 1.35rem;
+    height: 1.35rem;
+    font-size: 0.75rem;
+  }
+
+  .room-sheet > summary {
+    min-height: 34px;
+    padding: 0.35rem 0.55rem;
+    font-size: 0.8rem;
+  }
+
+  .topbar-stage-menu,
+  .topbar-chip-menu,
+  .room-sheet {
+    position: static !important;
+  }
+
+  .topbar-dropdown {
+    position: absolute !important;
+    top: calc(100% + 0.35rem) !important;
+    left: 0.5rem !important;
+    right: 0.5rem !important;
+    width: auto !important;
+    max-width: calc(100vw - 1rem) !important;
+    transform: none !important;
+    max-height: 80vh !important;
+    overflow-y: auto !important;
+    box-sizing: border-box !important;
+  }
+
+  .stage-hub-grid {
+    grid-template-columns: 1fr !important;
+    gap: 0.5rem;
+  }
+
+  .wallet-stats-grid {
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 0.3rem;
+  }
+
+  .wallet-stat-card {
+    padding: 0.4rem 0.3rem !important;
+  }
+
+  .wallet-stat-card strong {
+    font-size: 0.82rem !important;
+  }
+
+  .contribution-panel > .section-heading,
+  .contribution-panel > form,
+  .contribution-panel > .shared-ideas,
+  .contribution-panel > .next-up,
+  .contribution-panel > .next-stage-button,
+  .contribution-panel > .waiting-note,
+  .contribution-panel > .error-message,
+  .participant-progress,
+  .submission-waiting {
+    margin-inline: 0 !important;
+  }
+
+  .contribution-panel > .contribution-form {
+    margin-inline: 0 !important;
+  }
+
+  .contribution-form textarea {
+    padding: 0.75rem 0.65rem !important;
+  }
+
+  .form-input-meta {
+    padding: 0.35rem 0.65rem 0.2rem !important;
+  }
+
+  .form-footer {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.65rem;
+    padding: 0.65rem 0.65rem !important;
+  }
+
+  .form-footer .voice-input-button,
+  .form-footer .primary-button {
+    width: 100%;
+    min-height: 44px;
+  }
+
   .focus-utility-bar {
     width: min(100% - 1rem, 1180px);
     gap: 0.4rem;
