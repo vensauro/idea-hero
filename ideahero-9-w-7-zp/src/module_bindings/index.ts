@@ -34,6 +34,7 @@ import {
 } from "spacetimedb";
 
 // Import all reducer arg schemas
+import AcknowledgeStageGuidanceReducer from "./acknowledge_stage_guidance_reducer";
 import AdvanceStageReducer from "./advance_stage_reducer";
 import CastVoteReducer from "./cast_vote_reducer";
 import ClearOwnPrototypeDrawingReducer from "./clear_own_prototype_drawing_reducer";
@@ -297,6 +298,7 @@ const tablesSchema = __schema({
 
 /** The schema information for all reducers in this module. This is defined the same way as the reducers would have been defined in the server, except the body of the reducer is omitted in code generation. */
 const reducersSchema = __reducers(
+  __reducerSchema("acknowledge_stage_guidance", AcknowledgeStageGuidanceReducer),
   __reducerSchema("advance_stage", AdvanceStageReducer),
   __reducerSchema("cast_vote", CastVoteReducer),
   __reducerSchema("clear_own_prototype_drawing", ClearOwnPrototypeDrawingReducer),

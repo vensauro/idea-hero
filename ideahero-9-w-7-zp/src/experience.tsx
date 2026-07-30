@@ -14,12 +14,10 @@ export function BrandLogo({ compact = false }: { compact?: boolean }) {
 export function InspirationCard({
   card,
   stageLabel,
-  stage,
   actionControl,
 }: {
   card?: Card;
   stageLabel: string;
-  stage?: StageName;
   actionControl?: React.ReactNode;
 }) {
   if (!card) {
@@ -39,12 +37,9 @@ export function InspirationCard({
       </div>
 
       {actionControl && (
-        <div className="inspiration-card-action-box">
-          {actionControl}
-        </div>
+        <div className="inspiration-card-action-box">{actionControl}</div>
       )}
 
-      {stage && <StageMission stage={stage} />}
       <figcaption>
         <span className="card-stage">Carta de {stageLabel}</span>
         <h2>{card.title}</h2>
@@ -58,21 +53,54 @@ export function InspirationCard({
   );
 }
 
-export function StageMission({ stage }: { stage: StageName }) {
+export function StageGuidanceDialog({
+  stage,
+  confirmedCount,
+  playerCount,
+  hasConfirmed,
+  onConfirm,
+  pending = false,
+}: {
+  stage: StageName;
+  confirmedCount: number;
+  playerCount: number;
+  hasConfirmed: boolean;
+  onConfirm: () => void;
+  pending?: boolean;
+}) {
   const guidance =
-    STAGE_GUIDANCE[stage as keyof typeof STAGE_GUIDANCE] ?? STAGE_GUIDANCE.SCENARIO;
-  if (!guidance || !guidance.steps) return null;
+    STAGE_GUIDANCE[stage as keyof typeof STAGE_GUIDANCE] ??
+    STAGE_GUIDANCE.SCENARIO;
+  if (!guidance?.steps) return null;
+
   return (
-    <section className="stage-mission" aria-labelledby="mission-title">
-      <div>
-        <span className="mission-label">Como jogar agora</span>
-        <h2 id="mission-title">Da imagem para a sua ideia</h2>
-      </div>
-      <ol>
-        {guidance.steps.map((step) => (
-          <li key={step}>{step}</li>
-        ))}
-      </ol>
-    </section>
+    <div className="stage-guidance-backdrop" role="presentation">
+      <section
+        className="stage-guidance-dialog"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="guidance-title"
+        aria-describedby="guidance-progress"
+      >
+        <span className="mission-label">Orientação da etapa</span>
+        <h2 id="guidance-title">Antes de revelar a carta</h2>
+        <ol>
+          {guidance.steps.map((step) => (
+            <li key={step}>{step}</li>
+          ))}
+        </ol>
+        <p id="guidance-progress" className="stage-guidance-progress">
+          {confirmedCount}/{playerCount} pessoas leram a orientação
+        </p>
+        <button
+          type="button"
+          className="primary-button stage-guidance-confirm"
+          disabled={hasConfirmed || pending}
+          onClick={onConfirm}
+        >
+          {hasConfirmed ? "Aguardando o grupo…" : "Li e entendi"}
+        </button>
+      </section>
+    </div>
   );
 }

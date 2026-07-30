@@ -6,6 +6,7 @@
 import { type Infer as __Infer } from "spacetimedb";
 
 // Import all reducer arg schemas
+import AcknowledgeStageGuidanceReducer from "../acknowledge_stage_guidance_reducer";
 import AdvanceStageReducer from "../advance_stage_reducer";
 import CastVoteReducer from "../cast_vote_reducer";
 import ClearOwnPrototypeDrawingReducer from "../clear_own_prototype_drawing_reducer";
@@ -34,6 +35,7 @@ import VotePrototypeExtensionReducer from "../vote_prototype_extension_reducer";
 import VotePrototypeReadyReducer from "../vote_prototype_ready_reducer";
 import VoteStageAdvanceReducer from "../vote_stage_advance_reducer";
 
+export type AcknowledgeStageGuidanceParams = __Infer<typeof AcknowledgeStageGuidanceReducer>;
 export type AdvanceStageParams = __Infer<typeof AdvanceStageReducer>;
 export type CastVoteParams = __Infer<typeof CastVoteReducer>;
 export type ClearOwnPrototypeDrawingParams = __Infer<typeof ClearOwnPrototypeDrawingReducer>;

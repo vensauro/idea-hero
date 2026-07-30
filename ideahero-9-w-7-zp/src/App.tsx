@@ -31,7 +31,7 @@ import type {
   VoteStatus,
 } from "./module_bindings/types";
 import { useReducer, useSpacetimeDB, useTable } from "spacetimedb/react";
-import { BrandLogo, InspirationCard } from "./experience";
+import { BrandLogo, InspirationCard, StageGuidanceDialog } from "./experience";
 import { STAGE_GUIDANCE } from "./stage-guidance";
 import {
   buildJourneyMarkdown,
@@ -89,6 +89,12 @@ type BoardState = (typeof BOARD_STATES)[number];
 export const COLLABORATIVE_STAGES = new Set<BoardState>([
   ...BOARD_STATES.slice(0, 5),
   "CONQUERING",
+]);
+export const STAGES_REQUIRING_TEAM_CONFIRMATION = new Set<BoardState>([
+  "PROTOTYPE",
+  "TESTING",
+  "CONQUERING",
+  "FINAL",
 ]);
 export const COLLABORATIVE_PHASES = [
   "CONTRIBUTING",
@@ -206,14 +212,15 @@ const STAGE_CONTENT: Record<
   },
 };
 
-const STAGE_PLAN_RESOLUTIONS: Record<string, "FACILITATOR" | "UNION" | "VOTE"> = {
-  SCENARIO: "FACILITATOR",
-  PROBLEM: "FACILITATOR",
-  INSIGHT: "UNION",
-  SOLUTION: "VOTE",
-  POLISHING: "UNION",
-  CONQUERING: "VOTE",
-};
+const STAGE_PLAN_RESOLUTIONS: Record<string, "FACILITATOR" | "UNION" | "VOTE"> =
+  {
+    SCENARIO: "FACILITATOR",
+    PROBLEM: "FACILITATOR",
+    INSIGHT: "UNION",
+    SOLUTION: "VOTE",
+    POLISHING: "UNION",
+    CONQUERING: "VOTE",
+  };
 
 const AVATARS = ["seedling", "comet", "prism", "whale", "owl", "fox"] as const;
 const AVATAR_GLYPHS: Record<string, string> = {
@@ -245,7 +252,10 @@ function sameIdentity(
 ) {
   if (!left || !right) return false;
   if (left === right) return true;
-  if (typeof left.toHexString !== "function" || typeof right.toHexString !== "function") {
+  if (
+    typeof left.toHexString !== "function" ||
+    typeof right.toHexString !== "function"
+  ) {
     return false;
   }
   return left.toHexString() === right.toHexString();
@@ -897,8 +907,6 @@ function RoomEntry({
             {error}
           </p>
         )}
-
-
       </section>
     </main>
   );
@@ -994,7 +1002,9 @@ function Lobby({
       <section className="players-panel" aria-labelledby="players-title">
         <div className="section-heading">
           <h2 id="players-title">Heróis na sala</h2>
-          <span className={`players-ready-counter ${allReady ? "is-all-ready" : ""}`}>
+          <span
+            className={`players-ready-counter ${allReady ? "is-all-ready" : ""}`}
+          >
             {readyCount}/{players.length} prontos
           </span>
         </div>
@@ -1023,7 +1033,11 @@ function Lobby({
 
       <footer className="lobby-sticky-footer">
         <div className="lobby-action-container">
-          {error && <p className="error-message" role="alert">{error}</p>}
+          {error && (
+            <p className="error-message" role="alert">
+              {error}
+            </p>
+          )}
           {!isHost ? (
             <div className="cta-wrapper">
               <button
@@ -1038,7 +1052,9 @@ function Lobby({
                   )
                 }
               >
-                {currentPlayer.ready ? "Ainda não estou pronto" : "Estou pronto"}
+                {currentPlayer.ready
+                  ? "Ainda não estou pronto"
+                  : "Estou pronto"}
               </button>
               {currentPlayer.ready && (
                 <span className="ready-indicator-text">
@@ -1066,7 +1082,9 @@ function Lobby({
               <button
                 className="primary-button cta-btn cta-start-highlight"
                 disabled={!allReady}
-                onClick={() => void invoke(() => startGame({ roomId: room.id }))}
+                onClick={() =>
+                  void invoke(() => startGame({ roomId: room.id }))
+                }
               >
                 {!enoughPlayers
                   ? `Falta ${waitingForPlayers} participante`
@@ -1079,6 +1097,144 @@ function Lobby({
         </div>
       </footer>
     </main>
+  );
+}
+
+function StageAdvanceConfirmationPanel({
+  room,
+  stage,
+  stageIndex,
+  players,
+  currentPlayer,
+  groupVotes,
+  actionPending,
+  runStageAction,
+  voteStageAdvance,
+  advanceStage,
+  stagePrerequisiteMet = true,
+  prerequisiteMessage = "",
+}: {
+  room: Room;
+  stage: BoardState;
+  stageIndex: number;
+  players: readonly Player[];
+  currentPlayer: Player;
+  groupVotes: readonly GroupVote[];
+  actionPending: boolean;
+  runStageAction: (action: () => Promise<unknown>) => void;
+  voteStageAdvance: (params: {
+    roomId: bigint;
+    stage: string;
+    ready: boolean;
+  }) => Promise<unknown>;
+  advanceStage: (params: { roomId: bigint }) => Promise<unknown>;
+  stagePrerequisiteMet?: boolean;
+  prerequisiteMessage?: string;
+}) {
+  const onlinePlayers = players.filter((p) => p.active && p.online);
+  const topic = `STAGE_ADVANCE_${stage}`;
+  const stageAdvanceVotes = groupVotes.filter(
+    (v) => v.topic === topic && v.choice === "READY",
+  );
+
+  const confirmedIdentities = new Set(
+    stageAdvanceVotes.map((v) => v.playerIdentity.toHexString()),
+  );
+
+  const confirmedCount = onlinePlayers.filter((p) =>
+    confirmedIdentities.has(p.identity.toHexString()),
+  ).length;
+
+  const hasConfirmed = confirmedIdentities.has(
+    currentPlayer.identity.toHexString(),
+  );
+  const isHost = sameIdentity(currentPlayer.identity, room.ownerIdentity);
+  const allConfirmed =
+    onlinePlayers.length > 0 && confirmedCount >= onlinePlayers.length;
+
+  const nextStageKey = BOARD_STATES[stageIndex + 1];
+  const nextStageEyebrow = nextStageKey
+    ? STAGE_CONTENT[nextStageKey]?.eyebrow
+    : "";
+  const isFinal = stage === "FINAL";
+  const targetLabel = isFinal
+    ? "Concluir jornada"
+    : `Avançar para ${nextStageEyebrow || "próxima etapa"}`;
+
+  return (
+    <div className="stage-advance-minimal-container" aria-live="polite">
+      {/* Overlapping Avatars Row */}
+      <div className="stage-advance-avatar-stack">
+        {onlinePlayers.map((player) => {
+          const isConfirmed = confirmedIdentities.has(
+            player.identity.toHexString(),
+          );
+          const isMe = sameIdentity(player.identity, currentPlayer.identity);
+          return (
+            <div
+              key={player.id.toString()}
+              className={`minimal-avatar-chip ${isConfirmed ? "is-confirmed" : "is-pending"} ${isMe ? "is-me" : ""}`}
+              title={`${player.displayName} ${isConfirmed ? "(✓ Confirmou)" : "(Aguardando)"}`}
+            >
+              <span className="chip-glyph">
+                {AVATAR_GLYPHS[player.avatarId] ?? "✦"}
+              </span>
+              {isConfirmed ? (
+                <span className="chip-badge-check">✓</span>
+              ) : (
+                <span className="chip-badge-wait">•</span>
+              )}
+            </div>
+          );
+        })}
+        <span className="stack-counter-text">
+          {confirmedCount}/{onlinePlayers.length} confirmados
+        </span>
+      </div>
+
+      {!stagePrerequisiteMet ? (
+        <div className="minimal-prereq-alert">
+          <span>💡 {prerequisiteMessage}</span>
+        </div>
+      ) : (
+        <button
+          type="button"
+          className={`primary-button minimal-advance-btn ${hasConfirmed ? "is-confirmed" : ""}`}
+          disabled={actionPending}
+          onClick={() => {
+            void runStageAction(() =>
+              voteStageAdvance({
+                roomId: room.id,
+                stage,
+                ready: !hasConfirmed,
+              }),
+            );
+          }}
+        >
+          {hasConfirmed ? (
+            <span>
+              ✓ Confirmado ({confirmedCount}/{onlinePlayers.length}) — Toque
+              para desfazer
+            </span>
+          ) : (
+            <span>Confirmar e {targetLabel.toLowerCase()}</span>
+          )}
+        </button>
+      )}
+
+      {isHost && allConfirmed && (
+        <button
+          type="button"
+          className="quiet-button host-force-mini-btn"
+          disabled={actionPending}
+          onClick={() =>
+            void runStageAction(() => advanceStage({ roomId: room.id }))
+          }
+        >
+          Avançar agora
+        </button>
+      )}
+    </div>
   );
 }
 
@@ -1143,9 +1299,15 @@ function GameBoard({
   const castVote = useReducer(reducers.castVote);
   const resolveStage = useReducer(reducers.resolveStage);
   const endJourney = useReducer(reducers.endJourney);
+  const voteStageAdvance = useReducer(reducers.voteStageAdvance);
+  const acknowledgeStageGuidance = useReducer(
+    reducers.acknowledgeStageGuidance,
+  );
   const stage = room.currentStage as BoardState;
   const content = STAGE_CONTENT[stage] ?? STAGE_CONTENT.SCENARIO;
-  const guidance = STAGE_GUIDANCE[stage as keyof typeof STAGE_GUIDANCE] ?? STAGE_GUIDANCE.SCENARIO;
+  const guidance =
+    STAGE_GUIDANCE[stage as keyof typeof STAGE_GUIDANCE] ??
+    STAGE_GUIDANCE.SCENARIO;
   const stageDraw = cardDraws.find(
     (item) => item.roomId === room.id && item.stage === stage && item.active,
   );
@@ -1200,12 +1362,35 @@ function GameBoard({
         (item) => item.id === stageDecision.selectedContributionId,
       )
     : undefined;
-  const onlinePlayers = players.filter((item) => item.online);
+  const onlinePlayers = players.filter((item) => item.active && item.online);
   const presencePlayers = onlinePlayers.some((player) =>
     sameIdentity(player.identity, currentPlayer.identity),
   )
     ? onlinePlayers
     : [currentPlayer, ...onlinePlayers];
+  const guidanceTopic = `STAGE_GUIDANCE_${stage}`;
+  const guidanceAcknowledgements = groupVotes.filter(
+    (item) => item.topic === guidanceTopic && item.choice === "READ",
+  );
+  const acknowledgedIdentities = new Set(
+    guidanceAcknowledgements.map((item) => item.playerIdentity.toHexString()),
+  );
+  const guidancePlayerCount = presencePlayers.length;
+  const guidanceConfirmedCount = presencePlayers.filter((player) =>
+    acknowledgedIdentities.has(player.identity.toHexString()),
+  ).length;
+  const hasAcknowledgedGuidance = acknowledgedIdentities.has(
+    currentPlayer.identity.toHexString(),
+  );
+  const showStageGuidance =
+    guidancePlayerCount > 0 && guidanceConfirmedCount < guidancePlayerCount;
+  const guidanceCompletedAt = showStageGuidance
+    ? undefined
+    : Math.max(
+        ...guidanceAcknowledgements.map((item) =>
+          item.updatedAt.toDate().getTime(),
+        ),
+      );
   const participatingPlayers =
     currentAssignments.length === 0
       ? onlinePlayers
@@ -1280,11 +1465,17 @@ function GameBoard({
   }, [room.stageIndex]);
 
   useEffect(() => {
-    setRoundStartedAt(stageSession?.updatedAt.toDate().getTime() ?? Date.now());
+    if (!guidanceCompletedAt) return;
+    setRoundStartedAt(
+      Math.max(
+        stageSession?.updatedAt.toDate().getTime() ?? 0,
+        guidanceCompletedAt,
+      ),
+    );
     setClock(Date.now());
     const interval = window.setInterval(() => setClock(Date.now()), 1000);
     return () => window.clearInterval(interval);
-  }, [stage, phase, stageSession?.updatedAt]);
+  }, [stage, phase, stageSession?.updatedAt, guidanceCompletedAt]);
 
   useEffect(() => {
     if (stage === "PROTOTYPE") {
@@ -1297,10 +1488,13 @@ function GameBoard({
   const [roundStartedAt, setRoundStartedAt] = useState(() => Date.now());
   const roundSeconds = roundDuration(stage, phase, collaborative);
   const prototypeEndingAt = projectPrototype
-    ? projectPrototype.startedAt.toDate().getTime() + projectPrototype.durationSeconds * 1000
+    ? projectPrototype.startedAt.toDate().getTime() +
+      projectPrototype.durationSeconds * 1000
     : 0;
   const secondsLeft =
-    stage === "PROTOTYPE" && projectPrototype
+    !guidanceCompletedAt
+      ? roundSeconds
+      : stage === "PROTOTYPE" && projectPrototype
       ? Math.max(0, Math.ceil((prototypeEndingAt - clock) / 1000))
       : Math.max(0, roundSeconds - Math.floor((clock - roundStartedAt) / 1000));
   const timeExpired = secondsLeft === 0;
@@ -1310,7 +1504,7 @@ function GameBoard({
       const target = event.target as Node | null;
       if (!target) return;
       const openDetailsList = document.querySelectorAll<HTMLDetailsElement>(
-        "details.topbar-stage-menu[open], details.topbar-chip-menu[open], details.room-sheet[open]"
+        "details.topbar-stage-menu[open], details.topbar-chip-menu[open], details.room-sheet[open]",
       );
       openDetailsList.forEach((details) => {
         if (!details.contains(target)) {
@@ -1403,8 +1597,6 @@ function GameBoard({
     );
   }
 
-
-
   return (
     <main className="game-shell">
       <EconomyEventOverlay
@@ -1413,25 +1605,33 @@ function GameBoard({
       />
       <header className="game-topbar">
         <div className="game-topbar-left">
-          <span className="game-topbar-mark" aria-hidden="true">✦</span>
+          <span className="game-topbar-mark" aria-hidden="true">
+            ✦
+          </span>
           <div
             className={`topbar-timer-chip ${timeExpired ? "is-expired" : secondsLeft <= 15 ? "is-warning" : ""}`}
             aria-label="Tempo restante da rodada"
           >
-            <span className="timer-icon" aria-hidden="true">⏱</span>
+            <span className="timer-icon" aria-hidden="true">
+              ⏱
+            </span>
             <strong aria-live="polite">{formatSeconds(secondsLeft)}</strong>
           </div>
           <details className="topbar-stage-menu">
             <summary className="topbar-stage-pill">
-              <span className="stage-pill-badge">Etapa {room.stageIndex + 1}/8</span>
+              <span className="stage-pill-badge">
+                Etapa {room.stageIndex + 1}/8
+              </span>
               <span>{content.eyebrow}</span>
             </summary>
             <div className="topbar-dropdown topbar-stage-dropdown">
               <div className="topbar-dropdown-header">
                 <strong>Mapa da Jornada de Inovação</strong>
-                <span className="badge-pill">{room.stageIndex + 1} de 8 concluídas</span>
+                <span className="badge-pill">
+                  {room.stageIndex + 1} de 8 concluídas
+                </span>
               </div>
-              
+
               <div className="stage-hub-grid">
                 {BOARD_STATES.map((item, index) => {
                   const isCurrent = index === room.stageIndex;
@@ -1444,12 +1644,14 @@ function GameBoard({
                     ? cards.find((c) => c.id === draw.cardId)
                     : undefined;
                   const stageDecision = decisions.find(
-                    (d) => d.roomId === room.id && d.stage === item
+                    (d) => d.roomId === room.id && d.stage === item,
                   );
                   const stageOutcome = stageOutcomes.find(
-                    (o) => o.roomId === room.id && o.stage === item
+                    (o) => o.roomId === room.id && o.stage === item,
                   );
-                  const stageContribs = contributions.filter((c) => c.stage === item);
+                  const stageContribs = contributions.filter(
+                    (c) => c.stage === item,
+                  );
 
                   return (
                     <div
@@ -1461,14 +1663,20 @@ function GameBoard({
                           {isComplete ? "✓" : index + 1}
                         </span>
                         <span className="stage-status-tag">
-                          {isComplete ? "Concluída" : isCurrent ? "Atual" : "Próxima"}
+                          {isComplete
+                            ? "Concluída"
+                            : isCurrent
+                              ? "Atual"
+                              : "Próxima"}
                         </span>
                       </div>
 
                       <strong>
                         {stageData.icon} {stageData.eyebrow}
                       </strong>
-                      <p className="stage-hub-objective">{stageData.objective}</p>
+                      <p className="stage-hub-objective">
+                        {stageData.objective}
+                      </p>
 
                       {index < 4 && stageCard && (
                         <div className="stage-hub-card-card-box">
@@ -1478,39 +1686,68 @@ function GameBoard({
                             className="stage-hub-card-thumb"
                           />
                           <div className="stage-hub-card-info">
-                            <small className="stage-hub-card-lens">Lente {stageCard.lens}</small>
-                            <strong className="stage-hub-card-title">{stageCard.title}</strong>
+                            <small className="stage-hub-card-lens">
+                              Lente {stageCard.lens}
+                            </small>
+                            <strong className="stage-hub-card-title">
+                              {stageCard.title}
+                            </strong>
                           </div>
                         </div>
                       )}
 
-                      {item === "PROTOTYPE" && (projectPrototype || prototypeArtifacts.length > 0 || prototypeDrawingStrokes.length > 0) && (
-                        <div className="stage-hub-prototype-box">
-                          <div className="stage-hub-proto-header">
-                            <span className="stage-hub-proto-tag">🎨 Protótipo</span>
-                            {projectPrototype?.caption && <strong>“{projectPrototype.caption}”</strong>}
-                          </div>
-                          {prototypeDrawingStrokes.length > 0 && (
-                            <div className="stage-hub-drawing-indicator">
-                              <span>✎ Desenho colaborativo ({prototypeDrawingStrokes.length} traços)</span>
-                            </div>
-                          )}
-                          {prototypeArtifacts.map((art) => (
-                            <div key={art.id.toString()} className="stage-hub-artifact-item">
-                              {art.artifactKind === "AUDIO" ? (
-                                <audio controls src={artifactSource(art.artifactData)} className="stage-hub-audio" />
-                              ) : (
-                                <img src={artifactSource(art.artifactData)} alt={art.caption || "Artefato"} className="stage-hub-art-thumb" />
+                      {item === "PROTOTYPE" &&
+                        (projectPrototype ||
+                          prototypeArtifacts.length > 0 ||
+                          prototypeDrawingStrokes.length > 0) && (
+                          <div className="stage-hub-prototype-box">
+                            <div className="stage-hub-proto-header">
+                              <span className="stage-hub-proto-tag">
+                                🎨 Protótipo
+                              </span>
+                              {projectPrototype?.caption && (
+                                <strong>“{projectPrototype.caption}”</strong>
                               )}
-                              {art.caption && <small>{art.caption}</small>}
                             </div>
-                          ))}
-                        </div>
-                      )}
+                            {prototypeDrawingStrokes.length > 0 && (
+                              <div className="stage-hub-drawing-indicator">
+                                <span>
+                                  ✎ Desenho colaborativo (
+                                  {prototypeDrawingStrokes.length} traços)
+                                </span>
+                              </div>
+                            )}
+                            {prototypeArtifacts.map((art) => (
+                              <div
+                                key={art.id.toString()}
+                                className="stage-hub-artifact-item"
+                              >
+                                {art.artifactKind === "AUDIO" ? (
+                                  <audio
+                                    controls
+                                    src={artifactSource(art.artifactData)}
+                                    className="stage-hub-audio"
+                                  />
+                                ) : (
+                                  <img
+                                    src={artifactSource(art.artifactData)}
+                                    alt={art.caption || "Artefato"}
+                                    className="stage-hub-art-thumb"
+                                  />
+                                )}
+                                {art.caption && <small>{art.caption}</small>}
+                              </div>
+                            ))}
+                          </div>
+                        )}
 
-                      {(stageDecision || stageOutcome || stageContribs.length > 0) && (
+                      {(stageDecision ||
+                        stageOutcome ||
+                        stageContribs.length > 0) && (
                         <div className="stage-hub-memory">
-                          <div className="stage-memory-label">Memória da Etapa</div>
+                          <div className="stage-memory-label">
+                            Memória da Etapa
+                          </div>
                           {stageDecision && (
                             <p className="stage-decision-pill">
                               ★ {stageDecision.summary}
@@ -1526,13 +1763,21 @@ function GameBoard({
                               {stageContribs.map((entry) => {
                                 const author = entry.authorIdentity
                                   ? players.find((p) =>
-                                      sameIdentity(p.identity, entry.authorIdentity)
+                                      sameIdentity(
+                                        p.identity,
+                                        entry.authorIdentity,
+                                      ),
                                     )
                                   : undefined;
                                 return (
-                                  <div key={entry.id.toString()} className="stage-contrib-item">
+                                  <div
+                                    key={entry.id.toString()}
+                                    className="stage-contrib-item"
+                                  >
                                     <span>"{entry.content}"</span>
-                                    <small>— {author?.displayName ?? "Anônimo"}</small>
+                                    <small>
+                                      — {author?.displayName ?? "Anônimo"}
+                                    </small>
                                   </div>
                                 );
                               })}
@@ -1549,7 +1794,10 @@ function GameBoard({
         </div>
         <div className="game-topbar-right">
           <details className="topbar-chip-menu">
-            <summary className="topbar-icon-chip topbar-avatar-chip" aria-label="Pessoas na sala">
+            <summary
+              className="topbar-icon-chip topbar-avatar-chip"
+              aria-label="Pessoas na sala"
+            >
               <div className="chip-avatar-stack">
                 {presencePlayers.slice(0, 3).map((player, index) => (
                   <span
@@ -1567,23 +1815,38 @@ function GameBoard({
             <div className="topbar-dropdown topbar-people-dropdown">
               <div className="topbar-dropdown-header">
                 <strong>Pessoas na sala</strong>
-                <span className="badge-pill">{presencePlayers.length} online</span>
+                <span className="badge-pill">
+                  {presencePlayers.length} online
+                </span>
               </div>
               <div className="player-list-cards">
                 {players.map((player) => {
-                  const isPlayerHost = sameIdentity(player.identity, room.hostIdentity);
+                  const isPlayerHost = sameIdentity(
+                    player.identity,
+                    room.hostIdentity,
+                  );
                   return (
-                    <div className={`player-list-row ${player.online ? "is-online" : "is-offline"}`} key={player.id.toString()}>
+                    <div
+                      className={`player-list-row ${player.online ? "is-online" : "is-offline"}`}
+                      key={player.id.toString()}
+                    >
                       <div className="player-avatar-wrapper">
-                        <span aria-hidden="true" className="player-avatar-glyph">
+                        <span
+                          aria-hidden="true"
+                          className="player-avatar-glyph"
+                        >
                           {AVATAR_GLYPHS[player.avatarId] ?? "✦"}
                         </span>
-                        <span className={`status-indicator-dot ${player.online ? "online" : "offline"}`} />
+                        <span
+                          className={`status-indicator-dot ${player.online ? "online" : "offline"}`}
+                        />
                       </div>
                       <div className="player-info">
                         <strong>{player.displayName}</strong>
                         <div className="player-badges">
-                          {isPlayerHost && <span className="host-badge">Líder</span>}
+                          {isPlayerHost && (
+                            <span className="host-badge">Líder</span>
+                          )}
                           <small>{player.online ? "online" : "ausente"}</small>
                         </div>
                       </div>
@@ -1632,6 +1895,21 @@ function GameBoard({
         </div>
       </header>
 
+      {showStageGuidance && (
+        <StageGuidanceDialog
+          stage={stage}
+          confirmedCount={guidanceConfirmedCount}
+          playerCount={guidancePlayerCount}
+          hasConfirmed={hasAcknowledgedGuidance}
+          pending={actionPending}
+          onConfirm={() =>
+            void runStageAction(() =>
+              acknowledgeStageGuidance({ roomId: room.id, stage }),
+            )
+          }
+        />
+      )}
+
       <section className="stage-layout">
         <article className="stage-intro">
           <h1>{content.title}</h1>
@@ -1640,13 +1918,14 @@ function GameBoard({
             <InspirationCard
               card={stageCard}
               stageLabel={content.eyebrow}
-              stage={stage}
               actionControl={
                 <CardChangeButton
                   room={room}
                   draw={stageDraw}
                   economy={economy}
-                  locked={stageContributions.length > 0 || phase !== "CONTRIBUTING"}
+                  locked={
+                    stageContributions.length > 0 || phase !== "CONTRIBUTING"
+                  }
                   players={players}
                   currentPlayer={currentPlayer}
                   groupVotes={groupVotes}
@@ -1710,80 +1989,122 @@ function GameBoard({
             </div>
           )}
           {collaborative &&
-            ((stage === "POLISHING" && phase === "CONTRIBUTING" && isPolishingLead) ||
-              (isHost && phase === "CONTRIBUTING" && groupReady && !usesUnion && !usesFacilitator) ||
+            ((stage === "POLISHING" &&
+              phase === "CONTRIBUTING" &&
+              isPolishingLead) ||
+              (isHost &&
+                phase === "CONTRIBUTING" &&
+                groupReady &&
+                !usesUnion &&
+                !usesFacilitator) ||
               (isHost && phase === "VOTING" && allVoted) ||
-              (phase === "REVIEW" && canAdvanceStage)) && (
-            <section
-              className={`host-stage-action ${isHost || isFacilitator ? "is-host" : ""}`}
-              aria-label="Ação da etapa"
-            >
-              <div>
-                <strong>
-                  {stage === "POLISHING"
-                    ? "Pronto para continuar"
-                    : phase === "CONTRIBUTING"
-                    ? "Pronto para abrir a votação"
-                    : phase === "VOTING"
-                      ? "Pronto para revelar a decisão"
-                      : "Pronto para avançar"}
-                </strong>
-              </div>
-              {phase === "CONTRIBUTING" && isHost && !usesUnion && !usesFacilitator && (
-                <button
-                  className="primary-button"
-                  disabled={actionPending}
-                  onClick={() =>
-                    void runStageAction(() => openVoting({ roomId: room.id }))
-                  }
-                >
-                  Abrir votação
-                </button>
-              )}
-              {stage === "POLISHING" && phase === "CONTRIBUTING" && isPolishingLead && (
-                <button
-                  className="primary-button"
-                  disabled={actionPending}
-                  onClick={() =>
-                    void runStageAction(() => advanceStage({ roomId: room.id }))
-                  }
-                >
-                  Continuar para Protótipo
-                </button>
-              )}
-              {phase === "VOTING" && isHost && (
-                <button
-                  className="primary-button"
-                  disabled={actionPending}
-                  onClick={() =>
-                    void runStageAction(() => resolveStage({ roomId: room.id }))
-                  }
-                >
-                  Revelar decisão coletiva
-                </button>
-              )}
-              {stage !== "POLISHING" && phase === "REVIEW" && canAdvanceStage && (
-                <button
-                  className="primary-button"
-                  disabled={actionPending}
-                  onClick={() =>
-                    void runStageAction(() => advanceStage({ roomId: room.id }))
-                  }
-                >
-                  {stage === "FINAL"
-                    ? "Concluir a jornada"
-                    : `Confirmar e avançar para ${
-                        STAGE_CONTENT[BOARD_STATES[room.stageIndex + 1]]?.eyebrow ?? "próxima etapa"
-                      }`}
-                </button>
-              )}
-            </section>
-          )}
-          {stage === "POLISHING" && phase === "CONTRIBUTING" && !isPolishingLead && (
-            <p className="waiting-note" aria-live="polite">
-              {polishingActivePlayer?.displayName ?? "O jogador ativo"} pode continuar para Protótipo quando o grupo terminar.
-            </p>
-          )}
+              (phase === "REVIEW" &&
+                (canAdvanceStage ||
+                  STAGES_REQUIRING_TEAM_CONFIRMATION.has(stage)))) && (
+              <section
+                className={`host-stage-action ${isHost || isFacilitator ? "is-host" : ""}`}
+                aria-label="Ação da etapa"
+              >
+                <div>
+                  <strong>
+                    {stage === "POLISHING"
+                      ? "Pronto para continuar"
+                      : phase === "CONTRIBUTING"
+                        ? "Pronto para abrir a votação"
+                        : phase === "VOTING"
+                          ? "Pronto para revelar a decisão"
+                          : "Pronto para avançar"}
+                  </strong>
+                </div>
+                {phase === "CONTRIBUTING" &&
+                  isHost &&
+                  !usesUnion &&
+                  !usesFacilitator && (
+                    <button
+                      className="primary-button"
+                      disabled={actionPending}
+                      onClick={() =>
+                        void runStageAction(() =>
+                          openVoting({ roomId: room.id }),
+                        )
+                      }
+                    >
+                      Abrir votação
+                    </button>
+                  )}
+                {stage === "POLISHING" &&
+                  phase === "CONTRIBUTING" &&
+                  isPolishingLead && (
+                    <button
+                      className="primary-button"
+                      disabled={actionPending}
+                      onClick={() =>
+                        void runStageAction(() =>
+                          advanceStage({ roomId: room.id }),
+                        )
+                      }
+                    >
+                      Continuar para Protótipo
+                    </button>
+                  )}
+                {phase === "VOTING" && isHost && (
+                  <button
+                    className="primary-button"
+                    disabled={actionPending}
+                    onClick={() =>
+                      void runStageAction(() =>
+                        resolveStage({ roomId: room.id }),
+                      )
+                    }
+                  >
+                    Revelar decisão coletiva
+                  </button>
+                )}
+                {stage !== "POLISHING" &&
+                  phase === "REVIEW" &&
+                  (STAGES_REQUIRING_TEAM_CONFIRMATION.has(stage) ? (
+                    <StageAdvanceConfirmationPanel
+                      room={room}
+                      stage={stage}
+                      stageIndex={room.stageIndex}
+                      players={players}
+                      currentPlayer={currentPlayer}
+                      groupVotes={groupVotes}
+                      actionPending={actionPending}
+                      runStageAction={runStageAction}
+                      voteStageAdvance={voteStageAdvance}
+                      advanceStage={advanceStage}
+                    />
+                  ) : (
+                    canAdvanceStage && (
+                      <button
+                        className="primary-button"
+                        disabled={actionPending}
+                        onClick={() =>
+                          void runStageAction(() =>
+                            advanceStage({ roomId: room.id }),
+                          )
+                        }
+                      >
+                        {stage === "FINAL"
+                          ? "Concluir a jornada"
+                          : `Confirmar e avançar para ${
+                              STAGE_CONTENT[BOARD_STATES[room.stageIndex + 1]]
+                                ?.eyebrow ?? "próxima etapa"
+                            }`}
+                      </button>
+                    )
+                  ))}
+              </section>
+            )}
+          {stage === "POLISHING" &&
+            phase === "CONTRIBUTING" &&
+            !isPolishingLead && (
+              <p className="waiting-note" aria-live="polite">
+                {polishingActivePlayer?.displayName ?? "O jogador ativo"} pode
+                continuar para Protótipo quando o grupo terminar.
+              </p>
+            )}
           {stage === "PROTOTYPE" && phase === "CONTRIBUTING" && (
             <section
               className="prototype-direction"
@@ -1856,85 +2177,94 @@ function GameBoard({
           {collaborative &&
             phase === "CONTRIBUTING" &&
             (!usesFacilitator || isFacilitator) && (
-            <>
-              <form onSubmit={saveContribution} className="contribution-form">
-                <label className="sr-only" htmlFor="contribution">
-                  Sua contribuição
-                </label>
-                <textarea
-                  id="contribution"
-                  value={draft}
-                  onChange={(event) => setDraft(event.target.value)}
-                  placeholder={assignedPlaceholder}
-                  minLength={2}
-                  maxLength={280}
-                  required={stage !== "POLISHING"}
-                />
-                <div className="form-input-meta">
-                  <div className="contribution-status" aria-live="polite">
-                    <small>{draft.length}/280</small>
-                    {ownContribution && <span>✓ Sua ideia está segura</span>}
+              <>
+                <form onSubmit={saveContribution} className="contribution-form">
+                  <label className="sr-only" htmlFor="contribution">
+                    Sua contribuição
+                  </label>
+                  <textarea
+                    id="contribution"
+                    value={draft}
+                    onChange={(event) => setDraft(event.target.value)}
+                    placeholder={assignedPlaceholder}
+                    minLength={2}
+                    maxLength={280}
+                    required={stage !== "POLISHING"}
+                  />
+                  <div className="form-input-meta">
+                    <div className="contribution-status" aria-live="polite">
+                      <small>{draft.length}/280</small>
+                      {ownContribution && <span>✓ Sua ideia está segura</span>}
+                    </div>
                   </div>
-                </div>
-                {voiceSuggestion && (
-                  <div className="voice-suggestion">
-                    <p>Versão curta sugerida: {voiceSuggestion}</p>
+                  {voiceSuggestion && (
+                    <div className="voice-suggestion">
+                      <p>Versão curta sugerida: {voiceSuggestion}</p>
+                      <button
+                        type="button"
+                        className="secondary-button"
+                        onClick={() => {
+                          setDraft(voiceSuggestion);
+                          setVoiceSuggestion("");
+                        }}
+                      >
+                        Usar versão curta
+                      </button>
+                    </div>
+                  )}
+                  <div className="form-footer">
+                    <VoiceInputButton
+                      stage={stage}
+                      target="contribution"
+                      disabled={saving}
+                      onResult={applyContributionVoice}
+                    />
                     <button
-                      type="button"
-                      className="secondary-button"
-                      onClick={() => {
-                        setDraft(voiceSuggestion);
-                        setVoiceSuggestion("");
-                      }}
+                      className="primary-button"
+                      disabled={
+                        saving ||
+                        (stage === "POLISHING" && draft.trim().length === 0)
+                      }
                     >
-                      Usar versão curta
+                      {saving
+                        ? "Salvando…"
+                        : ownContribution
+                          ? "Atualizar contribuição"
+                          : "Compartilhar ideia"}
                     </button>
                   </div>
-                )}
-                <div className="form-footer">
-                  <VoiceInputButton
-                    stage={stage}
-                    target="contribution"
-                    disabled={saving}
-                    onResult={applyContributionVoice}
-                  />
-                  <button
-                    className="primary-button"
-                    disabled={saving || (stage === "POLISHING" && draft.trim().length === 0)}
-                  >
-                    {saving
-                      ? "Salvando…"
-                      : ownContribution
-                        ? "Atualizar contribuição"
-                        : "Compartilhar ideia"}
-                  </button>
-                </div>
-              </form>
-              {ownContribution && (
-                <div className="submission-waiting" aria-live="polite">
-                  <span aria-hidden="true">✓</span>
-                  <div>
-                    <strong>Ideia enviada</strong>
+                </form>
+                {ownContribution && (
+                  <div className="submission-waiting" aria-live="polite">
+                    <span aria-hidden="true">✓</span>
+                    <div>
+                      <strong>Ideia enviada</strong>
+                    </div>
                   </div>
-                </div>
-              )}
-            </>
-          )}
+                )}
+              </>
+            )}
 
-          {collaborative && phase === "CONTRIBUTING" && usesFacilitator && !isFacilitator && (
-            <div className="facilitator-waiting">
-              <div className="facilitator-waiting-avatar">
-                <span aria-hidden="true">
-                  {AVATAR_GLYPHS[facilitatorPlayer?.avatarId ?? ""] ?? "✦"}
-                </span>
+          {collaborative &&
+            phase === "CONTRIBUTING" &&
+            usesFacilitator &&
+            !isFacilitator && (
+              <div className="facilitator-waiting">
+                <div className="facilitator-waiting-avatar">
+                  <span aria-hidden="true">
+                    {AVATAR_GLYPHS[facilitatorPlayer?.avatarId ?? ""] ?? "✦"}
+                  </span>
+                </div>
+                <strong>
+                  {facilitatorPlayer?.displayName ?? "O facilitador"}
+                </strong>
+                <p>
+                  está narrando{" "}
+                  {stage === "SCENARIO" ? "o cenário" : "o problema"} do grupo.
+                </p>
+                <small>Você verá o resultado assim que for registrado.</small>
               </div>
-              <strong>{facilitatorPlayer?.displayName ?? "O facilitador"}</strong>
-              <p>
-                está narrando {stage === "SCENARIO" ? "o cenário" : "o problema"} do grupo.
-              </p>
-              <small>Você verá o resultado assim que for registrado.</small>
-            </div>
-          )}
+            )}
 
           {!collaborative && (
             <div className="stage-activity-workspace">
@@ -1969,23 +2299,34 @@ function GameBoard({
               )}
 
               <div className="form-footer" style={{ marginTop: "1.25rem" }}>
-                <button
-                  className="primary-button"
-                  disabled={
-                    actionPending ||
-                    (stage === "PROTOTYPE" && !projectPrototype?.committed) ||
-                    (stage === "TESTING" && !testingOptions.some((o) => o.selected))
+                <StageAdvanceConfirmationPanel
+                  room={room}
+                  stage={stage}
+                  stageIndex={room.stageIndex}
+                  players={players}
+                  currentPlayer={currentPlayer}
+                  groupVotes={groupVotes}
+                  actionPending={actionPending}
+                  runStageAction={runStageAction}
+                  voteStageAdvance={voteStageAdvance}
+                  advanceStage={advanceStage}
+                  stagePrerequisiteMet={
+                    stage === "PROTOTYPE"
+                      ? !!projectPrototype?.committed
+                      : stage === "TESTING"
+                        ? testingOptions
+                          ? testingOptions.some((o) => o.selected)
+                          : true
+                        : true
                   }
-                  onClick={() =>
-                    void runStageAction(() => advanceStage({ roomId: room.id }))
+                  prerequisiteMessage={
+                    stage === "PROTOTYPE"
+                      ? "Conclua o protótipo compartilhado antes de avançar."
+                      : stage === "TESTING"
+                        ? "Selecione uma opção de teste antes de avançar."
+                        : ""
                   }
-                >
-                  {stage === "FINAL"
-                    ? "Concluir a jornada"
-                    : `Confirmar e avançar para ${
-                        STAGE_CONTENT[BOARD_STATES[room.stageIndex + 1]]?.eyebrow ?? "próxima etapa"
-                      }`}
-                </button>
+                />
               </div>
             </div>
           )}
@@ -2073,32 +2414,36 @@ function GameBoard({
             />
           )}
 
-          {phase === "REVIEW" && (usesUnion || usesFacilitator) && stageOutcome && (
-            <section
-              className="decision-reveal union-reveal"
-              aria-live="polite"
-            >
-              <span className="decision-star" aria-hidden="true">
-                {usesFacilitator ? "★" : "✦"}
-              </span>
-              <p className="kicker">
-                {usesFacilitator ? "Registro da Etapa" : "Composicao do grupo"}
-              </p>
-              <div className="union-result">
-                {stageOutcome.summary.split("\n").map((entry, index) => {
-                  const cleaned = entry.includes(":")
-                    ? entry.slice(entry.indexOf(":") + 1).trim()
-                    : entry;
-                  return <p key={`${entry}-${index}`}>{cleaned}</p>;
-                })}
-              </div>
-              <p>
-                {usesFacilitator
-                  ? "Sintetizado pelo facilitador da etapa."
-                  : `${stageOutcome.sourceCount} pecas reunidas na mesma ideia.`}
-              </p>
-            </section>
-          )}
+          {phase === "REVIEW" &&
+            (usesUnion || usesFacilitator) &&
+            stageOutcome && (
+              <section
+                className="decision-reveal union-reveal"
+                aria-live="polite"
+              >
+                <span className="decision-star" aria-hidden="true">
+                  {usesFacilitator ? "★" : "✦"}
+                </span>
+                <p className="kicker">
+                  {usesFacilitator
+                    ? "Registro da Etapa"
+                    : "Composicao do grupo"}
+                </p>
+                <div className="union-result">
+                  {stageOutcome.summary.split("\n").map((entry, index) => {
+                    const cleaned = entry.includes(":")
+                      ? entry.slice(entry.indexOf(":") + 1).trim()
+                      : entry;
+                    return <p key={`${entry}-${index}`}>{cleaned}</p>;
+                  })}
+                </div>
+                <p>
+                  {usesFacilitator
+                    ? "Sintetizado pelo facilitador da etapa."
+                    : `${stageOutcome.sourceCount} pecas reunidas na mesma ideia.`}
+                </p>
+              </section>
+            )}
 
           {phase === "REVIEW" && stageDecision && (
             <section className="decision-reveal" aria-live="polite">
@@ -2162,10 +2507,13 @@ function GameBoard({
 
           {collaborative && phase === "REVIEW" && !canAdvanceStage && (
             <p className="waiting-note">
-              Aguardando {usesFacilitator ? (facilitatorPlayer?.displayName ?? "o facilitador") : "o anfitrião"} confirmar e avançar a jornada.
+              Aguardando{" "}
+              {usesFacilitator
+                ? (facilitatorPlayer?.displayName ?? "o facilitador")
+                : "o anfitrião"}{" "}
+              confirmar e avançar a jornada.
             </p>
           )}
-
 
           {!isHost && phase === "VOTING" && ownVote && (
             <p className="waiting-note">
