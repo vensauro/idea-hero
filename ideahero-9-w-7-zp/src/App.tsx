@@ -868,23 +868,7 @@ function RoomEntry({
           </p>
         )}
 
-        <div style={{ marginTop: "1.25rem", textAlign: "center" }}>
-          <a
-            href="/admin"
-            className="admin-link-btn"
-            style={{
-              fontSize: "0.85rem",
-              opacity: 0.85,
-              color: "#a78bfa",
-              textDecoration: "underline",
-              display: "inline-flex",
-              alignItems: "center",
-              gap: "0.4rem",
-            }}
-          >
-            ⚙️ Painel de Administração de Cartas
-          </a>
-        </div>
+
       </section>
     </main>
   );
