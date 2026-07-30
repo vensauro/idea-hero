@@ -206,14 +206,20 @@ const AVATAR_LABELS: Record<string, string> = {
   fox: "Raposa",
 };
 
-function shortIdentity(identity: { toHexString: () => string }) {
+function shortIdentity(identity?: { toHexString?: () => string } | null) {
+  if (!identity || typeof identity.toHexString !== "function") return "";
   return identity.toHexString().slice(0, 8);
 }
 
 function sameIdentity(
-  left: { toHexString: () => string },
-  right: { toHexString: () => string },
+  left?: { toHexString?: () => string } | null,
+  right?: { toHexString?: () => string } | null,
 ) {
+  if (!left || !right) return false;
+  if (left === right) return true;
+  if (typeof left.toHexString !== "function" || typeof right.toHexString !== "function") {
+    return false;
+  }
   return left.toHexString() === right.toHexString();
 }
 
@@ -1260,6 +1266,23 @@ function GameBoard({
   const timeExpired = secondsLeft === 0;
 
   useEffect(() => {
+    function handleDocumentClick(event: MouseEvent) {
+      const target = event.target as Node | null;
+      if (!target) return;
+      const openDetailsList = document.querySelectorAll<HTMLDetailsElement>(
+        "details.topbar-stage-menu[open], details.topbar-chip-menu[open], details.room-sheet[open]"
+      );
+      openDetailsList.forEach((details) => {
+        if (!details.contains(target)) {
+          details.removeAttribute("open");
+        }
+      });
+    }
+    document.addEventListener("click", handleDocumentClick);
+    return () => document.removeEventListener("click", handleDocumentClick);
+  }, []);
+
+  useEffect(() => {
     setDraft(ownContribution?.content ?? "");
     setVoiceSuggestion("");
   }, [ownContribution?.content, stage]);
@@ -1370,52 +1393,150 @@ function GameBoard({
         roomId={room.id}
         transactions={economyTransactions}
       />
-      <aside
-        className={`persistent-round-timer ${timeExpired ? "is-expired" : ""}`}
-        aria-label="Tempo da rodada"
-      >
-        <span>Tempo</span>
-        <strong aria-live="polite">{formatSeconds(secondsLeft)}</strong>
-      </aside>
-      <details className="room-sheet" name="journey-controls">
-        <summary aria-label="Opções da sala">•••</summary>
-        <div className="room-sheet-panel">
-          <header className="room-sheet-heading">
-            <span>Sala {room.code}</span>
-            <small>Opções e informações</small>
-          </header>
-          <details className="room-sheet-section">
-            <summary>
-              <span aria-hidden="true">♧</span>
-              <span>
-                Pessoas
-                <small>{presencePlayers.length} online</small>
-              </span>
+      <header className="game-topbar">
+        <div className="game-topbar-left">
+          <span className="game-topbar-mark" aria-hidden="true">✦</span>
+          <div
+            className={`topbar-timer-chip ${timeExpired ? "is-expired" : secondsLeft <= 15 ? "is-warning" : ""}`}
+            aria-label="Tempo restante da rodada"
+          >
+            <span className="timer-icon" aria-hidden="true">⏱</span>
+            <strong aria-live="polite">{formatSeconds(secondsLeft)}</strong>
+          </div>
+          <details className="topbar-stage-menu">
+            <summary className="topbar-stage-pill">
+              <span className="stage-pill-badge">Etapa {room.stageIndex + 1}/8</span>
+              <span>{content.eyebrow}</span>
             </summary>
-            <div className="room-sheet-players">
-              {players.map((player) => (
-                <div
-                  className={`player-list-row ${player.online ? "" : "is-offline"}`}
-                  key={player.id.toString()}
-                >
-                  <span aria-hidden="true">
-                    {AVATAR_GLYPHS[player.avatarId] ?? "✦"}
-                  </span>
-                  <strong>{player.displayName}</strong>
-                  <small>{player.online ? "online" : "ausente"}</small>
-                </div>
-              ))}
+            <div className="topbar-dropdown topbar-stage-dropdown">
+              <div className="topbar-dropdown-header">
+                <strong>Mapa da Jornada de Inovação</strong>
+                <span className="badge-pill">{room.stageIndex + 1} de 8 concluídas</span>
+              </div>
+              
+              <div className="stage-hub-grid">
+                {BOARD_STATES.map((item, index) => {
+                  const isCurrent = index === room.stageIndex;
+                  const isComplete = index < room.stageIndex;
+                  const stageData = STAGE_CONTENT[item];
+                  const stageDecision = decisions.find(
+                    (d) => d.roomId === room.id && d.stage === item
+                  );
+                  const stageOutcome = stageOutcomes.find(
+                    (o) => o.roomId === room.id && o.stage === item
+                  );
+                  const stageContribs = contributions.filter((c) => c.stage === item);
+
+                  return (
+                    <div
+                      key={item}
+                      className={`stage-hub-card ${isCurrent ? "is-current" : ""} ${isComplete ? "is-complete" : "is-upcoming"}`}
+                    >
+                      <div className="stage-hub-card-top">
+                        <span className="stage-number-badge">
+                          {isComplete ? "✓" : index + 1}
+                        </span>
+                        <span className="stage-status-tag">
+                          {isComplete ? "Concluída" : isCurrent ? "Atual" : "Próxima"}
+                        </span>
+                      </div>
+
+                      <strong>
+                        {stageData.icon} {stageData.eyebrow}
+                      </strong>
+                      <p className="stage-hub-objective">{stageData.objective}</p>
+
+                      {(stageDecision || stageOutcome || stageContribs.length > 0) && (
+                        <div className="stage-hub-memory">
+                          <div className="stage-memory-label">Memória da Etapa</div>
+                          {stageDecision && (
+                            <p className="stage-decision-pill">
+                              ★ {stageDecision.summary}
+                            </p>
+                          )}
+                          {stageOutcome && !stageDecision && (
+                            <p className="stage-outcome-pill">
+                              ✦ {stageOutcome.summary}
+                            </p>
+                          )}
+                          {stageContribs.length > 0 && (
+                            <div className="stage-contrib-list">
+                              {stageContribs.map((entry) => {
+                                const author = entry.authorIdentity
+                                  ? players.find((p) =>
+                                      sameIdentity(p.identity, entry.authorIdentity)
+                                    )
+                                  : undefined;
+                                return (
+                                  <div key={entry.id.toString()} className="stage-contrib-item">
+                                    <span>"{entry.content}"</span>
+                                    <small>— {author?.displayName ?? "Anônimo"}</small>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           </details>
-          <details className="room-sheet-section">
-            <summary>
-              <span aria-hidden="true">◌</span>
-              <span>
-                Caixa
-                <small>{formatCredits(economy.balance)} créditos</small>
-              </span>
+        </div>
+        <div className="game-topbar-right">
+          <details className="topbar-chip-menu">
+            <summary className="topbar-icon-chip topbar-avatar-chip" aria-label="Pessoas na sala">
+              <div className="chip-avatar-stack">
+                {presencePlayers.slice(0, 3).map((player, index) => (
+                  <span
+                    className="chip-avatar-bubble"
+                    key={player.id.toString()}
+                    style={{ zIndex: 10 - index }}
+                    title={player.displayName}
+                  >
+                    {AVATAR_GLYPHS[player.avatarId] ?? "✦"}
+                  </span>
+                ))}
+              </div>
+              <span className="chip-count-badge">{presencePlayers.length}</span>
             </summary>
-            <div className="room-sheet-wallet">
+            <div className="topbar-dropdown topbar-people-dropdown">
+              <div className="topbar-dropdown-header">
+                <strong>Pessoas na sala</strong>
+                <span className="badge-pill">{presencePlayers.length} online</span>
+              </div>
+              <div className="player-list-cards">
+                {players.map((player) => {
+                  const isPlayerHost = sameIdentity(player.identity, room.hostIdentity);
+                  return (
+                    <div className={`player-list-row ${player.online ? "is-online" : "is-offline"}`} key={player.id.toString()}>
+                      <div className="player-avatar-wrapper">
+                        <span aria-hidden="true" className="player-avatar-glyph">
+                          {AVATAR_GLYPHS[player.avatarId] ?? "✦"}
+                        </span>
+                        <span className={`status-indicator-dot ${player.online ? "online" : "offline"}`} />
+                      </div>
+                      <div className="player-info">
+                        <strong>{player.displayName}</strong>
+                        <div className="player-badges">
+                          {isPlayerHost && <span className="host-badge">Líder</span>}
+                          <small>{player.online ? "online" : "ausente"}</small>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </details>
+          <details className="topbar-chip-menu">
+            <summary className="topbar-icon-chip topbar-money-chip" aria-label="Caixa da sala">
+              <span className="money-coin-icon">◌</span>
+              <span className="money-amount">{formatCredits(economy.balance)}</span>
+            </summary>
+            <div className="topbar-dropdown topbar-wallet-dropdown">
               <RunwayWallet
                 economy={economy}
                 stageCost={stageCosts.find((item) => item.stage === stage)}
@@ -1423,90 +1544,55 @@ function GameBoard({
               />
             </div>
           </details>
-          <LeaveRoomButton room={room} currentPlayer={currentPlayer} />
-          {isHost && (
-            <button
-              type="button"
-              className="room-sheet-end-button"
-              disabled={actionPending}
-              onClick={endJourneyEarly}
-            >
-              Encerrar jornada para todos
-            </button>
-          )}
+          <details className="room-sheet" name="journey-controls">
+            <summary aria-label="Opções da sala">•••</summary>
+            <div className="room-sheet-panel">
+              <header className="room-sheet-heading">
+                <span>Sala {room.code}</span>
+                <small>Gerenciamento da jornada</small>
+              </header>
+              <div className="room-sheet-quick-info">
+                <span>👥 {presencePlayers.length} na sala</span>
+                <span>💰 {formatCredits(economy.balance)} cr.</span>
+              </div>
+              <div className="room-sheet-actions">
+                <LeaveRoomButton room={room} currentPlayer={currentPlayer} />
+                {isHost && (
+                  <button
+                    type="button"
+                    className="room-sheet-end-button"
+                    disabled={actionPending}
+                    onClick={endJourneyEarly}
+                  >
+                    Encerrar jornada para todos
+                  </button>
+                )}
+              </div>
+            </div>
+          </details>
         </div>
-      </details>
+      </header>
 
       <section className="stage-layout">
         <article className="stage-intro">
-          <p className="kicker">
-            Etapa {room.stageIndex + 1} de 8 · {content.eyebrow}
-          </p>
-          <details className="stage-details">
-            <summary className="kicker">
-              Etapa {room.stageIndex + 1} de 8 · {content.eyebrow}
-            </summary>
-            <div className="stage-details-panel">
-              <nav className="stage-progress" aria-label="Progresso da jornada">
-                {BOARD_STATES.map((item, index) => (
-                  <div
-                    key={item}
-                    className={`stage-step ${index === room.stageIndex ? "is-current" : ""} ${index < room.stageIndex ? "is-complete" : ""}`}
-                    aria-current={
-                      index === room.stageIndex ? "step" : undefined
-                    }
-                  >
-                    <span>{index < room.stageIndex ? "✓" : index + 1}</span>
-                    <small>{STAGE_CONTENT[item].eyebrow}</small>
-                  </div>
-                ))}
-              </nav>
-              <JourneySummary
-                room={room}
-                contributions={contributions}
-                players={players}
-                decisions={decisions}
-                outcomes={stageOutcomes}
-              />
-            </div>
-          </details>
-          <div
-            className="stage-presence"
-            aria-label={`Pessoas na sala: ${players.map((player) => player.displayName).join(", ")}`}
-          >
-            <span>Na sala</span>
-            <div className="stage-presence-avatars" aria-hidden="true">
-              {players.map((player) => (
-                <span
-                  className={player.online ? "" : "is-offline"}
-                  key={player.id.toString()}
-                  title={player.displayName}
-                >
-                  {AVATAR_GLYPHS[player.avatarId] ?? "✦"}
-                </span>
-              ))}
-            </div>
-            <small>{presencePlayers.length} online</small>
-          </div>
           <h1>{content.title}</h1>
           <p>{content.objective}</p>
           <InspirationCard
             card={stageCard}
             stageLabel={content.eyebrow}
             stage={stage}
+            actionControl={
+              <CardChangeButton
+                room={room}
+                draw={stageDraw}
+                economy={economy}
+                locked={stageContributions.length > 0 || phase !== "CONTRIBUTING"}
+                players={players}
+                currentPlayer={currentPlayer}
+                groupVotes={groupVotes}
+              />
+            }
           />
-          <details className="card-options">
-            <summary>Outras opções da carta</summary>
-            <CardChangeButton
-              room={room}
-              draw={stageDraw}
-              economy={economy}
-              locked={stageContributions.length > 0 || phase !== "CONTRIBUTING"}
-              players={players}
-              currentPlayer={currentPlayer}
-              groupVotes={groupVotes}
-            />
-          </details>
         </article>
 
         <article className="contribution-panel">
@@ -2458,8 +2544,8 @@ function JourneyResult({
           </button>
         </div>
         <details className="result-more-actions">
-          <summary>Mais opcoes</summary>
-          <div>
+          <summary>✦ Mais opções</summary>
+          <div className="result-more-body">
             {publishedUrl && (
               <button
                 className="secondary-button"
@@ -2468,7 +2554,7 @@ function JourneyResult({
               >
                 {busyAction === "copy-link"
                   ? "Copiando..."
-                  : "Copiar link publico"}
+                  : "Copiar link público"}
               </button>
             )}
             <button

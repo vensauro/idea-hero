@@ -3209,8 +3209,41 @@ export const onDisconnect = spacetimedb.clientDisconnected((ctx) => {
   }
 
   for (const currentPlayer of ctx.db.player.iter()) {
-    if (currentPlayer.identity.isEqual(ctx.sender)) {
-      ctx.db.player.id.update({ ...currentPlayer, online: false });
+    if (!currentPlayer.identity.isEqual(ctx.sender)) continue;
+
+    const currentRoom = ctx.db.room.id.find(currentPlayer.roomId);
+    // A lobby seat must be released when its connection closes. Otherwise a
+    // disconnected participant still consumes one of the six places and can
+    // prevent anyone (including themselves) from joining again with the code.
+    // Keep active games intact so a temporary connection loss can reconnect to
+    // the same journey without losing its participant attribution.
+    const releaseLobbySeat =
+      currentPlayer.active && currentRoom?.status === "LOBBY";
+    ctx.db.player.id.update({
+      ...currentPlayer,
+      online: false,
+      active: releaseLobbySeat ? false : currentPlayer.active,
+      ready: releaseLobbySeat ? false : currentPlayer.ready,
+    });
+
+    if (!releaseLobbySeat || !currentRoom?.ownerIdentity.isEqual(ctx.sender)) {
+      continue;
     }
+
+    const nextHost = Array.from(ctx.db.player.roomId.filter(currentRoom.id))
+      .filter((player) => player.active && player.id !== currentPlayer.id)
+      .sort((left, right) =>
+        left.joinedAt.microsSinceUnixEpoch < right.joinedAt.microsSinceUnixEpoch
+          ? -1
+          : 1,
+      )[0];
+    if (!nextHost) continue;
+
+    ctx.db.player.id.update({ ...nextHost, role: "HOST" });
+    ctx.db.room.id.update({
+      ...currentRoom,
+      ownerIdentity: nextHost.identity,
+      updatedAt: ctx.timestamp,
+    });
   }
 });

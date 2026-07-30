@@ -15,10 +15,12 @@ export function InspirationCard({
   card,
   stageLabel,
   stage,
+  actionControl,
 }: {
   card?: Card;
   stageLabel: string;
   stage?: StageName;
+  actionControl?: React.ReactNode;
 }) {
   if (!card) {
     return (
@@ -35,6 +37,13 @@ export function InspirationCard({
         <img src={card.imagePath} alt={card.altText} decoding="async" />
         <span className="card-lens">Lente · {card.lens}</span>
       </div>
+
+      {actionControl && (
+        <div className="inspiration-card-action-box">
+          {actionControl}
+        </div>
+      )}
+
       {stage && <StageMission stage={stage} />}
       <figcaption>
         <span className="card-stage">Carta de {stageLabel}</span>

@@ -38,9 +38,14 @@ const AVATAR_GLYPHS: Record<string, string> = {
 };
 
 function sameIdentity(
-  left: { toHexString: () => string },
-  right: { toHexString: () => string },
+  left?: { toHexString?: () => string } | null,
+  right?: { toHexString?: () => string } | null,
 ) {
+  if (!left || !right) return false;
+  if (left === right) return true;
+  if (typeof left.toHexString !== "function" || typeof right.toHexString !== "function") {
+    return false;
+  }
   return left.toHexString() === right.toHexString();
 }
 

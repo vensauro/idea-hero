@@ -86,9 +86,14 @@ const TIER_LABELS: Record<string, string> = {
 };
 
 function sameIdentity(
-  left: { toHexString: () => string },
-  right: { toHexString: () => string },
+  left?: { toHexString?: () => string } | null,
+  right?: { toHexString?: () => string } | null,
 ) {
+  if (!left || !right) return false;
+  if (left === right) return true;
+  if (typeof left.toHexString !== "function" || typeof right.toHexString !== "function") {
+    return false;
+  }
   return left.toHexString() === right.toHexString();
 }
 
@@ -141,18 +146,19 @@ export function RunwayWallet({
   const usableBalance = Math.max(0, economy.balance - economy.reservedBalance);
   const fill = Math.min(
     100,
-    Math.round((economy.balance / economy.initialBalance) * 100),
+    Math.round((economy.balance / Math.max(1, economy.initialBalance)) * 100),
   );
 
   return (
-    <section className="runway-wallet" aria-label="Caixa compartilhado">
-      <div className="runway-wallet-heading">
+    <section className="runway-wallet-popover" aria-label="Caixa compartilhado">
+      <div className="topbar-dropdown-header">
         <div>
-          <span>Caixa do projeto</span>
-          <strong>{formatCredits(economy.balance)} créditos</strong>
+          <small className="wallet-subtitle">Caixa Compartilhado</small>
+          <strong className="wallet-total">{formatCredits(economy.balance)} <small style={{ fontSize: "0.75rem", fontWeight: 700 }}>créditos</small></strong>
         </div>
-        <span className="runway-rules-chip">Caixa compartilhado</span>
+        <span className="badge-pill">{fill}% do capital</span>
       </div>
+
       <div
         className="runway-meter"
         role="meter"
@@ -163,22 +169,27 @@ export function RunwayWallet({
       >
         <span style={{ width: `${fill}%` }} />
       </div>
-      <div className="runway-wallet-details">
-        <span>
-          Disponível <b>{formatCredits(usableBalance)}</b>
-        </span>
+
+      <div className="wallet-stats-grid">
+        <div className="wallet-stat-card is-available">
+          <small>Disponível</small>
+          <strong>{formatCredits(usableBalance)} cr.</strong>
+        </div>
         {economy.reservedBalance > 0 && (
-          <span className="is-reserved">
-            Reserva de Vendas <b>{formatCredits(economy.reservedBalance)}</b>
-          </span>
+          <div className="wallet-stat-card is-reserved">
+            <small>Reserva de Vendas</small>
+            <strong>{formatCredits(economy.reservedBalance)} cr.</strong>
+          </div>
         )}
         {stageCost && (
-          <span>
-            {stageCost.label} <b>−{formatCredits(stageCost.amount)}</b>{" "}
+          <div className="wallet-stat-card is-cost">
+            <small>{stageCost.label}</small>
+            <strong>−{formatCredits(stageCost.amount)} cr.</strong>
             <em>{stageCost.applied ? "Pago" : "ao concluir"}</em>
-          </span>
+          </div>
         )}
       </div>
+
       <TransactionLedger transactions={transactions} />
     </section>
   );
@@ -318,26 +329,48 @@ function TransactionLedger({
     (left, right) => right.sequence - left.sequence,
   );
   return (
-    <details className="transaction-ledger">
-      <summary>Ver movimentos do caixa ({ordered.length})</summary>
-      <ol>
-        {ordered.map((transaction) => (
-          <li key={transaction.eventKey}>
-            <span>
-              <b>{transaction.label}</b>
-              <small>
-                {STAGE_LABELS[transaction.stage] ?? transaction.stage}
-              </small>
-            </span>
-            <strong className={transaction.delta > 0 ? "is-positive" : ""}>
-              {transaction.delta > 0 ? "+" : "−"}
-              {formatCredits(Math.abs(transaction.delta))}
-            </strong>
-            <small>saldo {formatCredits(transaction.balanceAfter)}</small>
-          </li>
-        ))}
-      </ol>
-    </details>
+    <div className="transaction-ledger-container">
+      <div className="ledger-heading">
+        <strong>Histórico de Transações</strong>
+        <span className="ledger-count-pill">{ordered.length}</span>
+      </div>
+      <div className="transaction-ledger-body">
+        {ordered.length === 0 ? (
+          <p style={{ margin: 0, fontSize: "0.76rem", color: "var(--muted)" }}>
+            Nenhum movimento registrado ainda.
+          </p>
+        ) : (
+          <ol className="ledger-list">
+            {ordered.map((transaction) => {
+              const positive = transaction.delta > 0;
+              return (
+                <li
+                  key={transaction.eventKey}
+                  className={`ledger-item ${positive ? "is-income" : "is-expense"}`}
+                >
+                  <div className="ledger-item-icon" aria-hidden="true">
+                    {positive ? "↑" : "↓"}
+                  </div>
+                  <div className="ledger-item-details">
+                    <strong>{transaction.label}</strong>
+                    <small>
+                      {STAGE_LABELS[transaction.stage] ?? transaction.stage}
+                    </small>
+                  </div>
+                  <div className="ledger-item-amount">
+                    <strong className={positive ? "is-positive" : "is-expense"}>
+                      {positive ? "+" : "−"}
+                      {formatCredits(Math.abs(transaction.delta))}
+                    </strong>
+                    <small>saldo {formatCredits(transaction.balanceAfter)}</small>
+                  </div>
+                </li>
+              );
+            })}
+          </ol>
+        )}
+      </div>
+    </div>
   );
 }
 
@@ -450,19 +483,19 @@ export function CardChangeButton({
         aria-pressed={Boolean(ownVote)}
         onClick={() => void toggleVote()}
       >
-        {ownVote ? "Retirar voto de troca" : "Votar para trocar · −500"}
+        <span className="button-label">
+          {ownVote ? "Retirar voto de troca" : "Votar para trocar · −500 cr"}
+        </span>
+        {!unavailable && (
+          <span className="card-change-vote-badge">
+            {votes.length}/{required} votos
+          </span>
+        )}
       </button>
-      {!unavailable && (
-        <VoteProgress
-          votes={votes}
-          required={required}
-          players={players}
-          label="votos para trocar"
-          hideInstruction
-        />
-      )}
       {locked && (
-        <small>A votação fechou quando a equipe começou esta etapa.</small>
+        <small className="card-change-lock-note">
+          A votação fechou nesta etapa.
+        </small>
       )}
       {error && <small className="error-message">{error}</small>}
     </div>
@@ -563,56 +596,27 @@ export function RunwayFinalStage(props: RunwayFinalStageProps) {
         <div className="room-sheet-panel">
           <header className="room-sheet-heading">
             <span>Sala {room.code}</span>
-            <small>Opções e informações</small>
+            <small>Gerenciamento da jornada</small>
           </header>
-          <details className="room-sheet-section">
-            <summary>
-              <span aria-hidden="true">♧</span>
-              <span>
-                Pessoas
-                <small>{presencePlayers.length} online</small>
-              </span>
-            </summary>
-            <div className="room-sheet-players">
-              {players.map((player) => (
-                <div
-                  className={`player-list-row ${player.online ? "" : "is-offline"}`}
-                  key={player.id.toString()}
-                >
-                  <span aria-hidden="true">{player.displayName.slice(0, 1)}</span>
-                  <strong>{player.displayName}</strong>
-                  <small>{player.online ? "online" : "ausente"}</small>
-                </div>
-              ))}
-            </div>
-          </details>
-          <details className="room-sheet-section">
-            <summary>
-              <span aria-hidden="true">◌</span>
-              <span>
-                Caixa
-                <small>{formatCredits(economy.balance)} créditos</small>
-              </span>
-            </summary>
-            <div className="room-sheet-wallet">
-              <RunwayWallet
-                economy={economy}
-                stageCost={stageCost}
-                transactions={transactions}
-              />
-            </div>
-          </details>
-          {leaveControl}
-          {isHost && (
-            <button
-              type="button"
-              className="room-sheet-end-button"
-              disabled={pending}
-              onClick={endEarly}
-            >
-              Encerrar jornada para todos
-            </button>
-          )}
+          
+          <div className="room-sheet-quick-info">
+            <span>👥 {presencePlayers.length} na sala</span>
+            <span>💰 {formatCredits(economy.balance)} cr.</span>
+          </div>
+
+          <div className="room-sheet-actions">
+            {leaveControl}
+            {isHost && (
+              <button
+                type="button"
+                className="room-sheet-end-button"
+                disabled={pending}
+                onClick={endEarly}
+              >
+                Encerrar jornada para todos
+              </button>
+            )}
+          </div>
         </div>
       </details>
 
