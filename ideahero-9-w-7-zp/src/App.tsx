@@ -352,15 +352,8 @@ function formatSeconds(seconds: number) {
   return `${minutes}:${String(remainder).padStart(2, "0")}`;
 }
 
-function roundDuration(
-  stage: BoardState,
-  phase: string,
-  collaborative: boolean,
-) {
-  if (phase === "VOTING") return 35;
-  if (phase === "REVIEW") return 20;
-  if (stage === "PROTOTYPE") return 90;
-  return collaborative ? 75 : 60;
+function roundDuration() {
+  return 300;
 }
 
 function prototypeSuggestion(productType: ProductType, draft: string) {
@@ -2017,7 +2010,7 @@ function GameBoard({
   const [suggesting, setSuggesting] = useState(false);
   const [clock, setClock] = useState(() => Date.now());
   const [roundStartedAt, setRoundStartedAt] = useState(() => Date.now());
-  const roundSeconds = roundDuration(stage, phase, collaborative);
+  const roundSeconds = roundDuration();
   const prototypeEndingAt = projectPrototype
     ? projectPrototype.startedAt.toDate().getTime() +
       projectPrototype.durationSeconds * 1000
