@@ -47,9 +47,13 @@ import OpenVotingReducer from "./open_voting_reducer";
 import PublishJourneyReducer from "./publish_journey_reducer";
 import RefreshRedrawnCardReducer from "./refresh_redrawn_card_reducer";
 import ResolveStageReducer from "./resolve_stage_reducer";
+import RespondStageInsightReducer from "./respond_stage_insight_reducer";
 import SelectTestOptionReducer from "./select_test_option_reducer";
 import SetProfileReducer from "./set_profile_reducer";
 import SetReadyReducer from "./set_ready_reducer";
+import SetStageInsightReducer from "./set_stage_insight_reducer";
+import SetStageQuestionReducer from "./set_stage_question_reducer";
+import SetTestingOptionsReducer from "./set_testing_options_reducer";
 import StartGameReducer from "./start_game_reducer";
 import StartPrototypeActivityReducer from "./start_prototype_activity_reducer";
 import SubmitContributionReducer from "./submit_contribution_reducer";
@@ -86,6 +90,7 @@ import RoomJourneysRow from "./room_journeys_table";
 import RoomPlayersRow from "./room_players_table";
 import RoomStageAssignmentsRow from "./room_stage_assignments_table";
 import RoomStageCostsRow from "./room_stage_costs_table";
+import RoomStageInsightsRow from "./room_stage_insights_table";
 import RoomStageOutcomesRow from "./room_stage_outcomes_table";
 import RoomStageSessionsRow from "./room_stage_sessions_table";
 import RoomTestingOptionsRow from "./room_testing_options_table";
@@ -252,6 +257,13 @@ const tablesSchema = __schema({
     constraints: [
     ],
   }, RoomStageCostsRow),
+  room_stage_insights: __table({
+    name: 'room_stage_insights',
+    indexes: [
+    ],
+    constraints: [
+    ],
+  }, RoomStageInsightsRow),
   room_stage_outcomes: __table({
     name: 'room_stage_outcomes',
     indexes: [
@@ -311,9 +323,13 @@ const reducersSchema = __reducers(
   __reducerSchema("publish_journey", PublishJourneyReducer),
   __reducerSchema("refresh_redrawn_card", RefreshRedrawnCardReducer),
   __reducerSchema("resolve_stage", ResolveStageReducer),
+  __reducerSchema("respond_stage_insight", RespondStageInsightReducer),
   __reducerSchema("select_test_option", SelectTestOptionReducer),
   __reducerSchema("set_profile", SetProfileReducer),
   __reducerSchema("set_ready", SetReadyReducer),
+  __reducerSchema("set_stage_insight", SetStageInsightReducer),
+  __reducerSchema("set_stage_question", SetStageQuestionReducer),
+  __reducerSchema("set_testing_options", SetTestingOptionsReducer),
   __reducerSchema("start_game", StartGameReducer),
   __reducerSchema("start_prototype_activity", StartPrototypeActivityReducer),
   __reducerSchema("submit_contribution", SubmitContributionReducer),

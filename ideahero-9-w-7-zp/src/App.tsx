@@ -1,4 +1,4 @@
-import { FormEvent, useEffect, useMemo, useState } from "react";
+import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import "./App.css";
 import "./idea-hero.css";
 import { reducers, tables } from "./module_bindings";
@@ -65,11 +65,17 @@ import {
   RunwayFinalStage,
   RunwayWallet,
   SalesStage,
+  StageAudienceReaction,
+  StageInsightResponse,
   TestingStage,
   TopbarMoneyChip,
   artifactSource,
 } from "./runway-experience";
 import { formatCredits } from "./runway-format";
+import {
+  buildInsightContext,
+  serializeInsightContext,
+} from "./ai/assemble-context";
 import { PILOT_FEEDBACK } from "../spacetimedb/src/economy";
 
 export const BOARD_STATES = [
@@ -106,36 +112,48 @@ const PRODUCT_TYPES = [
   {
     id: "physical",
     icon: "O",
-    label: "Produto fisico",
-    hint: "algo que se toca ou leva",
+    label: "Artefato",
+    hint: "algo que se toca, veste ou carrega",
   },
   {
     id: "digital",
     icon: "~",
-    label: "Produto digital",
-    hint: "app, site ou ferramenta",
+    label: "Portal",
+    hint: "uma tela, mapa ou ferramenta mágica",
   },
   {
     id: "service",
     icon: "+",
-    label: "Servico",
-    hint: "uma experiencia feita com pessoas",
+    label: "Ritual",
+    hint: "uma experiência feita em grupo",
   },
   {
     id: "process",
     icon: ">",
-    label: "Processo",
-    hint: "um jeito novo de fazer",
+    label: "Rota",
+    hint: "um novo caminho para seguir",
   },
   {
     id: "hybrid",
     icon: "*",
-    label: "Hibrido",
-    hint: "mistura de formatos",
+    label: "Mistura mágica",
+    hint: "uma combinação dos formatos",
   },
 ] as const;
 
 type ProductType = (typeof PRODUCT_TYPES)[number]["id"];
+
+const CONTRIBUTION_LABELS: Record<BoardState, string> = {
+  SCENARIO: "cenário",
+  PROBLEM: "problema",
+  INSIGHT: "insight",
+  SOLUTION: "ideia",
+  POLISHING: "exploração",
+  PROTOTYPE: "artefato",
+  TESTING: "escolha da provação",
+  CONQUERING: "convite",
+  FINAL: "reflexão final",
+};
 
 const STAGE_CONTENT: Record<
   BoardState,
@@ -150,64 +168,72 @@ const STAGE_CONTENT: Record<
   SCENARIO: {
     title: "Vamos criar o cenário",
     eyebrow: "Cenário",
-    objective: "Alinhe o grupo sobre o contexto onde a ideia vai existir.",
-    prompt: "O que existe neste mundo e quem vive nele?",
+    objective: "O jogador da vez define e registra o cenário à luz da carta.",
+    prompt: "Que mundo a carta convida vocês a imaginar?",
     icon: "◌",
   },
   PROBLEM: {
     title: "Vamos entender o problema",
     eyebrow: "Problema",
-    objective: "Transforme tensões do cenário em um problema relevante.",
-    prompt: "Qual necessidade merece ser resolvida primeiro?",
+    objective:
+      "Todos contam sua leitura; o jogador da vez sintetiza e registra o problema.",
+    prompt: "Que problema aparece nas histórias do grupo?",
     icon: "△",
   },
   INSIGHT: {
-    title: "Vamos descobrir o insight",
-    eyebrow: "Insight",
-    objective: "Olhe além da primeira explicação e encontre oportunidades.",
-    prompt: "O que estamos deixando de perceber?",
+    title: "Vamos encontrar insights",
+    eyebrow: "Insights",
+    objective:
+      "Cada pessoa compartilha formas de tratar o problema; o grupo registra todas.",
+    prompt: "Que insight pode abrir um novo caminho para o problema?",
     icon: "✦",
   },
   SOLUTION: {
-    title: "Vamos criar a solução",
-    eyebrow: "Solução",
-    objective: "Crie respostas e fortaleça as ideias do grupo.",
-    prompt: "Que solução inesperada conecta cenário, problema e insight?",
+    title: "Vamos criar ideias",
+    eyebrow: "Ideias",
+    objective:
+      "Cada pessoa registra uma ideia; o jogador da vez abre a votação em seguida.",
+    prompt: "Que ideia responde ao problema usando os insights do grupo?",
     icon: "◇",
   },
   POLISHING: {
     title: "Vamos lapidar a ideia",
     eyebrow: "Lapidando",
-    objective: "Explore e refine a ideia vencedora com o grupo.",
-    prompt: "O que pode tornar esta ideia ainda melhor?",
+    objective:
+      "Uma nova carta inspira uma rodada livre de exploração da ideia votada.",
+    prompt: "O que a nova carta faz vocês imaginarem sobre a ideia escolhida?",
     icon: "✧",
   },
   PROTOTYPE: {
-    title: "Vamos criar o protótipo",
-    eyebrow: "Protótipo",
-    objective: "Mostre rapidamente como alguém usaria a solução.",
-    prompt: "Qual é a menor representação que torna a ideia compreensível?",
+    title: "Vamos prototipar",
+    eyebrow: "Prototipando",
+    objective:
+      "Criem uma representação simples para mostrar como a ideia funciona.",
+    prompt: "Qual é a menor versão que torna a ideia compreensível?",
     icon: "▱",
   },
   TESTING: {
-    title: "Vamos testar com recursos",
+    title: "Vamos testar",
     eyebrow: "Testando",
-    objective: "Escolha uma estratégia para testar o protótipo com recursos.",
-    prompt: "Qual teste revela mais sobre a viabilidade da ideia?",
+    objective:
+      "Escolham entre cinco possibilidades aleatórias que usam os recursos do grupo para refinar o protótipo.",
+    prompt: "Qual teste ajuda mais a refinar o protótipo?",
     icon: "↗",
   },
   CONQUERING: {
     title: "Vamos conquistar adesão",
     eyebrow: "Conquistando",
-    objective: "Crie estratégias para conquistar pessoas.",
-    prompt: "Como explicar o valor desta ideia em uma frase?",
+    objective:
+      "Cada pessoa propõe uma forma de conquistar a adesão da galera; o jogador da vez abre a votação.",
+    prompt: "Como convidar a galera a aderir a esta ideia?",
     icon: "◎",
   },
   FINAL: {
-    title: "Vamos revelar a jornada",
+    title: "Final da jornada",
     eyebrow: "Final",
-    objective: "Consolide a jornada e descubra o que o grupo construiu.",
-    prompt: "Qual é o próximo passo real para esta ideia?",
+    objective:
+      "Um agente de IA cria o final a partir de toda a história construída pelo grupo.",
+    prompt: "Que final esta jornada merece?",
     icon: "★",
   },
 };
@@ -221,6 +247,18 @@ const STAGE_PLAN_RESOLUTIONS: Record<string, "FACILITATOR" | "UNION" | "VOTE"> =
     POLISHING: "UNION",
     CONQUERING: "VOTE",
   };
+
+const GAME_FLOW_STEPS = [
+  "Cenário",
+  "Problema",
+  "Insights",
+  "Ideias",
+  "Lapidar",
+  "Protótipo",
+  "Teste",
+  "Conquistar",
+  "Final",
+] as const;
 
 const AVATARS = ["seedling", "comet", "prism", "whale", "owl", "fox"] as const;
 const AVATAR_GLYPHS: Record<string, string> = {
@@ -963,6 +1001,24 @@ function Lobby({
     }
   }
 
+  const pizzaSlice = (index: number) => {
+    const angle = 360 / GAME_FLOW_STEPS.length;
+    const start = ((index * angle - 90) * Math.PI) / 180;
+    const end = (((index + 1) * angle - 90) * Math.PI) / 180;
+    const point = (r: number, radians: number) => [
+      50 + r * Math.cos(radians),
+      50 + r * Math.sin(radians),
+    ];
+    const [x1, y1] = point(48, start);
+    const [x2, y2] = point(48, end);
+    const [labelX, labelY] = point(33, start + (end - start) / 2);
+    return {
+      path: `M 50 50 L ${x1} ${y1} A 48 48 0 0 1 ${x2} ${y2} Z`,
+      labelX,
+      labelY,
+    };
+  };
+
   return (
     <main className="app-shell lobby-page">
       <header className="topbar">
@@ -997,6 +1053,62 @@ function Lobby({
             {copied ? "✓ Convite copiado!" : "Compartilhar convite"}
           </span>
         </button>
+      </section>
+
+      <section className="game-flow-panel" aria-labelledby="game-flow-title">
+        <div className="game-flow-copy">
+          <p className="kicker">Fluxo do jogo</p>
+          <h2 id="game-flow-title">
+            Nove etapas para transformar conversa em ideia
+          </h2>
+          <p>
+            O grupo percorre a jornada junto, da criação do cenário ao final.
+          </p>
+        </div>
+
+        <div className="game-flow-content">
+          <svg
+            className="game-flow-pizza"
+            viewBox="0 0 100 100"
+            role="img"
+            aria-labelledby="game-flow-visual-title game-flow-visual-description"
+          >
+            <title id="game-flow-visual-title">
+              Fluxo do jogo em nove etapas
+            </title>
+            <desc id="game-flow-visual-description">
+              Uma pizza dividida em nove fatias numeradas, que representam as
+              etapas da jornada.
+            </desc>
+            {GAME_FLOW_STEPS.map((step, index) => {
+              const slice = pizzaSlice(index);
+              return (
+                <g className="game-flow-slice" key={step}>
+                  <path d={slice.path} />
+                  <text x={slice.labelX} y={slice.labelY} dy="0.35em">
+                    {index + 1}
+                  </text>
+                </g>
+              );
+            })}
+            <circle className="game-flow-center" cx="50" cy="50" r="16" />
+            <text className="game-flow-center-label" x="50" y="48">
+              IDEA
+            </text>
+            <text className="game-flow-center-label" x="50" y="55">
+              HERO
+            </text>
+          </svg>
+
+          <ol className="game-flow-legend">
+            {GAME_FLOW_STEPS.map((step, index) => (
+              <li key={step}>
+                <span aria-hidden="true">{index + 1}</span>
+                {step}
+              </li>
+            ))}
+          </ol>
+        </div>
       </section>
 
       <section className="players-panel" aria-labelledby="players-title">
@@ -1303,6 +1415,10 @@ function GameBoard({
   const acknowledgeStageGuidance = useReducer(
     reducers.acknowledgeStageGuidance,
   );
+  const setStageInsight = useReducer(reducers.setStageInsight);
+  const setTestingOptions = useReducer(reducers.setTestingOptions);
+  const setStageQuestion = useReducer(reducers.setStageQuestion);
+  const [stageInsights] = useTable(tables.room_stage_insights);
   const stage = room.currentStage as BoardState;
   const content = STAGE_CONTENT[stage] ?? STAGE_CONTENT.SCENARIO;
   const guidance =
@@ -1340,6 +1456,9 @@ function GameBoard({
   const stageOutcome = stageOutcomes.find((item) => item.stage === stage);
   const assignedPlaceholder =
     ownAssignment?.actionPlaceholder ?? guidance?.placeholder ?? "";
+  const conqueringQuestionReady =
+    stage !== "CONQUERING" ||
+    !ownAssignment?.actionPrompt.includes("Como conquistar a adesão da galera");
   const collaborative = COLLABORATIVE_STAGES.has(stage);
   const stageVotes = votes.filter(
     (item) => item.roomId === room.id && item.stage === stage,
@@ -1368,6 +1487,334 @@ function GameBoard({
   )
     ? onlinePlayers
     : [currentPlayer, ...onlinePlayers];
+  const roomStageInsights = stageInsights.filter(
+    (item) => item.roomId === room.id,
+  );
+  const testingInsight = roomStageInsights.find(
+    (item) => item.stage === "TESTING",
+  );
+  const conqueringInsight = roomStageInsights.find(
+    (item) => item.stage === "CONQUERING",
+  );
+  const finalInsight = roomStageInsights.find((item) => item.stage === "FINAL");
+  const selectedTestingOption = testingOptions.find((item) => item.selected);
+  const conqueringDecision = decisions.find(
+    (item) => item.roomId === room.id && item.stage === "CONQUERING",
+  );
+  const insightForStage =
+    stage === "TESTING"
+      ? testingInsight
+      : stage === "CONQUERING"
+        ? conqueringInsight
+        : undefined;
+  const insightTriggered =
+    stage === "TESTING"
+      ? Boolean(selectedTestingOption)
+      : stage === "CONQUERING"
+        ? Boolean(conqueringDecision)
+        : false;
+  const insightAttemptedRef = useRef<Set<string>>(new Set());
+  const [insightPending, setInsightPending] = useState(false);
+  const [insightError, setInsightError] = useState("");
+  const testingOptionsAttemptedRef = useRef<Set<string>>(new Set());
+  const [testingOptionsPending, setTestingOptionsPending] = useState(false);
+  const [testingOptionsError, setTestingOptionsError] = useState("");
+  const conqueringQuestionAttemptedRef = useRef<Set<string>>(new Set());
+  const [conqueringQuestionPending, setConqueringQuestionPending] =
+    useState(false);
+  const [conqueringQuestionError, setConqueringQuestionError] = useState("");
+  const finalInsightAttemptedRef = useRef<Set<string>>(new Set());
+  const [finalInsightPending, setFinalInsightPending] = useState(false);
+  const [finalInsightError, setFinalInsightError] = useState("");
+
+  async function generateFinalInsight() {
+    setFinalInsightPending(true);
+    setFinalInsightError("");
+    try {
+      const context = buildInsightContext({
+        contributions: contributions.map((item) => ({
+          stage: item.stage,
+          content: item.content,
+        })),
+        decisions: decisions.map((item) => ({
+          stage: item.stage,
+          summary: item.summary,
+        })),
+        stageOutcomes: stageOutcomes.map((item) => ({
+          stage: item.stage,
+          summary: item.summary,
+        })),
+        stageInsights: roomStageInsights.map((item) => ({
+          stage: item.stage,
+          selectedLearning: item.selectedLearning,
+          selectedKey: item.selectedKey,
+        })),
+        prototype: projectPrototype
+          ? {
+              challengeTitle: projectPrototype.challengeTitle,
+              caption: projectPrototype.caption,
+            }
+          : undefined,
+        testingOption: selectedTestingOption
+          ? {
+              title: selectedTestingOption.title,
+              description: selectedTestingOption.description,
+              impact: selectedTestingOption.impact,
+            }
+          : undefined,
+      });
+      const response = await fetch("/api/stage-insight", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          stage: "FINAL",
+          context: serializeInsightContext(context),
+        }),
+      });
+      const data = (await response.json().catch(() => ({}))) as {
+        error?: string;
+        title?: string;
+        summary?: string;
+      };
+      if (!response.ok || !data.title || !data.summary) {
+        throw new Error(data.error ?? "Falha ao criar o final da jornada.");
+      }
+      await setStageInsight({
+        roomId: room.id,
+        stage: "FINAL",
+        headline: data.title,
+        body: data.summary,
+        optionsJson: "[]",
+      });
+    } catch (caught) {
+      setFinalInsightError(errorMessage(caught));
+    } finally {
+      setFinalInsightPending(false);
+    }
+  }
+
+  useEffect(() => {
+    if (!isHost || stage !== "FINAL" || finalInsight || finalInsightPending)
+      return;
+    const key = room.id.toString();
+    if (finalInsightAttemptedRef.current.has(key)) return;
+    finalInsightAttemptedRef.current.add(key);
+    void generateFinalInsight();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isHost, room.id, stage, finalInsight, finalInsightPending]);
+
+  async function generateTestingOptions() {
+    setTestingOptionsPending(true);
+    setTestingOptionsError("");
+    try {
+      const context = buildInsightContext({
+        contributions: contributions.map((item) => ({
+          stage: item.stage,
+          content: item.content,
+        })),
+        decisions: decisions.map((item) => ({
+          stage: item.stage,
+          summary: item.summary,
+        })),
+        stageOutcomes: stageOutcomes.map((item) => ({
+          stage: item.stage,
+          summary: item.summary,
+        })),
+        prototype: projectPrototype
+          ? {
+              challengeTitle: projectPrototype.challengeTitle,
+              caption: projectPrototype.caption,
+            }
+          : undefined,
+      });
+      const response = await fetch("/api/stage-insight", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          stage: "TESTING_OPTIONS",
+          context: serializeInsightContext(context),
+        }),
+      });
+      const data = (await response.json().catch(() => ({}))) as {
+        error?: string;
+        question?: string;
+        options?: unknown[];
+      };
+      if (!response.ok || !data.question || !data.options) {
+        throw new Error(data.error ?? "Falha ao gerar as opções de teste.");
+      }
+      await setTestingOptions({
+        roomId: room.id,
+        question: data.question,
+        optionsJson: JSON.stringify(data.options),
+      });
+    } catch (caught) {
+      setTestingOptionsError(errorMessage(caught));
+    } finally {
+      setTestingOptionsPending(false);
+    }
+  }
+
+  useEffect(() => {
+    if (
+      !isHost ||
+      stage !== "TESTING" ||
+      testingOptions.length > 0 ||
+      testingOptionsPending
+    ) {
+      return;
+    }
+    const key = room.id.toString();
+    if (testingOptionsAttemptedRef.current.has(key)) return;
+    testingOptionsAttemptedRef.current.add(key);
+    void generateTestingOptions();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isHost, room.id, stage, testingOptions.length, testingOptionsPending]);
+
+  async function generateConqueringQuestion() {
+    setConqueringQuestionPending(true);
+    setConqueringQuestionError("");
+    try {
+      const context = buildInsightContext({
+        contributions: contributions.map((item) => ({
+          stage: item.stage,
+          content: item.content,
+        })),
+        decisions: decisions.map((item) => ({
+          stage: item.stage,
+          summary: item.summary,
+        })),
+        stageOutcomes: stageOutcomes.map((item) => ({
+          stage: item.stage,
+          summary: item.summary,
+        })),
+        prototype: projectPrototype
+          ? {
+              challengeTitle: projectPrototype.challengeTitle,
+              caption: projectPrototype.caption,
+            }
+          : undefined,
+      });
+      const response = await fetch("/api/stage-insight", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          stage: "CONQUERING_QUESTION",
+          context: serializeInsightContext(context),
+        }),
+      });
+      const data = (await response.json().catch(() => ({}))) as {
+        error?: string;
+        question?: string;
+      };
+      if (!response.ok || !data.question) {
+        throw new Error(data.error ?? "Falha ao gerar a pergunta da etapa.");
+      }
+      await setStageQuestion({
+        roomId: room.id,
+        stage: "CONQUERING",
+        question: data.question,
+      });
+    } catch (caught) {
+      setConqueringQuestionError(errorMessage(caught));
+    } finally {
+      setConqueringQuestionPending(false);
+    }
+  }
+
+  useEffect(() => {
+    if (!isHost || stage !== "CONQUERING" || phase !== "CONTRIBUTING") return;
+    const key = room.id.toString();
+    if (conqueringQuestionAttemptedRef.current.has(key)) return;
+    conqueringQuestionAttemptedRef.current.add(key);
+    void generateConqueringQuestion();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isHost, room.id, stage, phase]);
+
+  async function generateStageInsight(targetStage: "TESTING" | "CONQUERING") {
+    setInsightPending(true);
+    setInsightError("");
+    try {
+      const context = buildInsightContext({
+        contributions: contributions.map((item) => ({
+          stage: item.stage,
+          content: item.content,
+        })),
+        decisions: decisions.map((item) => ({
+          stage: item.stage,
+          summary: item.summary,
+        })),
+        stageOutcomes: stageOutcomes.map((item) => ({
+          stage: item.stage,
+          summary: item.summary,
+        })),
+        stageInsights: roomStageInsights.map((item) => ({
+          stage: item.stage,
+          selectedLearning: item.selectedLearning,
+          selectedKey: item.selectedKey,
+        })),
+        prototype: projectPrototype
+          ? {
+              challengeTitle: projectPrototype.challengeTitle,
+              caption: projectPrototype.caption,
+            }
+          : undefined,
+        testingOption: selectedTestingOption
+          ? {
+              title: selectedTestingOption.title,
+              description: selectedTestingOption.description,
+              impact: selectedTestingOption.impact,
+            }
+          : undefined,
+      });
+      const response = await fetch("/api/stage-insight", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          stage: targetStage,
+          context: serializeInsightContext(context),
+        }),
+      });
+      if (!response.ok) {
+        const data = (await response.json().catch(() => ({}))) as {
+          error?: string;
+        };
+        throw new Error(data.error ?? "Falha ao gerar a reacao da etapa.");
+      }
+      const result = (await response.json()) as {
+        headline: string;
+        body: string;
+        options?: {
+          key: string;
+          title: string;
+          description: string;
+          learning: string;
+        }[];
+      };
+      await setStageInsight({
+        roomId: room.id,
+        stage: targetStage,
+        headline: result.headline,
+        body: result.body,
+        optionsJson: JSON.stringify(result.options ?? []),
+      });
+    } catch (caught) {
+      setInsightError(errorMessage(caught));
+    } finally {
+      setInsightPending(false);
+    }
+  }
+
+  useEffect(() => {
+    if (!isHost || insightPending) return;
+    if (stage !== "TESTING" && stage !== "CONQUERING") return;
+    if (insightForStage || !insightTriggered) return;
+    if (insightAttemptedRef.current.has(stage)) return;
+    insightAttemptedRef.current.add(stage);
+    void generateStageInsight(stage);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isHost, stage, insightForStage, insightTriggered, insightPending]);
+
   const guidanceTopic = `STAGE_GUIDANCE_${stage}`;
   const guidanceAcknowledgements = groupVotes.filter(
     (item) => item.topic === guidanceTopic && item.choice === "READ",
@@ -1491,10 +1938,9 @@ function GameBoard({
     ? projectPrototype.startedAt.toDate().getTime() +
       projectPrototype.durationSeconds * 1000
     : 0;
-  const secondsLeft =
-    !guidanceCompletedAt
-      ? roundSeconds
-      : stage === "PROTOTYPE" && projectPrototype
+  const secondsLeft = !guidanceCompletedAt
+    ? roundSeconds
+    : stage === "PROTOTYPE" && projectPrototype
       ? Math.max(0, Math.ceil((prototypeEndingAt - clock) / 1000))
       : Math.max(0, roundSeconds - Math.floor((clock - roundStartedAt) / 1000));
   const timeExpired = secondsLeft === 0;
@@ -1620,15 +2066,15 @@ function GameBoard({
           <details className="topbar-stage-menu">
             <summary className="topbar-stage-pill">
               <span className="stage-pill-badge">
-                Etapa {room.stageIndex + 1}/8
+                Etapa {room.stageIndex + 1}/9
               </span>
               <span>{content.eyebrow}</span>
             </summary>
             <div className="topbar-dropdown topbar-stage-dropdown">
               <div className="topbar-dropdown-header">
-                <strong>Mapa da Jornada de Inovação</strong>
+                <strong>Mapa da jornada</strong>
                 <span className="badge-pill">
-                  {room.stageIndex + 1} de 8 concluídas
+                  {room.stageIndex + 1} de 9 concluídas
                 </span>
               </div>
 
@@ -1901,6 +2347,18 @@ function GameBoard({
           confirmedCount={guidanceConfirmedCount}
           playerCount={guidancePlayerCount}
           hasConfirmed={hasAcknowledgedGuidance}
+          isActivePlayer={
+            ["INSIGHT", "PROTOTYPE", "TESTING", "FINAL"].includes(stage) ||
+            isFacilitator ||
+            isPolishingLead ||
+            ((stage === "SOLUTION" || stage === "CONQUERING") &&
+              sameIdentity(turnPlayer?.identity, currentPlayer.identity))
+          }
+          activePlayerName={
+            facilitatorPlayer?.displayName ??
+            polishingActivePlayer?.displayName ??
+            turnPlayer?.displayName
+          }
           pending={actionPending}
           onConfirm={() =>
             void runStageAction(() =>
@@ -2176,12 +2634,19 @@ function GameBoard({
 
           {collaborative &&
             phase === "CONTRIBUTING" &&
+            stage !== "POLISHING" &&
+            conqueringQuestionReady &&
             (!usesFacilitator || isFacilitator) && (
               <>
                 <form onSubmit={saveContribution} className="contribution-form">
                   <label className="sr-only" htmlFor="contribution">
                     Sua contribuição
                   </label>
+                  {ownAssignment?.actionPrompt && (
+                    <p className="simulation-disclaimer">
+                      {ownAssignment.actionPrompt}
+                    </p>
+                  )}
                   <textarea
                     id="contribution"
                     value={draft}
@@ -2230,7 +2695,7 @@ function GameBoard({
                         ? "Salvando…"
                         : ownContribution
                           ? "Atualizar contribuição"
-                          : "Compartilhar ideia"}
+                          : `Compartilhar ${CONTRIBUTION_LABELS[stage]}`}
                     </button>
                   </div>
                 </form>
@@ -2238,11 +2703,45 @@ function GameBoard({
                   <div className="submission-waiting" aria-live="polite">
                     <span aria-hidden="true">✓</span>
                     <div>
-                      <strong>Ideia enviada</strong>
+                      <strong>
+                        {CONTRIBUTION_LABELS[stage][0].toUpperCase() +
+                          CONTRIBUTION_LABELS[stage].slice(1)}{" "}
+                        compartilhado
+                      </strong>
                     </div>
                   </div>
                 )}
               </>
+            )}
+
+          {stage === "CONQUERING" &&
+            phase === "CONTRIBUTING" &&
+            !conqueringQuestionReady && (
+              <div
+                className="stage-insight-pending"
+                style={{ padding: "1rem 0" }}
+              >
+                {conqueringQuestionPending ? (
+                  <p className="empty-state">
+                    Gerando a pergunta da etapa com IA…
+                  </p>
+                ) : isHost ? (
+                  <button
+                    type="button"
+                    className="primary-button"
+                    onClick={() => void generateConqueringQuestion()}
+                  >
+                    Gerar pergunta da etapa com IA
+                  </button>
+                ) : (
+                  <p className="empty-state">
+                    O anfitrião está gerando a pergunta da etapa com IA…
+                  </p>
+                )}
+                {conqueringQuestionError && (
+                  <p className="error-message">{conqueringQuestionError}</p>
+                )}
+              </div>
             )}
 
           {collaborative &&
@@ -2266,6 +2765,47 @@ function GameBoard({
               </div>
             )}
 
+          {stage === "TESTING" && insightForStage && (
+              <StageInsightResponse
+                room={room}
+                stage={stage}
+                insight={insightForStage}
+                groupVotes={groupVotes}
+                currentPlayer={currentPlayer}
+                players={players}
+              />
+            )}
+          {stage === "CONQUERING" && insightForStage && (
+            <StageAudienceReaction insight={insightForStage} />
+          )}
+          {(stage === "TESTING" || stage === "CONQUERING") &&
+            !insightForStage &&
+            insightTriggered && (
+              <div
+                className="stage-insight-pending"
+                style={{ padding: "1rem 0" }}
+              >
+                {insightPending ? (
+                  <p className="empty-state">Preparando a reação da etapa…</p>
+                ) : (
+                  <button
+                    type="button"
+                    className="primary-button"
+                    onClick={() =>
+                      void generateStageInsight(
+                        stage as "TESTING" | "CONQUERING",
+                      )
+                    }
+                  >
+                    Gerar reação da etapa
+                  </button>
+                )}
+                {insightError && (
+                  <p className="error-message">{insightError}</p>
+                )}
+              </div>
+            )}
+
           {!collaborative && (
             <div className="stage-activity-workspace">
               {stage === "PROTOTYPE" && (
@@ -2281,21 +2821,88 @@ function GameBoard({
                 />
               )}
               {stage === "TESTING" && (
-                <TestingStage
-                  room={room}
-                  testOptions={testingOptions}
-                  groupVotes={groupVotes}
-                  currentPlayer={currentPlayer}
-                  players={players}
-                />
+                <>
+                  <TestingStage
+                    room={room}
+                    testOptions={testingOptions}
+                    groupVotes={groupVotes}
+                    currentPlayer={currentPlayer}
+                    players={players}
+                  />
+                  {testingOptions.length === 0 && (
+                    <div
+                      className="stage-insight-pending"
+                      style={{ padding: "1rem 0" }}
+                    >
+                      {testingOptionsPending ? (
+                        <p className="empty-state">
+                          Gerando opções de teste com IA…
+                        </p>
+                      ) : isHost ? (
+                        <button
+                          type="button"
+                          className="primary-button"
+                          onClick={() => void generateTestingOptions()}
+                        >
+                          Gerar opções de teste com IA
+                        </button>
+                      ) : (
+                        <p className="empty-state">
+                          O anfitrião está gerando as opções de teste com IA…
+                        </p>
+                      )}
+                      {testingOptionsError && (
+                        <p className="error-message">{testingOptionsError}</p>
+                      )}
+                    </div>
+                  )}
+                </>
               )}
               {stage === "FINAL" && (
-                <SalesStage
-                  economy={economy}
-                  sales={salesResult}
-                  pilot={pilotSimulation}
-                  transactions={economyTransactions}
-                />
+                <>
+                  <SalesStage
+                    economy={economy}
+                    sales={salesResult}
+                    pilot={pilotSimulation}
+                    transactions={economyTransactions}
+                  />
+                  {finalInsight ? (
+                    <section className="pilot-learning" aria-live="polite">
+                      <span aria-hidden="true">✦</span>
+                      <div>
+                        <small>Final criado pela IA a partir da jornada</small>
+                        <h2>{finalInsight.headline}</h2>
+                        <p>{finalInsight.body}</p>
+                      </div>
+                    </section>
+                  ) : (
+                    <div
+                      className="stage-insight-pending"
+                      style={{ padding: "1rem 0" }}
+                    >
+                      {finalInsightPending ? (
+                        <p className="empty-state">
+                          A IA está criando o final da jornada…
+                        </p>
+                      ) : isHost ? (
+                        <button
+                          type="button"
+                          className="primary-button"
+                          onClick={() => void generateFinalInsight()}
+                        >
+                          Criar final com IA
+                        </button>
+                      ) : (
+                        <p className="empty-state">
+                          A IA está criando o final da jornada…
+                        </p>
+                      )}
+                      {finalInsightError && (
+                        <p className="error-message">{finalInsightError}</p>
+                      )}
+                    </div>
+                  )}
+                </>
               )}
 
               <div className="form-footer" style={{ marginTop: "1.25rem" }}>
@@ -2315,59 +2922,69 @@ function GameBoard({
                       ? !!projectPrototype?.committed
                       : stage === "TESTING"
                         ? testingOptions
-                          ? testingOptions.some((o) => o.selected)
+                          ? testingOptions.some((o) => o.selected) &&
+                            (!testingInsight || testingInsight.completed)
                           : true
-                        : true
+                        : stage === "FINAL"
+                          ? Boolean(finalInsight)
+                          : true
                   }
                   prerequisiteMessage={
                     stage === "PROTOTYPE"
                       ? "Conclua o protótipo compartilhado antes de avançar."
                       : stage === "TESTING"
-                        ? "Selecione uma opção de teste antes de avançar."
-                        : ""
+                        ? testingInsight && !testingInsight.completed
+                          ? "Respondam à reação do teste antes de avançar."
+                          : "Selecione uma opção de teste antes de avançar."
+                        : stage === "FINAL"
+                          ? "Aguarde o agente de IA criar o final da jornada."
+                          : ""
                   }
                 />
               </div>
             </div>
           )}
 
-          {collaborative && phase !== "REVIEW" && !usesFacilitator && (
-            <div
-              className="participant-progress"
-              aria-label="Progresso do grupo"
-            >
-              {participatingPlayers.map((player) => {
-                const complete =
-                  phase === "VOTING"
-                    ? activeStageVotes.some((item) =>
-                        sameIdentity(item.voterIdentity, player.identity),
-                      )
-                    : contributingPlayers.some((item) =>
-                        sameIdentity(item.identity, player.identity),
-                      );
-                return (
-                  <span
-                    className={complete ? "is-complete" : ""}
-                    key={player.id.toString()}
-                  >
-                    <b aria-hidden="true">
-                      {AVATAR_GLYPHS[player.avatarId] ?? "✦"}
-                    </b>
-                    {player.displayName}
-                    <small>
-                      {complete
-                        ? phase === "VOTING"
-                          ? "votou"
-                          : "enviou"
-                        : phase === "VOTING"
-                          ? "escolhendo"
-                          : "criando"}
-                    </small>
-                  </span>
-                );
-              })}
-            </div>
-          )}
+          {collaborative &&
+            phase !== "REVIEW" &&
+            phase !== "RESPONDING" &&
+            !usesFacilitator && (
+              <div
+                className="participant-progress"
+                aria-label="Progresso do grupo"
+              >
+                {participatingPlayers.map((player) => {
+                  const complete =
+                    phase === "VOTING"
+                      ? activeStageVotes.some((item) =>
+                          sameIdentity(item.voterIdentity, player.identity),
+                        )
+                      : contributingPlayers.some((item) =>
+                          sameIdentity(item.identity, player.identity),
+                        );
+                  return (
+                    <span
+                      className={complete ? "is-complete" : ""}
+                      key={player.id.toString()}
+                    >
+                      <b aria-hidden="true">
+                        {AVATAR_GLYPHS[player.avatarId] ?? "✦"}
+                      </b>
+                      {player.displayName}
+                      <small>
+                        {complete
+                          ? phase === "VOTING"
+                            ? "votou"
+                            : "enviou"
+                          : phase === "VOTING"
+                            ? "escolhendo"
+                            : "criando"}
+                      </small>
+                    </span>
+                  );
+                })}
+              </div>
+            )}
 
           {phase === "VOTING" && (
             <section className="vote-panel" aria-labelledby="vote-title">
@@ -2629,6 +3246,69 @@ function JourneyResult({
     }, 600);
     return () => window.clearTimeout(timer);
   }, [isHost, manifestChanged, room.id, summary, title, updateJourney]);
+
+  const journeyConsolidatedRef = useRef(false);
+  const [consolidating, setConsolidating] = useState(false);
+  const isPlaceholderTitle =
+    !!journey &&
+    (journey.title.startsWith("Ideia da jornada ") ||
+      journey.title.startsWith("Jornada parcial "));
+
+  useEffect(() => {
+    if (!isHost || !journey || journeyConsolidatedRef.current) return;
+    if (!isPlaceholderTitle || consolidating) return;
+    journeyConsolidatedRef.current = true;
+    setConsolidating(true);
+    setError("");
+    const context = buildInsightContext({
+      contributions: contributions.map((item) => ({
+        stage: item.stage,
+        content: item.content,
+      })),
+      decisions: decisions.map((item) => ({
+        stage: item.stage,
+        summary: item.summary,
+      })),
+      stageOutcomes: stageOutcomes.map((item) => ({
+        stage: item.stage,
+        summary: item.summary,
+      })),
+      prototype: projectPrototype
+        ? {
+            challengeTitle: projectPrototype.challengeTitle,
+            caption: projectPrototype.caption,
+          }
+        : undefined,
+    });
+    fetch("/api/stage-insight", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        stage: "FINAL",
+        context: serializeInsightContext(context),
+      }),
+    })
+      .then((response) =>
+        response.ok
+          ? (response.json() as Promise<{ title: string; summary: string }>)
+          : Promise.reject(new Error("Falha ao consolidar a jornada.")),
+      )
+      .then((result) => {
+        setTitle(result.title.slice(0, 80));
+        setSummary(result.summary.slice(0, 400));
+      })
+      .catch((caught) => setError(errorMessage(caught)))
+      .finally(() => setConsolidating(false));
+  }, [
+    isHost,
+    journey,
+    isPlaceholderTitle,
+    consolidating,
+    contributions,
+    decisions,
+    stageOutcomes,
+    projectPrototype,
+  ]);
 
   function applyManifestVoice({
     transcript,
@@ -2917,9 +3597,11 @@ function JourneyResult({
           )}
           <div className="manifest-footer">
             <small>
-              {syncingManifest
-                ? "Sincronizando com o grupo…"
-                : `${summary.length}/400 caracteres`}
+              {consolidating
+                ? "Consolidando a jornada com IA…"
+                : syncingManifest
+                  ? "Sincronizando com o grupo…"
+                  : `${summary.length}/400 caracteres`}
             </small>
             {isHost && (
               <button

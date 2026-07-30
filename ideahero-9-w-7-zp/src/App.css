@@ -447,6 +447,105 @@ textarea:focus {
   text-transform: uppercase;
 }
 
+.game-flow-panel {
+  width: min(calc(100% - 2rem), 720px);
+  margin: 0 auto 1.5rem;
+  padding: clamp(1rem, 3vw, 1.5rem);
+  border: 2px solid var(--line);
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.78);
+  box-shadow: 5px 5px 0 var(--line);
+}
+.game-flow-copy h2 {
+  margin-bottom: 0.45rem;
+  font-size: clamp(1.35rem, 4vw, 1.8rem);
+}
+.game-flow-copy > p:last-child {
+  margin-bottom: 1rem;
+  color: var(--muted);
+  line-height: 1.45;
+}
+.game-flow-content {
+  display: grid;
+  grid-template-columns: minmax(150px, 210px) 1fr;
+  align-items: center;
+  gap: clamp(1rem, 4vw, 2rem);
+}
+.game-flow-pizza {
+  display: block;
+  width: 100%;
+  max-width: 210px;
+  margin: 0 auto;
+  overflow: visible;
+}
+.game-flow-slice path {
+  stroke: var(--line);
+  stroke-width: 1.4;
+}
+.game-flow-slice text {
+  fill: var(--ink);
+  font-size: 11px;
+  font-weight: 900;
+  text-anchor: middle;
+}
+.game-flow-slice:nth-of-type(1) path,
+.game-flow-legend li:nth-child(1) span { fill: var(--pink); }
+.game-flow-slice:nth-of-type(2) path,
+.game-flow-legend li:nth-child(2) span { fill: var(--sun); }
+.game-flow-slice:nth-of-type(3) path,
+.game-flow-legend li:nth-child(3) span { fill: var(--lime); }
+.game-flow-slice:nth-of-type(4) path,
+.game-flow-legend li:nth-child(4) span { fill: var(--teal); }
+.game-flow-slice:nth-of-type(5) path,
+.game-flow-legend li:nth-child(5) span { fill: #b9a8f5; }
+.game-flow-slice:nth-of-type(6) path,
+.game-flow-legend li:nth-child(6) span { fill: #ffb38c; }
+.game-flow-slice:nth-of-type(7) path,
+.game-flow-legend li:nth-child(7) span { fill: #9edfc0; }
+.game-flow-slice:nth-of-type(8) path,
+.game-flow-legend li:nth-child(8) span { fill: #8ed8e3; }
+.game-flow-slice:nth-of-type(9) path,
+.game-flow-legend li:nth-child(9) span { fill: #f6a8c3; }
+.game-flow-center {
+  fill: var(--paper);
+  stroke: var(--line);
+  stroke-width: 1.4;
+}
+.game-flow-center-label {
+  fill: var(--ink);
+  font-size: 7px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-anchor: middle;
+}
+.game-flow-legend {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.55rem;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+.game-flow-legend li {
+  display: flex;
+  align-items: center;
+  gap: 0.38rem;
+  min-width: 0;
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+.game-flow-legend span {
+  display: grid;
+  flex: 0 0 auto;
+  place-items: center;
+  width: 1.45rem;
+  height: 1.45rem;
+  border: 1.5px solid var(--line);
+  border-radius: 50%;
+  color: var(--ink);
+  font-size: 0.72rem;
+}
+
 .players-panel,
 .journey-summary,
 .contribution-panel {
@@ -612,6 +711,14 @@ textarea:focus {
 @media (min-width: 520px) {
   .host-actions-group {
     flex-direction: row;
+  }
+}
+@media (max-width: 480px) {
+  .game-flow-content {
+    grid-template-columns: 1fr;
+  }
+  .game-flow-legend {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 

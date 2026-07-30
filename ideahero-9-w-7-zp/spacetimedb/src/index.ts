@@ -20,7 +20,6 @@ import {
   marketResponseForSeed,
   pilotFeedbackForSeed,
   prototypeChallengeForSeed,
-  generateTestOptions,
 } from "./economy";
 
 const BOARD_STATES = [
@@ -68,8 +67,8 @@ const COLLABORATIVE_STAGE_PLANS: Record<string, CollaborativeStagePlan> = {
     actions: [
       {
         key: "SCENARIO",
-        title: "Definição do cenario",
-        prompt: "Defina o cenario a luz da carta sorteada para o grupo.",
+        title: "Definição do cenário",
+        prompt: "Defina o cenário à luz da carta sorteada para o grupo.",
         placeholder: "Neste mundo, as pessoas vivem...",
       },
     ],
@@ -81,7 +80,7 @@ const COLLABORATIVE_STAGE_PLANS: Record<string, CollaborativeStagePlan> = {
         key: "PROBLEM",
         title: "Síntese do problema",
         prompt: "Ouvindo as histórias de todos, sintetize o problema central.",
-        placeholder: "O problema central que o grupo identificou e...",
+        placeholder: "O problema central que o grupo identificou é...",
       },
     ],
   },
@@ -98,28 +97,28 @@ const COLLABORATIVE_STAGE_PLANS: Record<string, CollaborativeStagePlan> = {
         key: "BEHAVIOR",
         title: "Um comportamento",
         prompt:
-          "Observe um habito ou comportamento que revela algo importante.",
+          "Observe um hábito ou comportamento que revela algo importante.",
         placeholder: "As pessoas costumam...",
       },
       {
         key: "CONTRADICTION",
-        title: "A contradicao",
+        title: "A contradição",
         prompt:
-          "Encontre algo que parece contraditorio, mas abre uma oportunidade.",
+          "Encontre algo que parece contraditório, mas abre uma oportunidade.",
         placeholder: "Mesmo que..., as pessoas...",
       },
       {
         key: "RESOURCE",
         title: "Um recurso esquecido",
         prompt:
-          "Aponte um recurso, relacao ou capacidade que ainda nao foi aproveitado.",
-        placeholder: "Ja existe uma forca em...",
+          "Aponte um recurso, relação ou capacidade que ainda não foi aproveitado.",
+        placeholder: "Já existe uma força em...",
       },
       {
         key: "SIGNAL",
-        title: "Um sinal de mudanca",
-        prompt: "Descreva um sinal de que esse contexto esta mudando.",
-        placeholder: "Um sinal disso e...",
+        title: "Um sinal de mudança",
+        prompt: "Descreva um sinal de que esse contexto está mudando.",
+        placeholder: "Um sinal disso é...",
       },
       {
         key: "OPENING",
@@ -134,9 +133,9 @@ const COLLABORATIVE_STAGE_PLANS: Record<string, CollaborativeStagePlan> = {
     actions: [
       {
         key: "SOLUTION",
-        title: "Sua proposta de solucao",
-        prompt: "Que solucao inesperada conecta cenario, problema e insight?",
-        placeholder: "E se criassemos uma forma de...",
+        title: "Sua ideia",
+        prompt: "Que ideia inesperada conecta cenário, problema e insights?",
+        placeholder: "E se criássemos uma forma de...",
       },
     ],
   },
@@ -147,8 +146,8 @@ const COLLABORATIVE_STAGE_PLANS: Record<string, CollaborativeStagePlan> = {
         key: "POLISH",
         title: "Lapidando a ideia",
         prompt:
-          "Como o grupo decidiu lapidar a ideia vencedora à luz da carta?",
-        placeholder: "Ajustamos a ideia para...",
+          "Como o grupo decidiu explorar a ideia votada à luz da nova carta?",
+        placeholder: "Exploramos a ideia a partir de...",
       },
     ],
   },
@@ -157,9 +156,9 @@ const COLLABORATIVE_STAGE_PLANS: Record<string, CollaborativeStagePlan> = {
     actions: [
       {
         key: "CONQUEST",
-        title: "Sua proposta de conquista",
-        prompt: "Como convencer as pessoas a aderirem a esta ideia?",
-        placeholder: "Para conquistar adesão, eu proporia...",
+        title: "Sua proposta de adesão",
+        prompt: "Como conquistar a adesão da galera para esta ideia?",
+        placeholder: "Para conquistar a adesão, eu proporia...",
       },
     ],
   },
@@ -417,8 +416,35 @@ const testingOption = table(
     description: t.string(),
     cost: t.u32(),
     impact: t.string(),
+    question: t.string().default(""),
     selected: t.bool(),
     createdAt: t.timestamp(),
+  },
+);
+
+const stageInsight = table(
+  {
+    name: "stage_insight",
+    indexes: [
+      {
+        accessor: "by_room_stage",
+        algorithm: "btree",
+        columns: ["roomId", "stage"],
+      },
+    ],
+  },
+  {
+    id: t.u64().primaryKey().autoInc(),
+    roomId: t.u64().index("btree"),
+    stage: t.string(),
+    headline: t.string(),
+    body: t.string(),
+    optionsJson: t.string(),
+    selectedKey: t.string().default(""),
+    selectedLearning: t.string().default(""),
+    completed: t.bool().default(false),
+    createdAt: t.timestamp(),
+    updatedAt: t.timestamp(),
   },
 );
 
@@ -593,6 +619,7 @@ const spacetimedb = schema({
   marketingPlan,
   salesResult,
   testingOption,
+  stageInsight,
   card,
   cardDraw,
   stageSession,
@@ -786,6 +813,23 @@ export const room_testing_options = spacetimedb.view(
         membership.roomId,
       )) {
         rows.push(option);
+      }
+    }
+    return rows;
+  },
+);
+
+export const room_stage_insights = spacetimedb.view(
+  { name: "room_stage_insights", public: true },
+  t.array(stageInsight.rowType),
+  (ctx) => {
+    const rows = [];
+    for (const membership of ctx.db.player.identity.filter(ctx.sender)) {
+      if (!membership.active) continue;
+      for (const insight of ctx.db.stageInsight.roomId.filter(
+        membership.roomId,
+      )) {
+        rows.push(insight);
       }
     }
     return rows;
@@ -2548,6 +2592,353 @@ export const select_test_option = spacetimedb.reducer(
       });
   },
 );
+
+export const set_testing_options = spacetimedb.reducer(
+  { roomId: t.u64(), question: t.string(), optionsJson: t.string() },
+  (ctx, { roomId, question, optionsJson }) => {
+    const currentRoom = ctx.db.room.id.find(roomId);
+    if (
+      !currentRoom ||
+      currentRoom.status !== "ACTIVE" ||
+      currentRoom.currentStage !== "TESTING"
+    ) {
+      throw new SenderError("A etapa de teste não está ativa.");
+    }
+    if (!currentRoom.ownerIdentity.isEqual(ctx.sender)) {
+      throw new SenderError("Apenas o anfitrião pode gerar os testes com IA.");
+    }
+    const existing = Array.from(ctx.db.testingOption.roomId.filter(roomId));
+    if (existing.some((item) => item.selected)) {
+      throw new SenderError("Um teste já foi escolhido para esta etapa.");
+    }
+    if (existing.length > 0) return;
+
+    let rawOptions: unknown;
+    try {
+      rawOptions = JSON.parse(optionsJson);
+    } catch {
+      throw new SenderError("As opções de teste estão em formato inválido.");
+    }
+    if (!Array.isArray(rawOptions) || rawOptions.length !== 5) {
+      throw new SenderError(
+        "A IA precisa gerar exatamente cinco opções de teste.",
+      );
+    }
+    const trimmedQuestion = question.trim();
+    if (trimmedQuestion.length < 12 || trimmedQuestion.length > 180) {
+      throw new SenderError("A pergunta de teste gerada pela IA é inválida.");
+    }
+    const keys = new Set<string>();
+    const options = rawOptions.map((entry) => {
+      const value = entry as Record<string, unknown>;
+      const key = String(value.key ?? "").trim();
+      const title = String(value.title ?? "").trim();
+      const description = String(value.description ?? "").trim();
+      const impact = String(value.impact ?? "").trim();
+      const cost = Number(value.cost);
+      if (
+        !/^[A-E]$/.test(key) ||
+        keys.has(key) ||
+        !title ||
+        !description ||
+        !impact ||
+        !Number.isInteger(cost) ||
+        cost < 0 ||
+        cost > 2_000
+      ) {
+        throw new SenderError("Uma opção de teste gerada pela IA é inválida.");
+      }
+      keys.add(key);
+      return { key, title, description, impact, cost };
+    });
+    for (const option of options) {
+      ctx.db.testingOption.insert({
+        id: 0n,
+        roomId,
+        optionKey: option.key,
+        title: option.title,
+        description: option.description,
+        cost: option.cost,
+        impact: option.impact,
+        question: trimmedQuestion,
+        selected: false,
+        createdAt: ctx.timestamp,
+      });
+    }
+  },
+);
+
+export const set_stage_question = spacetimedb.reducer(
+  { roomId: t.u64(), stage: t.string(), question: t.string() },
+  (ctx, { roomId, stage, question }) => {
+    const room = ctx.db.room.id.find(roomId);
+    if (!room || room.status !== "ACTIVE" || room.currentStage !== stage) {
+      throw new SenderError("Esta etapa não está ativa.");
+    }
+    if (!room.ownerIdentity.isEqual(ctx.sender)) {
+      throw new SenderError("Apenas o anfitrião pode gerar a pergunta com IA.");
+    }
+    if (stage !== "CONQUERING") {
+      throw new SenderError(
+        "Esta etapa não recebe uma pergunta gerada por IA.",
+      );
+    }
+    const prompt = question.trim();
+    if (prompt.length < 12 || prompt.length > 180) {
+      throw new SenderError("A pergunta gerada pela IA é inválida.");
+    }
+    const assignments = Array.from(
+      ctx.db.stageAssignment.roomId.filter(roomId),
+    ).filter((item) => item.stage === stage);
+    if (assignments.length === 0) {
+      throw new SenderError(
+        "As atribuições desta etapa não foram encontradas.",
+      );
+    }
+    for (const assignment of assignments) {
+      ctx.db.stageAssignment.id.update({ ...assignment, actionPrompt: prompt });
+    }
+  },
+);
+
+const INSIGHT_STAGES = new Set(["TESTING", "CONQUERING", "FINAL"]);
+
+function parseInsightOptions(optionsJson: string) {
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(optionsJson);
+  } catch {
+    throw new SenderError("As opções de reação estão em formato inválido.");
+  }
+  if (!Array.isArray(parsed) || parsed.length !== 3) {
+    throw new SenderError("A reação precisa de exatamente três opções.");
+  }
+  const options = parsed.map((entry) => {
+    const value = entry as Record<string, unknown>;
+    const key = String(value?.key ?? "").trim();
+    const title = String(value?.title ?? "").trim();
+    const description = String(value?.description ?? "").trim();
+    const learning = String(value?.learning ?? "").trim();
+    if (!key || !title || !description || !learning) {
+      throw new SenderError(
+        "Cada opção de reação precisa de chave, título, descrição e aprendizado.",
+      );
+    }
+    return { key, title, description, learning };
+  });
+  const keys = options.map((option) => option.key);
+  if (new Set(keys).size !== 3) {
+    throw new SenderError("As opções de reação precisam de chaves distintas.");
+  }
+  return options;
+}
+
+export const set_stage_insight = spacetimedb.reducer(
+  {
+    roomId: t.u64(),
+    stage: t.string(),
+    headline: t.string(),
+    body: t.string(),
+    optionsJson: t.string(),
+  },
+  (ctx, { roomId, stage, headline, body, optionsJson }) => {
+    const currentRoom = ctx.db.room.id.find(roomId);
+    if (!currentRoom || currentRoom.status !== "ACTIVE") {
+      throw new SenderError("A jornada não está ativa.");
+    }
+    const membership = Array.from(ctx.db.player.roomId.filter(roomId)).find(
+      (item) => item.active && item.identity.isEqual(ctx.sender),
+    );
+    if (!membership) {
+      throw new SenderError("Voce nao pertence a esta sala.");
+    }
+    if (currentRoom.currentStage !== stage) {
+      throw new SenderError("Esta não é a etapa atual da jornada.");
+    }
+    if (!INSIGHT_STAGES.has(stage)) {
+      throw new SenderError("Esta etapa não recebe uma reação consolidada.");
+    }
+
+    const trimmedHeadline = headline.trim();
+    const trimmedBody = body.trim();
+    if (trimmedHeadline.length < 4 || trimmedHeadline.length > 120) {
+      throw new SenderError(
+        "O título da reação deve ter entre 4 e 120 caracteres.",
+      );
+    }
+    if (trimmedBody.length < 4 || trimmedBody.length > 280) {
+      throw new SenderError(
+        "A descrição da reação deve ter entre 4 e 280 caracteres.",
+      );
+    }
+    const requiresResponse = stage === "TESTING";
+    const options = requiresResponse ? parseInsightOptions(optionsJson) : [];
+
+    if (stage === "FINAL" && !currentRoom.ownerIdentity.isEqual(ctx.sender)) {
+      throw new SenderError("Apenas o anfitrião pode gerar o final com IA.");
+    }
+    if (stage === "TESTING") {
+      const selectedTest = Array.from(
+        ctx.db.testingOption.roomId.filter(roomId),
+      ).find((item) => item.selected);
+      if (!selectedTest) {
+        throw new SenderError(
+          "Selecione uma opção de teste antes de gerar a reação.",
+        );
+      }
+    } else if (stage === "CONQUERING") {
+      const conquestDecision = Array.from(
+        ctx.db.decision.roomId.filter(roomId),
+      ).find((item) => item.stage === "CONQUERING");
+      if (!conquestDecision) {
+        throw new SenderError(
+          "Decida a proposta de conquista antes de gerar a reação.",
+        );
+      }
+    }
+
+    const normalizedOptions = JSON.stringify(
+      options.map(({ key, title, description, learning }) => ({
+        key,
+        title,
+        description,
+        learning,
+      })),
+    );
+    const now = ctx.timestamp;
+    const existing = Array.from(
+      ctx.db.stageInsight.by_room_stage.filter([roomId, stage]),
+    )[0];
+    if (existing) {
+      ctx.db.stageInsight.id.update({
+        ...existing,
+        headline: trimmedHeadline,
+        body: trimmedBody,
+        optionsJson: normalizedOptions,
+        selectedKey: "",
+        selectedLearning: "",
+        completed: !requiresResponse,
+        updatedAt: now,
+      });
+    } else {
+      ctx.db.stageInsight.insert({
+        id: 0n,
+        roomId,
+        stage,
+        headline: trimmedHeadline,
+        body: trimmedBody,
+        optionsJson: normalizedOptions,
+        selectedKey: "",
+        selectedLearning: "",
+        completed: !requiresResponse,
+        createdAt: now,
+        updatedAt: now,
+      });
+    }
+
+    const session = Array.from(ctx.db.stageSession.roomId.filter(roomId)).find(
+      (item) => item.stage === stage,
+    );
+    if (session) {
+      ctx.db.stageSession.id.update({
+        ...session,
+        phase: requiresResponse ? "RESPONDING" : "REVIEW",
+        updatedAt: now,
+      });
+    }
+  },
+);
+
+export const respond_stage_insight = spacetimedb.reducer(
+  { roomId: t.u64(), stage: t.string(), optionKey: t.string() },
+  (ctx, { roomId, stage, optionKey }) => {
+    const currentRoom = ctx.db.room.id.find(roomId);
+    if (!currentRoom || currentRoom.status !== "ACTIVE") {
+      throw new SenderError("A jornada não está ativa.");
+    }
+    if (currentRoom.currentStage !== stage) {
+      throw new SenderError("Esta não é a etapa atual da jornada.");
+    }
+    if (stage !== "TESTING") {
+      throw new SenderError("Apenas a reação de teste recebe uma resposta coletiva.");
+    }
+    const membership = Array.from(ctx.db.player.roomId.filter(roomId)).find(
+      (item) => item.active && item.identity.isEqual(ctx.sender),
+    );
+    if (!membership) throw new SenderError("Você não pertence a esta sala.");
+    const eligiblePlayers = Array.from(
+      ctx.db.player.roomId.filter(roomId),
+    ).filter((item) => item.active && item.online);
+    if (!eligiblePlayers.some((item) => item.identity.isEqual(ctx.sender))) {
+      throw new SenderError(
+        "Você precisa estar online nesta sala para responder.",
+      );
+    }
+
+    const insight = Array.from(
+      ctx.db.stageInsight.by_room_stage.filter([roomId, stage]),
+    )[0];
+    if (!insight) {
+      throw new SenderError("A reação da etapa ainda não foi gerada.");
+    }
+    if (insight.completed) return;
+    const options = parseInsightOptions(insight.optionsJson);
+    const target = options.find((item) => item.key === optionKey);
+    if (!target) throw new SenderError("Opção de resposta inválida.");
+
+    const topic = `INSIGHT_RESPONSE_${stage}`;
+    const existingVote = Array.from(
+      ctx.db.groupVote.roomId.filter(roomId),
+    ).find(
+      (item) => item.topic === topic && item.playerIdentity.isEqual(ctx.sender),
+    );
+    if (existingVote) {
+      ctx.db.groupVote.id.update({
+        ...existingVote,
+        choice: optionKey,
+        updatedAt: ctx.timestamp,
+      });
+    } else {
+      ctx.db.groupVote.insert({
+        id: 0n,
+        roomId,
+        stage,
+        topic,
+        playerIdentity: ctx.sender,
+        choice: optionKey,
+        updatedAt: ctx.timestamp,
+      });
+    }
+
+    const votes = Array.from(ctx.db.groupVote.roomId.filter(roomId)).filter(
+      (item) =>
+        item.topic === topic &&
+        item.choice === optionKey &&
+        eligiblePlayers.some((player) =>
+          player.identity.isEqual(item.playerIdentity),
+        ),
+    ).length;
+    if (votes < Math.floor(eligiblePlayers.length / 2) + 1) return;
+
+    ctx.db.stageInsight.id.update({
+      ...insight,
+      selectedKey: target.key,
+      selectedLearning: target.learning,
+      completed: true,
+      updatedAt: ctx.timestamp,
+    });
+    const session = Array.from(ctx.db.stageSession.roomId.filter(roomId)).find(
+      (item) => item.stage === stage,
+    );
+    if (session) {
+      ctx.db.stageSession.id.update({
+        ...session,
+        phase: stage === "CONQUERING" ? "REVIEW" : "READY",
+        updatedAt: ctx.timestamp,
+      });
+    }
+  },
+);
 export const open_voting = spacetimedb.reducer(
   { roomId: t.u64() },
   (ctx, { roomId }) => {
@@ -2832,6 +3223,12 @@ export const vote_stage_advance = spacetimedb.reducer(
       if (!selectedOption) {
         throw new SenderError("Selecione uma opção de teste antes de avançar.");
       }
+      const testingInsight = Array.from(
+        ctx.db.stageInsight.by_room_stage.filter([roomId, "TESTING"]),
+      )[0];
+      if (testingInsight && !testingInsight.completed) {
+        throw new SenderError("Respondam à reação do teste antes de avançar.");
+      }
     }
 
     const eligiblePlayers = Array.from(
@@ -3050,26 +3447,6 @@ export const vote_stage_advance = spacetimedb.reducer(
             createdAt: ctx.timestamp,
           });
         });
-    }
-
-    if (
-      nextStage === "TESTING" &&
-      Array.from(ctx.db.testingOption.roomId.filter(roomId)).length === 0
-    ) {
-      const options = generateTestOptions(economy.seed);
-      for (const opt of options) {
-        ctx.db.testingOption.insert({
-          id: 0n,
-          roomId,
-          optionKey: opt.key,
-          title: opt.title,
-          description: opt.description,
-          cost: opt.cost,
-          impact: opt.impact,
-          selected: false,
-          createdAt: ctx.timestamp,
-        });
-      }
     }
 
     let fundingRevealed = economy.fundingRevealed;
@@ -3303,6 +3680,12 @@ export const advance_stage = spacetimedb.reducer(
       if (!selectedOption) {
         throw new SenderError("Selecione uma opção de teste antes de avançar.");
       }
+      const testingInsight = Array.from(
+        ctx.db.stageInsight.by_room_stage.filter([roomId, "TESTING"]),
+      )[0];
+      if (testingInsight && !testingInsight.completed) {
+        throw new SenderError("Respondam à reação do teste antes de avançar.");
+      }
     }
 
     let balance = economy.balance;
@@ -3444,26 +3827,6 @@ export const advance_stage = spacetimedb.reducer(
         });
     }
 
-    if (
-      nextStage === "TESTING" &&
-      Array.from(ctx.db.testingOption.roomId.filter(roomId)).length === 0
-    ) {
-      const options = generateTestOptions(economy.seed);
-      for (const opt of options) {
-        ctx.db.testingOption.insert({
-          id: 0n,
-          roomId,
-          optionKey: opt.key,
-          title: opt.title,
-          description: opt.description,
-          cost: opt.cost,
-          impact: opt.impact,
-          selected: false,
-          createdAt: ctx.timestamp,
-        });
-      }
-    }
-
     let fundingRevealed = economy.fundingRevealed;
     let reservedBalance = economy.reservedBalance;
 
@@ -3527,6 +3890,9 @@ export const end_journey = spacetimedb.reducer(
     }
 
     if (!ctx.db.journey.roomId.find(roomId)) {
+      const finalInsight = Array.from(
+        ctx.db.stageInsight.roomId.filter(roomId),
+      ).find((item) => item.stage === "FINAL");
       const partialContribution = Array.from(
         ctx.db.contribution.roomId.filter(roomId),
       ).find(
@@ -3537,15 +3903,19 @@ export const end_journey = spacetimedb.reducer(
         id: 0n,
         roomId,
         publicId: journeyPublicId(roomId),
-        title: "Jornada parcial " + journeyPublicId(roomId).toUpperCase(),
-        summary: partialContribution
-          ? "Jornada encerrada na etapa " +
-            (currentRoom.stageIndex + 1) +
-            ". Última contribuição: " +
-            partialContribution.content
-          : "Jornada encerrada na etapa " +
-            (currentRoom.stageIndex + 1) +
-            " antes de registrar contribuições.",
+        title:
+          finalInsight?.headline ||
+          "Jornada parcial " + journeyPublicId(roomId).toUpperCase(),
+        summary:
+          finalInsight?.body ||
+          (partialContribution
+            ? "Jornada encerrada na etapa " +
+              (currentRoom.stageIndex + 1) +
+              ". Última contribuição: " +
+              partialContribution.content
+            : "Jornada encerrada na etapa " +
+              (currentRoom.stageIndex + 1) +
+              " antes de registrar contribuições."),
         createdAt: ctx.timestamp,
         updatedAt: ctx.timestamp,
       });

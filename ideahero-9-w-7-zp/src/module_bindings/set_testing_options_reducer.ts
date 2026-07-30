@@ -10,15 +10,8 @@ import {
   type Infer as __Infer,
 } from "spacetimedb";
 
-export default __t.row({
-  id: __t.u64().primaryKey(),
-  roomId: __t.u64().name("room_id"),
-  optionKey: __t.string().name("option_key"),
-  title: __t.string(),
-  description: __t.string(),
-  cost: __t.u32(),
-  impact: __t.string(),
+export default {
+  roomId: __t.u64(),
   question: __t.string(),
-  selected: __t.bool(),
-  createdAt: __t.timestamp().name("created_at"),
-});
+  optionsJson: __t.string(),
+};

@@ -1,5 +1,3 @@
-import { GENERATED_CARD_CATALOG } from "./generated-cards";
-
 const BASE_CARD_CATALOG = [
   {
     id: "00a3fd49-a67d-4438-92e8-2dc61ef93b98",
@@ -169,74 +167,85 @@ const BASE_CARD_CATALOG = [
   {
     id: "pol-001",
     stage: "POLISHING",
-    title: "Espelho da ideia",
-    lens: "Refinamento",
+    title: "Espelho do encantamento",
+    lens: "Aprimoramento",
     imagePath: "/cards/27f865fe-60fb-4f78-8c6f-f38c57e7f649.webp",
-    altText: "Um castelo multicolorido surge no topo de uma escadaria sob raios luminosos.",
-    provocation: "Se a ideia fosse uma joia, qual aresta ainda precisa ser lapidada?",
+    altText:
+      "Um castelo multicolorido surge no topo de uma escadaria sob raios luminosos.",
+    provocation:
+      "Se o encantamento fosse uma joia, que aresta ainda precisa ser lapidada?",
   },
   {
     id: "pol-002",
     stage: "POLISHING",
-    title: "Fogo criativo",
+    title: "Fogo de fada",
     lens: "Provocação",
     imagePath: "/cards/09d3bfc2-8797-41fc-86aa-008c98b098aa.webp",
-    altText: "Uma rua futurista em cores neon mistura arquitetura, natureza e caminhos líquidos.",
-    provocation: "Que crítica construtiva poderia tornar esta ideia irresistível?",
+    altText:
+      "Uma rua futurista em cores neon mistura arquitetura, natureza e caminhos líquidos.",
+    provocation:
+      "Que ajuste pode tornar este encantamento mais forte e generoso?",
   },
   {
     id: "tst-001",
     stage: "TESTING",
     title: "Equilíbrio delicado",
-    lens: "Teste",
+    lens: "Provação",
     imagePath: "/cards/0ba59d82-c596-4fc6-9cdc-b73beafffe22.webp",
-    altText: "Uma ave fantástica de pernas muito longas caminha cautelosamente em preto e branco.",
-    provocation: "Qual condição pode desequilibrar o primeiro teste?",
+    altText:
+      "Uma ave fantástica de pernas muito longas caminha cautelosamente em preto e branco.",
+    provocation:
+      "Que obstáculo pode desequilibrar o primeiro teste do artefato?",
   },
   {
     id: "tst-002",
     stage: "TESTING",
     title: "Distância da realidade",
-    lens: "Condição",
+    lens: "Travessia",
     imagePath: "/cards/405f009f-c3b7-4a64-a5e3-ea8d33323a69.webp",
-    altText: "Uma lua enorme flutua sobre montanhas enquanto uma pequena figura paira abaixo dela.",
-    provocation: "O que parece perto, mas ainda exige uma travessia?",
+    altText:
+      "Uma lua enorme flutua sobre montanhas enquanto uma pequena figura paira abaixo dela.",
+    provocation: "O que parece perto, mas ainda exige uma travessia corajosa?",
   },
   {
     id: "cnq-001",
     stage: "CONQUERING",
     title: "Caminhos que chamam",
-    lens: "Canal",
+    lens: "Chamado",
     imagePath: "/cards/16d17b42-9b9c-4f4a-b792-5573c116ffa0.webp",
-    altText: "Um rio rosa serpenteia por uma paisagem azul e roxa de aparência fantástica.",
-    provocation: "Como convencer alguém que ainda não conhece esta ideia?",
+    altText:
+      "Um rio rosa serpenteia por uma paisagem azul e roxa de aparência fantástica.",
+    provocation: "Que chamado convida alguém a se juntar à missão?",
   },
   {
     id: "cnq-002",
     stage: "CONQUERING",
     title: "O tempo da mensagem",
-    lens: "Momento",
+    lens: "Encontro",
     imagePath: "/cards/22d440f3-97b3-4de6-8bc4-e98cfe8b19b0.webp",
-    altText: "Relógios ornamentados se encaixam em uma composição laranja, azul e rosa.",
-    provocation: "Qual o melhor momento para apresentar esta ideia ao mundo?",
+    altText:
+      "Relógios ornamentados se encaixam em uma composição laranja, azul e rosa.",
+    provocation: "Em que momento este convite pode tocar mais corações?",
   },
   {
     id: "fnl-001",
     stage: "FINAL",
-    title: "Valor que floresce",
-    lens: "Impacto",
+    title: "Jardim que floresce",
+    lens: "Transformação",
     imagePath: "/cards/185db6df-7fcc-4ed8-869d-e57148b956a1.webp",
-    altText: "Mãos, flores e formas orgânicas se conectam em uma colagem de tons quentes.",
-    provocation: "Que transformação concreta provaria que esta ideia tem valor?",
+    altText:
+      "Mãos, flores e formas orgânicas se conectam em uma colagem de tons quentes.",
+    provocation: "Que transformação mostra que a missão fez bem ao reino?",
   },
   {
     id: "fnl-002",
     stage: "FINAL",
     title: "Constelação de aliados",
-    lens: "Legado",
+    lens: "Próximo capítulo",
     imagePath: "/cards/380f0ddd-3b79-4af0-8200-15fade24b735.webp",
-    altText: "Animais de diferentes espécies formam uma constelação sobre um fundo azul escuro.",
-    provocation: "Quem precisa se tornar aliado para a ideia continuar viva?",
+    altText:
+      "Animais de diferentes espécies formam uma constelação sobre um fundo azul escuro.",
+    provocation: "Quem pode ser aliado para esta história continuar viva?",
   },
 ] as const;
 
@@ -380,63 +389,66 @@ const CARD_VARIANTS: Record<
       suffix: "deeper",
       title: "Camada mais funda",
       lens: "Profundidade",
-      provocation: "Que aspecto da ideia merece mais atenção antes de seguir em frente?",
+      provocation:
+        "Que parte do encantamento merece mais atenção antes de seguir?",
     },
     {
       suffix: "edge",
-      title: "A borda afiada",
-      lens: "Diferencial",
-      provocation: "O que torna esta ideia impossível de ignorar?",
+      title: "A centelha rara",
+      lens: "Magia própria",
+      provocation: "O que torna este encantamento impossível de ignorar?",
     },
   ],
   TESTING: [
     {
       suffix: "access",
-      title: "Acesso limitado",
-      lens: "Realidade",
-      provocation: "Teste como a solução se comporta com conexão, tempo ou recursos limitados.",
+      title: "Passagem estreita",
+      lens: "Limite",
+      provocation:
+        "Ponham o artefato à prova com pouco tempo, pouca ajuda ou um caminho difícil.",
     },
     {
       suffix: "skeptic",
-      title: "Pessoa cética",
+      title: "Guardião desconfiado",
       lens: "Confiança",
-      provocation: "O primeiro participante não acredita na promessa. Que evidência poderia convencê-lo?",
+      provocation:
+        "Um guardião não acredita na magia. O que pode fazê-lo confiar?",
     },
   ],
   CONQUERING: [
     {
       suffix: "community",
-      title: "Confiança em rede",
-      lens: "Comunidade",
-      provocation: "Como a mensagem pode circular entre pessoas que já confiam umas nas outras?",
+      title: "Sussurro entre aliados",
+      lens: "Aliança",
+      provocation:
+        "Como o convite pode viajar entre aliados que já confiam uns nos outros?",
     },
     {
       suffix: "direct",
-      title: "Convite direto",
-      lens: "Relacionamento",
-      provocation: "Que convite pessoal faria o público certo experimentar a proposta agora?",
+      title: "Convite à porta",
+      lens: "Encontro",
+      provocation:
+        "Que convite pessoal faria alguém querer entrar na missão agora?",
     },
   ],
   FINAL: [
     {
       suffix: "signal",
-      title: "Primeiro sinal",
-      lens: "Validação",
-      provocation: "Qual comportamento concreto indicaria que o mercado percebeu valor?",
+      title: "Primeiro brilho",
+      lens: "Sinal",
+      provocation: "Que sinal mostra que o reino acolheu a transformação?",
     },
     {
       suffix: "runway",
-      title: "Próxima pista",
-      lens: "Runway",
-      provocation: "Que próximo experimento merece receber o capital que ainda resta?",
+      title: "Próxima constelação",
+      lens: "Continuação",
+      provocation:
+        "Que capítulo a missão merece explorar depois desta celebração?",
     },
   ],
 };
 
-export const CARD_CATALOG = [
-  ...BASE_CARD_CATALOG,
-  ...GENERATED_CARD_CATALOG,
-].flatMap((card) => {
+export const CARD_CATALOG = [...BASE_CARD_CATALOG].flatMap((card) => {
   const variants = CARD_VARIANTS[card.stage];
   return [
     card,

@@ -58,6 +58,8 @@ export function StageGuidanceDialog({
   confirmedCount,
   playerCount,
   hasConfirmed,
+  isActivePlayer,
+  activePlayerName,
   onConfirm,
   pending = false,
 }: {
@@ -65,6 +67,8 @@ export function StageGuidanceDialog({
   confirmedCount: number;
   playerCount: number;
   hasConfirmed: boolean;
+  isActivePlayer: boolean;
+  activePlayerName?: string;
   onConfirm: () => void;
   pending?: boolean;
 }) {
@@ -72,6 +76,13 @@ export function StageGuidanceDialog({
     STAGE_GUIDANCE[stage as keyof typeof STAGE_GUIDANCE] ??
     STAGE_GUIDANCE.SCENARIO;
   if (!guidance?.steps) return null;
+  const roleSteps = isActivePlayer
+    ? guidance.steps
+    : [
+        `O jogador da vez é ${activePlayerName ?? "outra pessoa"}.`,
+        "Leia a carta, participe da conversa e compartilhe sua perspectiva quando a etapa pedir.",
+        "Acompanhe a ação do jogador da vez antes de avançar.",
+      ];
 
   return (
     <div className="stage-guidance-backdrop" role="presentation">
@@ -85,7 +96,7 @@ export function StageGuidanceDialog({
         <span className="mission-label">Orientação da etapa</span>
         <h2 id="guidance-title">Antes de revelar a carta</h2>
         <ol>
-          {guidance.steps.map((step) => (
+          {roleSteps.map((step) => (
             <li key={step}>{step}</li>
           ))}
         </ol>

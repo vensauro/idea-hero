@@ -23,6 +23,7 @@ import type {
   RoomEconomy,
   SalesResult,
   StageCost,
+  StageInsight,
   StageOutcome,
   TestingOption,
   VisibleContribution,
@@ -95,7 +96,10 @@ function sameIdentity(
 ) {
   if (!left || !right) return false;
   if (left === right) return true;
-  if (typeof left.toHexString !== "function" || typeof right.toHexString !== "function") {
+  if (
+    typeof left.toHexString !== "function" ||
+    typeof right.toHexString !== "function"
+  ) {
     return false;
   }
   return left.toHexString() === right.toHexString();
@@ -158,7 +162,12 @@ export function RunwayWallet({
       <div className="topbar-dropdown-header">
         <div>
           <small className="wallet-subtitle">Caixa Compartilhado</small>
-          <strong className="wallet-total">{formatCredits(economy.balance)} <small style={{ fontSize: "0.75rem", fontWeight: 700 }}>créditos</small></strong>
+          <strong className="wallet-total">
+            {formatCredits(economy.balance)}{" "}
+            <small style={{ fontSize: "0.75rem", fontWeight: 700 }}>
+              créditos
+            </small>
+          </strong>
         </div>
         <span className="badge-pill">{fill}% do capital</span>
       </div>
@@ -408,7 +417,9 @@ function TransactionLedger({
                       {positive ? "+" : "−"}
                       {formatCredits(Math.abs(transaction.delta))}
                     </strong>
-                    <small>saldo {formatCredits(transaction.balanceAfter)}</small>
+                    <small>
+                      saldo {formatCredits(transaction.balanceAfter)}
+                    </small>
                   </div>
                 </li>
               );
@@ -649,7 +660,7 @@ export function RunwayFinalStage(props: RunwayFinalStageProps) {
             <span>Sala {room.code}</span>
             <small>Gerenciamento da jornada</small>
           </header>
-          
+
           <div className="room-sheet-quick-info">
             <span>👥 {presencePlayers.length} na sala</span>
             <span>💰 {formatCredits(economy.balance)} cr.</span>
@@ -707,11 +718,16 @@ export function RunwayFinalStage(props: RunwayFinalStageProps) {
               card={card}
               winningIdea={
                 decisions.find((d) => d.stage === "SOLUTION")?.summary ??
-                contributions.find((c) => c.stage === "SOLUTION" && c.kind === "MAIN")?.content
+                contributions.find(
+                  (c) => c.stage === "SOLUTION" && c.kind === "MAIN",
+                )?.content
               }
-              turnPlayer={presencePlayers[room.stageIndex % presencePlayers.length]}
+              turnPlayer={
+                presencePlayers[room.stageIndex % presencePlayers.length]
+              }
               isTurnPlayer={sameIdentity(
-                presencePlayers[room.stageIndex % presencePlayers.length]?.identity,
+                presencePlayers[room.stageIndex % presencePlayers.length]
+                  ?.identity,
                 currentPlayer.identity,
               )}
             />
@@ -746,42 +762,56 @@ export function RunwayFinalStage(props: RunwayFinalStageProps) {
             />
           )}
 
-          {stageReady && (() => {
-            const stageAdvanceTopic = `STAGE_ADVANCE_${stage}`;
-            const stageAdvanceVotes = groupVotes.filter((item) => item.topic === stageAdvanceTopic);
-            const hasConfirmedStageAdvance = stageAdvanceVotes.some((item) => sameIdentity(item.playerIdentity, currentPlayer.identity));
-            return (
-              <div className="stage-advance-collective-panel" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px', marginTop: '20px' }}>
-                <VoteProgress
-                  votes={stageAdvanceVotes}
-                  required={onlinePlayers.length}
-                  players={players}
-                  label="confirmaram para avançar"
-                  hideInstruction={false}
-                />
-                <button
-                  type="button"
-                  className={`primary-button next-stage-button ${hasConfirmedStageAdvance ? "is-confirmed" : ""}`}
-                  disabled={pending}
-                  onClick={() =>
-                    void run(() =>
-                      voteStageAdvance({
-                        roomId: room.id,
-                        stage,
-                        ready: !hasConfirmedStageAdvance,
-                      }),
-                    )
-                  }
+          {stageReady &&
+            (() => {
+              const stageAdvanceTopic = `STAGE_ADVANCE_${stage}`;
+              const stageAdvanceVotes = groupVotes.filter(
+                (item) => item.topic === stageAdvanceTopic,
+              );
+              const hasConfirmedStageAdvance = stageAdvanceVotes.some((item) =>
+                sameIdentity(item.playerIdentity, currentPlayer.identity),
+              );
+              return (
+                <div
+                  className="stage-advance-collective-panel"
+                  style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    gap: "12px",
+                    marginTop: "20px",
+                  }}
                 >
-                  {hasConfirmedStageAdvance
-                    ? "✓ Aguardando a equipe..."
-                    : stage === "FINAL"
-                      ? "Concluir e ver a jornada"
-                      : `Avançar para ${STAGE_LABELS[STAGES[room.stageIndex + 1]] ?? "próxima etapa"}`}
-                </button>
-              </div>
-            );
-          })()}
+                  <VoteProgress
+                    votes={stageAdvanceVotes}
+                    required={onlinePlayers.length}
+                    players={players}
+                    label="confirmaram para avançar"
+                    hideInstruction={false}
+                  />
+                  <button
+                    type="button"
+                    className={`primary-button next-stage-button ${hasConfirmedStageAdvance ? "is-confirmed" : ""}`}
+                    disabled={pending}
+                    onClick={() =>
+                      void run(() =>
+                        voteStageAdvance({
+                          roomId: room.id,
+                          stage,
+                          ready: !hasConfirmedStageAdvance,
+                        }),
+                      )
+                    }
+                  >
+                    {hasConfirmedStageAdvance
+                      ? "✓ Aguardando a equipe..."
+                      : stage === "FINAL"
+                        ? "Concluir e ver a jornada"
+                        : `Avançar para ${STAGE_LABELS[STAGES[room.stageIndex + 1]] ?? "próxima etapa"}`}
+                  </button>
+                </div>
+              );
+            })()}
           {!stageReady && (
             <p className="waiting-note">
               Conclua a atividade da etapa para liberar o avanço.
@@ -1771,7 +1801,8 @@ export function PolishingStage({
                 fontSize: "0.875rem",
               }}
             >
-              Explore a ideia vencedora com o grupo usando a provocação da carta. Não é necessário digitar nada.
+              Explore a ideia vencedora com o grupo usando a provocação da
+              carta. Não é necessário digitar nada.
             </p>
           </div>
         </section>
@@ -1806,7 +1837,9 @@ export function PolishingStage({
         <span>Sem registro — apenas conversa</span>
       </div>
       <p className="simulation-disclaimer">
-        Esta é uma rodada de brainstorming livre. O jogador da vez ({turnPlayer?.displayName ?? "indicado acima"}) conduz a conversa e o grupo explora novas perspectivas sobre a ideia vencedora à luz da carta.
+        Esta é uma rodada de brainstorming livre. O jogador da vez (
+        {turnPlayer?.displayName ?? "indicado acima"}) conduz a conversa e o
+        grupo explora novas perspectivas sobre a ideia vencedora à luz da carta.
       </p>
     </>
   );
@@ -1868,7 +1901,10 @@ export function TestingStage({
       <div className="section-heading">
         <div>
           <p className="kicker">5 possibilidades de teste</p>
-          <h2>Qual teste faz mais sentido para o protótipo?</h2>
+          <h2>
+            {testOptions[0]?.question ||
+              "Qual teste faz mais sentido para o protótipo?"}
+          </h2>
         </div>
         <span>Maioria decide</span>
       </div>
@@ -1901,6 +1937,142 @@ export function TestingStage({
       <VoteProgress votes={votes} required={required} players={players} />
       {error && <p className="error-message">{error}</p>}
     </>
+  );
+}
+
+export function StageInsightResponse({
+  room,
+  stage,
+  insight,
+  groupVotes,
+  currentPlayer,
+  players,
+}: {
+  room: Room;
+  stage: "TESTING";
+  insight: StageInsight;
+  groupVotes: readonly GroupVote[];
+  currentPlayer: Player;
+  players: readonly Player[];
+}) {
+  const respondStageInsight = useReducer(reducers.respondStageInsight);
+  const [pending, setPending] = useState(false);
+  const [error, setError] = useState("");
+  const topic = `INSIGHT_RESPONSE_${stage}`;
+  const votes = topicVotes(groupVotes, topic, players);
+  const ownVote = ownTopicVote(groupVotes, topic, currentPlayer);
+  const required = majorityFor(players);
+
+  let options: {
+    key: string;
+    title: string;
+    description: string;
+    learning: string;
+  }[] = [];
+  try {
+    const parsed = JSON.parse(insight.optionsJson);
+    if (Array.isArray(parsed)) options = parsed as typeof options;
+  } catch {
+    options = [];
+  }
+
+  async function choose(optionKey: string) {
+    setPending(true);
+    setError("");
+    try {
+      await respondStageInsight({ roomId: room.id, stage, optionKey });
+    } catch (caught) {
+      setError(errorMessage(caught));
+    } finally {
+      setPending(false);
+    }
+  }
+
+  if (insight.completed) {
+    const chosen = options.find((option) => option.key === insight.selectedKey);
+    return (
+      <section className="pilot-learning">
+        <span aria-hidden="true">✓</span>
+        <div>
+          <small>Aprendizado da equipe</small>
+          <h2>{chosen?.title ?? insight.selectedLearning}</h2>
+          <p>{insight.headline}</p>
+          <strong>{insight.selectedLearning}</strong>
+        </div>
+      </section>
+    );
+  }
+
+  if (options.length !== 3) {
+    return (
+      <section className="pilot-feedback">
+        <div className="section-heading">
+          <div>
+            <p className="kicker">Reação da etapa</p>
+            <h2>{insight.headline}</h2>
+          </div>
+        </div>
+        <p>{insight.body}</p>
+        <p className="empty-state">Preparando as opções de resposta…</p>
+      </section>
+    );
+  }
+
+  return (
+    <section className="pilot-feedback">
+      <div className="section-heading">
+        <div>
+          <p className="kicker">Reação da etapa</p>
+          <h2>{insight.headline}</h2>
+        </div>
+        <span>Maioria decide</span>
+      </div>
+      <p className="pilot-feedback-body">{insight.body}</p>
+      <div className="pilot-option-grid">
+        {options.map((option) => {
+          const count = votes.filter(
+            (vote) => vote.choice === option.key,
+          ).length;
+          return (
+            <button
+              type="button"
+              className={ownVote?.choice === option.key ? "is-selected" : ""}
+              disabled={pending}
+              key={option.key}
+              onClick={() => void choose(option.key)}
+            >
+              <strong>{option.title}</strong>
+              <p>{option.description}</p>
+              <em>{option.learning}</em>
+              <small>
+                {count} {count === 1 ? "voto" : "votos"}
+              </small>
+            </button>
+          );
+        })}
+      </div>
+      <VoteProgress votes={votes} required={required} players={players} />
+      {error && <p className="error-message">{error}</p>}
+    </section>
+  );
+}
+
+export function StageAudienceReaction({
+  insight,
+}: {
+  insight: StageInsight;
+}) {
+  return (
+    <section className="pilot-feedback">
+      <div className="section-heading">
+        <div>
+          <p className="kicker">Reacao do publico</p>
+          <h2>{insight.headline}</h2>
+        </div>
+        <span>Registro da jornada</span>
+      </div>
+      <p className="pilot-feedback-body">{insight.body}</p>
+    </section>
   );
 }
 
@@ -2279,10 +2451,15 @@ export function PrototypeShowcase({
   );
 
   return (
-    <section className="shared-artifact prototype-showcase-card" aria-live="polite">
+    <section
+      className="shared-artifact prototype-showcase-card"
+      aria-live="polite"
+    >
       <div className="shared-artifact-heading">
         <div>
-          <p className="kicker">✦ Protótipo da Equipe · {prototype.challengeTitle}</p>
+          <p className="kicker">
+            ✦ Protótipo da Equipe · {prototype.challengeTitle}
+          </p>
           <h3>{prototype.caption || "Protótipo construído em grupo"}</h3>
         </div>
         <span>{usedKinds.size}/4 linguagens criativas</span>
@@ -2293,10 +2470,7 @@ export function PrototypeShowcase({
         aria-label="Bônus por linguagens criativas"
       >
         {(["DRAWING", "IMAGE", "AI_IMAGE", "AUDIO"] as const).map((kind) => (
-          <span
-            className={usedKinds.has(kind) ? "is-earned" : ""}
-            key={kind}
-          >
+          <span className={usedKinds.has(kind) ? "is-earned" : ""} key={kind}>
             {kind === "DRAWING"
               ? "Desenho"
               : kind === "IMAGE"
@@ -2310,8 +2484,13 @@ export function PrototypeShowcase({
       </div>
 
       {drawingStrokes.length > 0 && (
-        <div className="prototype-showcase-drawing-block" style={{ marginTop: "1rem" }}>
-          <p className="kicker" style={{ marginBottom: "0.5rem" }}>✎ Desenho Colaborativo</p>
+        <div
+          className="prototype-showcase-drawing-block"
+          style={{ marginTop: "1rem" }}
+        >
+          <p className="kicker" style={{ marginBottom: "0.5rem" }}>
+            ✎ Desenho Colaborativo
+          </p>
           <DrawingBoard
             strokes={drawingStrokes}
             players={players}
@@ -2351,7 +2530,9 @@ export function PrototypeShowcase({
 
       {prototype.artifactData && artifacts.length === 0 && (
         <figure className="prototype-media-artifact">
-          <figcaption>{prototype.caption || "Artefato do protótipo"}</figcaption>
+          <figcaption>
+            {prototype.caption || "Artefato do protótipo"}
+          </figcaption>
           {prototype.artifactKind === "AUDIO" ? (
             <audio controls src={artifactSource(prototype.artifactData)}>
               Seu navegador não reproduz este áudio.

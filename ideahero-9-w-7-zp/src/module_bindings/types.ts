@@ -310,6 +310,9 @@ export type RoomStageAssignments = __Infer<typeof RoomStageAssignments>;
 export const RoomStageCosts = __t.object("RoomStageCosts", {});
 export type RoomStageCosts = __Infer<typeof RoomStageCosts>;
 
+export const RoomStageInsights = __t.object("RoomStageInsights", {});
+export type RoomStageInsights = __Infer<typeof RoomStageInsights>;
+
 export const RoomStageOutcomes = __t.object("RoomStageOutcomes", {});
 export type RoomStageOutcomes = __Infer<typeof RoomStageOutcomes>;
 
@@ -362,6 +365,21 @@ export const StageCost = __t.object("StageCost", {
 });
 export type StageCost = __Infer<typeof StageCost>;
 
+export const StageInsight = __t.object("StageInsight", {
+  id: __t.u64(),
+  roomId: __t.u64(),
+  stage: __t.string(),
+  headline: __t.string(),
+  body: __t.string(),
+  optionsJson: __t.string(),
+  selectedKey: __t.string(),
+  selectedLearning: __t.string(),
+  completed: __t.bool(),
+  createdAt: __t.timestamp(),
+  updatedAt: __t.timestamp(),
+});
+export type StageInsight = __Infer<typeof StageInsight>;
+
 export const StageOutcome = __t.object("StageOutcome", {
   id: __t.u64(),
   roomId: __t.u64(),
@@ -392,6 +410,7 @@ export const TestingOption = __t.object("TestingOption", {
   description: __t.string(),
   cost: __t.u32(),
   impact: __t.string(),
+  question: __t.string(),
   selected: __t.bool(),
   createdAt: __t.timestamp(),
 });
