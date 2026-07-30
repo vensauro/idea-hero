@@ -106,7 +106,11 @@ export function JourneySummary({
                 </p>
               ) : stageOutcome ? (
                 <p className="journey-decision">
-                  ✦ {stageOutcome.summary.replace(/\n/g, " · ")}{" "}
+                  ✦{" "}
+                  <span className="journey-outcome-summary">
+                    {stageOutcome.summary}
+                  </span>
+                  <br />
                   <em>— composicao do grupo</em>
                 </p>
               ) : entries.length === 0 ? (

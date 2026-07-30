@@ -30,7 +30,7 @@ import type {
   VoteStatus,
 } from "./module_bindings/types";
 import { useReducer, useSpacetimeDB, useTable } from "spacetimedb/react";
-import { BrandLogo, InspirationCard, StageMission } from "./experience";
+import { BrandLogo, InspirationCard } from "./experience";
 import { STAGE_GUIDANCE } from "./stage-guidance";
 import {
   buildJourneyMarkdown,
@@ -1165,7 +1165,6 @@ function GameBoard({
     sameIdentity(item.playerIdentity, currentPlayer.identity),
   );
   const stageOutcome = stageOutcomes.find((item) => item.stage === stage);
-  const assignedPrompt = ownAssignment?.actionPrompt ?? content.prompt;
   const assignedPlaceholder =
     ownAssignment?.actionPlaceholder ?? guidance.placeholder;
   const collaborative = COLLABORATIVE_STAGES.has(stage);
@@ -1191,6 +1190,11 @@ function GameBoard({
       )
     : undefined;
   const onlinePlayers = players.filter((item) => item.online);
+  const presencePlayers = onlinePlayers.some((player) =>
+    sameIdentity(player.identity, currentPlayer.identity),
+  )
+    ? onlinePlayers
+    : [currentPlayer, ...onlinePlayers];
   const participatingPlayers =
     currentAssignments.length === 0
       ? onlinePlayers
@@ -1225,10 +1229,6 @@ function GameBoard({
   const [saving, setSaving] = useState(false);
   const [actionPending, setActionPending] = useState(false);
   const isHost = sameIdentity(currentPlayer.identity, room.ownerIdentity);
-  const host = players.find((player) =>
-    sameIdentity(player.identity, room.ownerIdentity),
-  );
-  const hostName = host?.displayName ?? "A pessoa anfitriã";
   const [productType, setProductType] = useState<ProductType>("digital");
   const [copilotSuggestion, setCopilotSuggestion] = useState("");
   const [voiceSuggestion, setVoiceSuggestion] = useState("");
@@ -1370,75 +1370,146 @@ function GameBoard({
         roomId={room.id}
         transactions={economyTransactions}
       />
-      <header className="game-header">
-        <BrandLogo compact />
-        <div className="topbar-actions">
-          <div className="room-pill">Sala {room.code}</div>
+      <aside
+        className={`persistent-round-timer ${timeExpired ? "is-expired" : ""}`}
+        aria-label="Tempo da rodada"
+      >
+        <span>Tempo</span>
+        <strong aria-live="polite">{formatSeconds(secondsLeft)}</strong>
+      </aside>
+      <details className="room-sheet" name="journey-controls">
+        <summary aria-label="Opções da sala">•••</summary>
+        <div className="room-sheet-panel">
+          <header className="room-sheet-heading">
+            <span>Sala {room.code}</span>
+            <small>Opções e informações</small>
+          </header>
+          <details className="room-sheet-section">
+            <summary>
+              <span aria-hidden="true">♧</span>
+              <span>
+                Pessoas
+                <small>{presencePlayers.length} online</small>
+              </span>
+            </summary>
+            <div className="room-sheet-players">
+              {players.map((player) => (
+                <div
+                  className={`player-list-row ${player.online ? "" : "is-offline"}`}
+                  key={player.id.toString()}
+                >
+                  <span aria-hidden="true">
+                    {AVATAR_GLYPHS[player.avatarId] ?? "✦"}
+                  </span>
+                  <strong>{player.displayName}</strong>
+                  <small>{player.online ? "online" : "ausente"}</small>
+                </div>
+              ))}
+            </div>
+          </details>
+          <details className="room-sheet-section">
+            <summary>
+              <span aria-hidden="true">◌</span>
+              <span>
+                Caixa
+                <small>{formatCredits(economy.balance)} créditos</small>
+              </span>
+            </summary>
+            <div className="room-sheet-wallet">
+              <RunwayWallet
+                economy={economy}
+                stageCost={stageCosts.find((item) => item.stage === stage)}
+                transactions={economyTransactions}
+              />
+            </div>
+          </details>
           <LeaveRoomButton room={room} currentPlayer={currentPlayer} />
+          {isHost && (
+            <button
+              type="button"
+              className="room-sheet-end-button"
+              disabled={actionPending}
+              onClick={endJourneyEarly}
+            >
+              Encerrar jornada para todos
+            </button>
+          )}
         </div>
-      </header>
-
-      <nav className="stage-progress" aria-label="Progresso da jornada">
-        {BOARD_STATES.map((item, index) => (
-          <div
-            key={item}
-            className={`stage-step ${index === room.stageIndex ? "is-current" : ""} ${index < room.stageIndex ? "is-complete" : ""}`}
-            aria-current={index === room.stageIndex ? "step" : undefined}
-          >
-            <span>{index < room.stageIndex ? "✓" : index + 1}</span>
-            <small>{STAGE_CONTENT[item].eyebrow}</small>
-          </div>
-        ))}
-      </nav>
-
-      <JourneySummary
-        room={room}
-        contributions={contributions}
-        players={players}
-        decisions={decisions}
-        outcomes={stageOutcomes}
-      />
-
-      <RunwayWallet
-        economy={economy}
-        stageCost={stageCosts.find((item) => item.stage === stage)}
-        transactions={economyTransactions}
-      />
+      </details>
 
       <section className="stage-layout">
         <article className="stage-intro">
           <p className="kicker">
             Etapa {room.stageIndex + 1} de 8 · {content.eyebrow}
           </p>
+          <details className="stage-details">
+            <summary className="kicker">
+              Etapa {room.stageIndex + 1} de 8 · {content.eyebrow}
+            </summary>
+            <div className="stage-details-panel">
+              <nav className="stage-progress" aria-label="Progresso da jornada">
+                {BOARD_STATES.map((item, index) => (
+                  <div
+                    key={item}
+                    className={`stage-step ${index === room.stageIndex ? "is-current" : ""} ${index < room.stageIndex ? "is-complete" : ""}`}
+                    aria-current={
+                      index === room.stageIndex ? "step" : undefined
+                    }
+                  >
+                    <span>{index < room.stageIndex ? "✓" : index + 1}</span>
+                    <small>{STAGE_CONTENT[item].eyebrow}</small>
+                  </div>
+                ))}
+              </nav>
+              <JourneySummary
+                room={room}
+                contributions={contributions}
+                players={players}
+                decisions={decisions}
+                outcomes={stageOutcomes}
+              />
+            </div>
+          </details>
+          <div
+            className="stage-presence"
+            aria-label={`Pessoas na sala: ${players.map((player) => player.displayName).join(", ")}`}
+          >
+            <span>Na sala</span>
+            <div className="stage-presence-avatars" aria-hidden="true">
+              {players.map((player) => (
+                <span
+                  className={player.online ? "" : "is-offline"}
+                  key={player.id.toString()}
+                  title={player.displayName}
+                >
+                  {AVATAR_GLYPHS[player.avatarId] ?? "✦"}
+                </span>
+              ))}
+            </div>
+            <small>{presencePlayers.length} online</small>
+          </div>
           <h1>{content.title}</h1>
           <p>{content.objective}</p>
-          <InspirationCard card={stageCard} stageLabel={content.eyebrow} />
-          <CardChangeButton
-            room={room}
-            draw={stageDraw}
-            economy={economy}
-            locked={stageContributions.length > 0 || phase !== "CONTRIBUTING"}
-            players={players}
-            currentPlayer={currentPlayer}
-            groupVotes={groupVotes}
+          <InspirationCard
+            card={stageCard}
+            stageLabel={content.eyebrow}
+            stage={stage}
           />
+          <details className="card-options">
+            <summary>Outras opções da carta</summary>
+            <CardChangeButton
+              room={room}
+              draw={stageDraw}
+              economy={economy}
+              locked={stageContributions.length > 0 || phase !== "CONTRIBUTING"}
+              players={players}
+              currentPlayer={currentPlayer}
+              groupVotes={groupVotes}
+            />
+          </details>
         </article>
 
         <article className="contribution-panel">
-          <section
-            className={`round-timer ${timeExpired ? "is-expired" : ""}`}
-            aria-label="Tempo da rodada"
-          >
-            <div>
-              <span>Tempo da rodada</span>
-              <strong aria-live="polite">{formatSeconds(secondsLeft)}</strong>
-            </div>
-            <p>
-              {timeExpired
-                ? "O tempo acabou. Fechem a ideia em uma frase."
-                : "Um pequeno limite deixa a conversa em movimento."}
-            </p>
-          </section>
           {collaborative && (
             <div className="phase-ribbon" aria-label="Fase da decisão coletiva">
               {(usesUnion
@@ -1474,72 +1545,54 @@ function GameBoard({
               </strong>
               <span>
                 {phase === "CONTRIBUTING"
-                  ? "Cada pessoa escreve em particular. O grupo vê apenas quem já terminou."
+                  ? "Crie em particular. Veja apenas o progresso do grupo."
                   : phase === "VOTING"
-                    ? "Leia todas as propostas sem autoria e escolha a que melhor conduz a etapa."
-                    : "Veja a síntese escolhida, reconheça a autoria e prepare-se para avançar."}
+                    ? "Escolha uma proposta sem ver a autoria."
+                    : "Veja a escolha do grupo e avance quando estiverem prontos."}
               </span>
             </div>
           )}
-          {collaborative && (
+          {collaborative &&
+            isHost &&
+            ((phase === "CONTRIBUTING" && groupReady && !usesUnion) ||
+              (phase === "VOTING" && allVoted) ||
+              phase === "REVIEW") && (
             <section
-              className={`host-stage-action ${isHost ? "is-host" : ""}`}
+              className="host-stage-action is-host"
               aria-label="Próxima ação do anfitrião"
             >
               <div>
-                <p className="kicker">
-                  {isHost
-                    ? "Sua ação de anfitrião"
-                    : "Próxima ação do anfitrião"}
-                </p>
                 <strong>
                   {phase === "CONTRIBUTING"
-                    ? `${hostName} abre a votação`
+                    ? "Pronto para abrir a votação"
                     : phase === "VOTING"
-                      ? `${hostName} revela a decisão coletiva`
-                      : `${hostName} confirma e avança a jornada`}
+                      ? "Pronto para revelar a decisão"
+                      : "Pronto para avançar"}
                 </strong>
-                <span>
-                  {phase === "CONTRIBUTING"
-                    ? groupReady
-                      ? "Todas as contribuições chegaram. A votação pode começar quando o grupo estiver atento."
-                      : `Faltam ${onlinePlayers.length - contributingPlayers.length} contribuições antes de abrir a votação.`
-                    : phase === "VOTING"
-                      ? allVoted
-                        ? "Todas as pessoas online votaram. A escolha do grupo está pronta para ser revelada."
-                        : `Faltam ${onlinePlayers.length - activeStageVotes.length} votos antes da revelação.`
-                      : "A escolha já faz parte da memória coletiva. O anfitrião pode levar o grupo à próxima etapa."}
-                </span>
               </div>
-              {usesUnion && phase === "CONTRIBUTING" && (
-                <p className="waiting-note">
-                  Cada pessoa recebeu uma acao diferente. Quando todas chegarem,
-                  o resultado do grupo sera montado automaticamente.
-                </p>
-              )}
-              {isHost && phase === "CONTRIBUTING" && !usesUnion && (
+              {phase === "CONTRIBUTING" && (
                 <button
                   className="primary-button"
-                  disabled={!groupReady || actionPending}
+                  disabled={actionPending}
                   onClick={() =>
                     void runStageAction(() => openVoting({ roomId: room.id }))
                   }
                 >
-                  {groupReady ? "Abrir votação" : "Esperando contribuições"}
+                  Abrir votação
                 </button>
               )}
-              {isHost && phase === "VOTING" && (
+              {phase === "VOTING" && (
                 <button
                   className="primary-button"
-                  disabled={!allVoted || actionPending}
+                  disabled={actionPending}
                   onClick={() =>
                     void runStageAction(() => resolveStage({ roomId: room.id }))
                   }
                 >
-                  {allVoted ? "Revelar decisão coletiva" : "Esperando votos"}
+                  Revelar decisão coletiva
                 </button>
               )}
-              {isHost && phase === "REVIEW" && (
+              {phase === "REVIEW" && (
                 <button
                   className="primary-button"
                   disabled={actionPending}
@@ -1556,7 +1609,6 @@ function GameBoard({
               )}
             </section>
           )}
-          <StageMission stage={stage} />
           {stage === "PROTOTYPE" && phase === "CONTRIBUTING" && (
             <section
               className="prototype-direction"
@@ -1614,38 +1666,30 @@ function GameBoard({
               </small>
             </section>
           )}
-          <div className="section-heading">
-            <div>
-              <p className="kicker">
+          {phase !== "CONTRIBUTING" && (
+            <div className="section-heading">
+              <div>
+                <p className="kicker">
+                  {phase === "VOTING"
+                    ? "✦ Escolha individual"
+                    : "★ Decisão coletiva"}
+                </p>
+                <h2>
+                  {phase === "VOTING"
+                    ? "Qual proposta deve guiar esta etapa?"
+                    : "O grupo escolheu um caminho"}
+                </h2>
+              </div>
+              <span>
                 {phase === "VOTING"
-                  ? "✦ Escolha individual"
-                  : phase === "REVIEW"
-                    ? "★ Decisão coletiva"
-                    : "✦ Sua contribuição"}
-              </p>
-              <h2>
-                {phase === "VOTING"
-                  ? "Qual proposta deve guiar esta etapa?"
-                  : phase === "REVIEW"
-                    ? "O grupo escolheu um caminho"
-                    : assignedPrompt}
-              </h2>
+                  ? `${activeStageVotes.length}/${participatingPlayers.length} votos`
+                  : `${contributingPlayers.length}/${participatingPlayers.length} enviadas`}
+              </span>
             </div>
-            <span>
-              {phase === "VOTING"
-                ? `${activeStageVotes.length}/${participatingPlayers.length} votos`
-                : `${contributingPlayers.length}/${participatingPlayers.length} enviadas`}
-            </span>
-          </div>
+          )}
 
           {phase === "CONTRIBUTING" && (
             <>
-              {usesUnion && ownAssignment && (
-                <aside className="assigned-action" aria-label="Sua acao">
-                  <strong>{ownAssignment.actionTitle}</strong>
-                  <span>{ownAssignment.actionPrompt}</span>
-                </aside>
-              )}
               <form onSubmit={saveContribution} className="contribution-form">
                 <label className="sr-only" htmlFor="contribution">
                   Sua contribuição
@@ -1698,16 +1742,7 @@ function GameBoard({
                 <div className="submission-waiting" aria-live="polite">
                   <span aria-hidden="true">✓</span>
                   <div>
-                    <strong>Sua contribuição está guardada em segredo.</strong>
-                    <p>
-                      {groupReady
-                        ? isHost
-                          ? "Todos terminaram. Abra a votação quando o grupo estiver atento."
-                          : "Todos terminaram. O anfitrião vai abrir a votação."
-                        : `Enquanto o grupo termina, você ainda pode revisar seu texto. Faltam ${
-                            onlinePlayers.length - contributingPlayers.length
-                          }.`}
-                    </p>
+                    <strong>Ideia enviada</strong>
                   </div>
                 </div>
               )}
@@ -1834,7 +1869,7 @@ function GameBoard({
             </section>
           )}
 
-          {(phase === "CONTRIBUTING" || !collaborative) && (
+          {!collaborative && (
             <div className="shared-ideas" aria-live="polite">
               {stageContributions.length === 0 ? (
                 <p className="empty-state">
@@ -1865,39 +1900,9 @@ function GameBoard({
             </div>
           )}
 
-          <p className="next-up">
-            <strong>
-              {phase === "REVIEW" ? "Próxima etapa:" : "Em seguida:"}
-            </strong>{" "}
-            {phase === "VOTING"
-              ? "Quando todos votarem, o anfitrião revela a escolha do grupo."
-              : phase === "REVIEW"
-                ? guidance.next
-                : collaborative
-                  ? "Depois das contribuições, cada pessoa escolherá uma proposta sem ver a autoria."
-                  : guidance.next}
-          </p>
+          {!collaborative && <p className="next-up">{guidance.next}</p>}
 
-          {isHost && (
-            <aside className="host-end-panel" aria-label="Opções do anfitrião">
-              <div>
-                <strong>Precisa parar a atividade?</strong>
-                <span>
-                  Salva o progresso parcial e encerra esta jornada para todo o
-                  grupo.
-                </span>
-              </div>
-              <button
-                type="button"
-                className="host-end-button"
-                disabled={actionPending}
-                onClick={endJourneyEarly}
-              >
-                Encerrar para todos
-              </button>
-            </aside>
-          )}
-          {!isHost && phase !== "VOTING" && (
+          {!isHost && phase === "REVIEW" && (
             <p className="waiting-note">
               {phase === "REVIEW"
                 ? "O anfitrião confirma a escolha e avança a jornada."

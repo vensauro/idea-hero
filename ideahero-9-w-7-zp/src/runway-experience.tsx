@@ -26,7 +26,6 @@ import type {
   StageOutcome,
   VisibleContribution,
 } from "./module_bindings/types";
-import { BrandLogo } from "./experience";
 import { JourneySummary } from "./JourneySummary";
 import { formatCredits } from "./runway-format";
 import {
@@ -519,6 +518,12 @@ export function RunwayFinalStage(props: RunwayFinalStageProps) {
   const [pending, setPending] = useState(false);
   const [error, setError] = useState("");
   const stageCost = stageCosts.find((item) => item.stage === stage);
+  const onlinePlayers = players.filter((player) => player.online);
+  const presencePlayers = onlinePlayers.some((player) =>
+    sameIdentity(player.identity, currentPlayer.identity),
+  )
+    ? onlinePlayers
+    : [currentPlayer, ...onlinePlayers];
   const stageReady =
     (stage === "PROTOTYPE" && prototype?.committed) ||
     (stage === "PILOT" && pilot?.completed) ||
@@ -553,52 +558,95 @@ export function RunwayFinalStage(props: RunwayFinalStageProps) {
   return (
     <main className="game-shell runway-game-shell">
       <EconomyEventOverlay roomId={room.id} transactions={transactions} />
-      <header className="game-header">
-        <BrandLogo compact />
-        <div className="topbar-actions">
-          <div className="room-pill">Sala {room.code}</div>
+      <details className="room-sheet" name="journey-controls">
+        <summary aria-label="Opções da sala">•••</summary>
+        <div className="room-sheet-panel">
+          <header className="room-sheet-heading">
+            <span>Sala {room.code}</span>
+            <small>Opções e informações</small>
+          </header>
+          <details className="room-sheet-section">
+            <summary>
+              <span aria-hidden="true">♧</span>
+              <span>
+                Pessoas
+                <small>{presencePlayers.length} online</small>
+              </span>
+            </summary>
+            <div className="room-sheet-players">
+              {players.map((player) => (
+                <div
+                  className={`player-list-row ${player.online ? "" : "is-offline"}`}
+                  key={player.id.toString()}
+                >
+                  <span aria-hidden="true">{player.displayName.slice(0, 1)}</span>
+                  <strong>{player.displayName}</strong>
+                  <small>{player.online ? "online" : "ausente"}</small>
+                </div>
+              ))}
+            </div>
+          </details>
+          <details className="room-sheet-section">
+            <summary>
+              <span aria-hidden="true">◌</span>
+              <span>
+                Caixa
+                <small>{formatCredits(economy.balance)} créditos</small>
+              </span>
+            </summary>
+            <div className="room-sheet-wallet">
+              <RunwayWallet
+                economy={economy}
+                stageCost={stageCost}
+                transactions={transactions}
+              />
+            </div>
+          </details>
           {leaveControl}
+          {isHost && (
+            <button
+              type="button"
+              className="room-sheet-end-button"
+              disabled={pending}
+              onClick={endEarly}
+            >
+              Encerrar jornada para todos
+            </button>
+          )}
         </div>
-      </header>
-
-      <nav className="stage-progress" aria-label="Progresso da jornada">
-        {STAGES.map((item, index) => (
-          <div
-            key={item}
-            className={`stage-step ${index === room.stageIndex ? "is-current" : ""} ${
-              index < room.stageIndex ? "is-complete" : ""
-            }`}
-            aria-current={index === room.stageIndex ? "step" : undefined}
-          >
-            <span>{index < room.stageIndex ? "✓" : index + 1}</span>
-            <small>{STAGE_LABELS[item]}</small>
-          </div>
-        ))}
-      </nav>
-
-      <JourneySummary
-        room={room}
-        contributions={contributions}
-        players={players}
-        decisions={decisions}
-        outcomes={stageOutcomes}
-      />
-
-      <RunwayWallet
-        economy={economy}
-        stageCost={stageCost}
-        transactions={transactions}
-      />
+      </details>
 
       <section className="runway-stage-flow">
         <header className="runway-stage-heading">
           <p className="kicker">
             Etapa {room.stageIndex + 1} de 8 · {STAGE_LABELS[stage]}
           </p>
+          <div
+            className="stage-presence"
+            aria-label={`Pessoas na sala: ${players.map((player) => player.displayName).join(", ")}`}
+          >
+            <span>Na sala</span>
+            <div className="stage-presence-avatars" aria-hidden="true">
+              {players.map((player) => (
+                <span
+                  className={player.online ? "" : "is-offline"}
+                  key={player.id.toString()}
+                  title={player.displayName}
+                >
+                  {player.displayName.slice(0, 1)}
+                </span>
+              ))}
+            </div>
+            <small>{presencePlayers.length} online</small>
+          </div>
           <h1>{STAGE_TITLES[stage]}</h1>
         </header>
 
         <div className="runway-stage-activity">
+          <div className="active-workspace-label">
+            <span aria-hidden="true">✦</span>
+            <span>Atividade da etapa</span>
+          </div>
           {stage === "PROTOTYPE" && (
             <PrototypeStage
               room={room}

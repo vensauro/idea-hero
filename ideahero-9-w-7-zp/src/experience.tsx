@@ -14,9 +14,11 @@ export function BrandLogo({ compact = false }: { compact?: boolean }) {
 export function InspirationCard({
   card,
   stageLabel,
+  stage,
 }: {
   card?: Card;
   stageLabel: string;
+  stage?: StageName;
 }) {
   if (!card) {
     return (
@@ -33,6 +35,7 @@ export function InspirationCard({
         <img src={card.imagePath} alt={card.altText} decoding="async" />
         <span className="card-lens">Lente · {card.lens}</span>
       </div>
+      {stage && <StageMission stage={stage} />}
       <figcaption>
         <span className="card-stage">Carta de {stageLabel}</span>
         <h2>{card.title}</h2>
