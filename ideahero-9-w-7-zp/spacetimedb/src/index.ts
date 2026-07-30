@@ -89,41 +89,39 @@ const COLLABORATIVE_STAGE_PLANS: Record<string, CollaborativeStagePlan> = {
     actions: [
       {
         key: "HIDDEN_CAUSE",
-        title: "A causa escondida",
-        prompt: "Descubra uma causa profunda que a maioria das pessoas ignora.",
-        placeholder: "O problema continua existindo porque...",
+        title: "Um caminho escondido",
+        prompt:
+          "Encontre uma direção que a maioria das pessoas ainda não considerou.",
+        placeholder: "Uma possibilidade que ainda não vimos é...",
       },
       {
         key: "BEHAVIOR",
-        title: "Um comportamento",
-        prompt:
-          "Observe um hábito ou comportamento que revela algo importante.",
-        placeholder: "As pessoas costumam...",
+        title: "Uma conexão inesperada",
+        prompt: "Conecte elementos que ainda não foram pensados juntos.",
+        placeholder: "E se conectássemos...",
       },
       {
         key: "CONTRADICTION",
-        title: "A contradição",
-        prompt:
-          "Encontre algo que parece contraditório, mas abre uma oportunidade.",
-        placeholder: "Mesmo que..., as pessoas...",
+        title: "Uma contradição fértil",
+        prompt: "Encontre uma contradição que possa abrir um caminho criativo.",
+        placeholder: "Mesmo que..., talvez possamos...",
       },
       {
         key: "RESOURCE",
-        title: "Um recurso esquecido",
-        prompt:
-          "Aponte um recurso, relação ou capacidade que ainda não foi aproveitado.",
-        placeholder: "Já existe uma força em...",
+        title: "Uma possibilidade disponível",
+        prompt: "Aponte algo que já existe e pode ajudar a criar uma ideia.",
+        placeholder: "Já podemos partir de...",
       },
       {
         key: "SIGNAL",
         title: "Um sinal de mudança",
-        prompt: "Descreva um sinal de que esse contexto está mudando.",
-        placeholder: "Um sinal disso é...",
+        prompt: "Descreva algo que indique uma nova direção possível.",
+        placeholder: "Um sinal de caminho é...",
       },
       {
         key: "OPENING",
         title: "A abertura",
-        prompt: "Formule uma abertura que possa mudar o rumo da ideia.",
+        prompt: "Formule uma abertura que possa inspirar uma ideia inesperada.",
         placeholder: "Talvez possamos...",
       },
     ],
@@ -2766,9 +2764,10 @@ export const set_stage_insight = spacetimedb.reducer(
         "O título da reação deve ter entre 4 e 120 caracteres.",
       );
     }
-    if (trimmedBody.length < 4 || trimmedBody.length > 280) {
+    const maximumBodyLength = stage === "FINAL" ? 400 : 280;
+    if (trimmedBody.length < 4 || trimmedBody.length > maximumBodyLength) {
       throw new SenderError(
-        "A descrição da reação deve ter entre 4 e 280 caracteres.",
+        `A descrição da reação deve ter entre 4 e ${maximumBodyLength} caracteres.`,
       );
     }
     const requiresResponse = stage === "TESTING";
@@ -2860,7 +2859,9 @@ export const respond_stage_insight = spacetimedb.reducer(
       throw new SenderError("Esta não é a etapa atual da jornada.");
     }
     if (stage !== "TESTING") {
-      throw new SenderError("Apenas a reação de teste recebe uma resposta coletiva.");
+      throw new SenderError(
+        "Apenas a reação de teste recebe uma resposta coletiva.",
+      );
     }
     const membership = Array.from(ctx.db.player.roomId.filter(roomId)).find(
       (item) => item.active && item.identity.isEqual(ctx.sender),
