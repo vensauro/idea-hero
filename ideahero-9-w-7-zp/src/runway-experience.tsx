@@ -1243,7 +1243,7 @@ function DrawingBoard({
   );
 }
 
-function PrototypeStage({
+export function PrototypeStage({
   room,
   prototype,
   artifacts,
@@ -1681,7 +1681,7 @@ function PrototypeStage({
   );
 }
 
-function PilotStage({
+export function PilotStage({
   room,
   pilot,
   groupVotes,
@@ -1799,7 +1799,7 @@ function PilotStage({
   );
 }
 
-function MarketingStage({
+export function MarketingStage({
   room,
   marketing,
   economy,
@@ -1946,7 +1946,7 @@ function MarketingStage({
   );
 }
 
-function SalesStage({
+export function SalesStage({
   economy,
   sales,
   pilot,

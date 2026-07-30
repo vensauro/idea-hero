@@ -56,8 +56,12 @@ import { JourneySummary } from "./JourneySummary";
 import {
   CardChangeButton,
   EconomyEventOverlay,
+  MarketingStage,
+  PilotStage,
+  PrototypeStage,
   RunwayFinalStage,
   RunwayWallet,
+  SalesStage,
   TopbarMoneyChip,
 } from "./runway-experience";
 import { formatCredits } from "./runway-format";
@@ -1361,32 +1365,7 @@ function GameBoard({
     );
   }
 
-  if (room.stageIndex >= 4) {
-    return (
-      <RunwayFinalStage
-        room={room}
-        players={players}
-        contributions={contributions}
-        decisions={decisions}
-        stageOutcomes={stageOutcomes}
-        currentPlayer={currentPlayer}
-        card={stageCard}
-        economy={economy}
-        stageCosts={stageCosts}
-        transactions={economyTransactions}
-        prototype={projectPrototype}
-        prototypeArtifacts={prototypeArtifacts}
-        prototypeDrawingStrokes={prototypeDrawingStrokes}
-        groupVotes={groupVotes}
-        pilot={pilotSimulation}
-        marketing={marketingPlan}
-        sales={salesResult}
-        leaveControl={
-          <LeaveRoomButton room={room} currentPlayer={currentPlayer} />
-        }
-      />
-    );
-  }
+
 
   return (
     <main className="game-shell">
@@ -1575,22 +1554,24 @@ function GameBoard({
         <article className="stage-intro">
           <h1>{content.title}</h1>
           <p>{content.objective}</p>
-          <InspirationCard
-            card={stageCard}
-            stageLabel={content.eyebrow}
-            stage={stage}
-            actionControl={
-              <CardChangeButton
-                room={room}
-                draw={stageDraw}
-                economy={economy}
-                locked={stageContributions.length > 0 || phase !== "CONTRIBUTING"}
-                players={players}
-                currentPlayer={currentPlayer}
-                groupVotes={groupVotes}
-              />
-            }
-          />
+          {stage !== "PROTOTYPE" && (
+            <InspirationCard
+              card={stageCard}
+              stageLabel={content.eyebrow}
+              stage={stage}
+              actionControl={
+                <CardChangeButton
+                  room={room}
+                  draw={stageDraw}
+                  economy={economy}
+                  locked={stageContributions.length > 0 || phase !== "CONTRIBUTING"}
+                  players={players}
+                  currentPlayer={currentPlayer}
+                  groupVotes={groupVotes}
+                />
+              }
+            />
+          )}
         </article>
 
         <article className="contribution-panel">
@@ -1750,7 +1731,7 @@ function GameBoard({
               </small>
             </section>
           )}
-          {phase !== "CONTRIBUTING" && (
+          {collaborative && phase !== "CONTRIBUTING" && (
             <div className="section-heading">
               <div>
                 <p className="kicker">
@@ -1772,7 +1753,7 @@ function GameBoard({
             </div>
           )}
 
-          {phase === "CONTRIBUTING" && (
+          {collaborative && phase === "CONTRIBUTING" && (
             <>
               <form onSubmit={saveContribution} className="contribution-form">
                 <label className="sr-only" htmlFor="contribution">
@@ -1833,6 +1814,73 @@ function GameBoard({
                 </div>
               )}
             </>
+          )}
+
+          {!collaborative && (
+            <div className="stage-activity-workspace">
+              {stage === "PROTOTYPE" && (
+                <PrototypeStage
+                  room={room}
+                  prototype={projectPrototype}
+                  artifacts={prototypeArtifacts}
+                  drawingStrokes={prototypeDrawingStrokes}
+                  groupVotes={groupVotes}
+                  currentPlayer={currentPlayer}
+                  players={players}
+                  economy={economy}
+                />
+              )}
+              {stage === "PILOT" && (
+                <PilotStage
+                  room={room}
+                  pilot={pilotSimulation}
+                  groupVotes={groupVotes}
+                  currentPlayer={currentPlayer}
+                  players={players}
+                />
+              )}
+              {stage === "MARKETING" && (
+                <MarketingStage
+                  room={room}
+                  marketing={marketingPlan}
+                  economy={economy}
+                  groupVotes={groupVotes}
+                  currentPlayer={currentPlayer}
+                  players={players}
+                  card={stageCard}
+                />
+              )}
+              {stage === "SALES" && (
+                <SalesStage
+                  economy={economy}
+                  sales={salesResult}
+                  pilot={pilotSimulation}
+                  transactions={economyTransactions}
+                />
+              )}
+
+              <div className="form-footer" style={{ marginTop: "1.25rem" }}>
+                <button
+                  className="primary-button"
+                  disabled={
+                    actionPending ||
+                    (stage === "PROTOTYPE" && !projectPrototype?.committed) ||
+                    (stage === "PILOT" && !pilotSimulation?.completed) ||
+                    (stage === "MARKETING" && !marketingPlan?.committed) ||
+                    (stage === "SALES" && !salesResult)
+                  }
+                  onClick={() =>
+                    void runStageAction(() => advanceStage({ roomId: room.id }))
+                  }
+                >
+                  {stage === "SALES"
+                    ? "Concluir a jornada"
+                    : `Confirmar e avançar para ${
+                        STAGE_CONTENT[BOARD_STATES[room.stageIndex + 1]].eyebrow
+                      }`}
+                </button>
+              </div>
+            </div>
           )}
 
           {collaborative && phase !== "REVIEW" && (
