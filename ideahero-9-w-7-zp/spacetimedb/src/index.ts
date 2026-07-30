@@ -2933,7 +2933,7 @@ export const respond_stage_insight = spacetimedb.reducer(
     if (session) {
       ctx.db.stageSession.id.update({
         ...session,
-        phase: stage === "CONQUERING" ? "REVIEW" : "READY",
+        phase: "READY",
         updatedAt: ctx.timestamp,
       });
     }
