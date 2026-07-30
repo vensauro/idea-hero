@@ -4552,12 +4552,19 @@ h1 {
 }
 
 .topbar-stage-pill::-webkit-details-marker,
-.topbar-icon-chip::-webkit-details-marker {
+.topbar-icon-chip::-webkit-details-marker,
+.topbar-money-chip::-webkit-details-marker {
   display: none;
 }
 
+.topbar-money-chip {
+  list-style: none;
+  cursor: pointer;
+}
+
 .topbar-stage-menu[open] .topbar-stage-pill,
-.topbar-chip-menu[open] .topbar-icon-chip {
+.topbar-chip-menu[open] .topbar-icon-chip,
+.topbar-chip-menu[open] .topbar-money-chip {
   background: var(--sun);
   box-shadow: 2px 2px 0 rgba(52, 44, 59, 0.2);
 }
@@ -5756,17 +5763,22 @@ h1 {
   align-items: center;
   justify-content: space-between;
   width: 100%;
-  min-height: 42px;
-  padding: 0.55rem 0.95rem;
+  min-height: 40px;
+  padding: 0.5rem 0.85rem;
   border: 2px solid var(--line);
   border-radius: 14px;
   background: var(--sun);
   color: var(--ink);
-  font-size: 0.92rem;
-  font-weight: 950;
+  font-size: 0.83rem;
+  font-weight: 850;
   box-shadow: 2.5px 2.5px 0 var(--line);
   cursor: pointer;
   transition: all 0.15s ease;
+}
+
+.card-change-button .button-label {
+  font-size: 0.83rem;
+  font-weight: 850;
 }
 
 .card-change-button:not(:disabled):hover {

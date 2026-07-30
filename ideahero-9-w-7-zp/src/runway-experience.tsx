@@ -245,7 +245,7 @@ export function TopbarMoneyChip({ balance }: { balance: number }) {
   }, [balance]);
 
   return (
-    <div
+    <summary
       className={`topbar-timer-chip topbar-money-chip ${
         animating === "deduct"
           ? "is-deduct-animating"
@@ -263,7 +263,7 @@ export function TopbarMoneyChip({ balance }: { balance: number }) {
           {delta > 0 ? `+${formatCredits(delta)}` : formatCredits(delta)}
         </span>
       )}
-    </div>
+    </summary>
   );
 }
 
