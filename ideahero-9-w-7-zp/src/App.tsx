@@ -1264,10 +1264,13 @@ function GameBoard({
   const [clock, setClock] = useState(() => Date.now());
   const [roundStartedAt, setRoundStartedAt] = useState(() => Date.now());
   const roundSeconds = roundDuration(stage, phase, collaborative);
-  const secondsLeft = Math.max(
-    0,
-    roundSeconds - Math.floor((clock - roundStartedAt) / 1000),
-  );
+  const prototypeEndingAt = projectPrototype
+    ? projectPrototype.startedAt.toDate().getTime() + projectPrototype.durationSeconds * 1000
+    : 0;
+  const secondsLeft =
+    stage === "PROTOTYPE" && projectPrototype
+      ? Math.max(0, Math.ceil((prototypeEndingAt - clock) / 1000))
+      : Math.max(0, roundSeconds - Math.floor((clock - roundStartedAt) / 1000));
   const timeExpired = secondsLeft === 0;
 
   useEffect(() => {

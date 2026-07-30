@@ -1628,6 +1628,7 @@ export function PrototypeStage({
             )}
             <button
               type="button"
+              className="card-change-button"
               aria-pressed={Boolean(ownExtension)}
               disabled={pending}
               onClick={() =>
@@ -1639,7 +1640,14 @@ export function PrototypeStage({
                 )
               }
             >
-              +30 segundos · −500
+              <span className="button-label">
+                {ownExtension
+                  ? "Retirar voto de tempo"
+                  : "Votar +30 segundos · −500 cr"}
+              </span>
+              <span className="card-change-vote-badge">
+                {extensionVotes.length}/{required} votos
+              </span>
             </button>
             <VoteProgress
               votes={extensionVotes}
