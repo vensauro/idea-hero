@@ -11,11 +11,13 @@ import {
 } from "spacetimedb";
 
 export default __t.row({
-  roomId: __t.u64().primaryKey().name("room_id"),
-  remainingCredits: __t.u32().name("remaining_credits"),
-  marketingInvestment: __t.u32().name("marketing_investment"),
-  multiplier: __t.u32(),
-  simulatedSales: __t.u32().name("simulated_sales"),
-  finalRunway: __t.u32().name("final_runway"),
-  tier: __t.string(),
+  id: __t.u64().primaryKey(),
+  roomId: __t.u64().name("room_id"),
+  optionKey: __t.string().name("option_key"),
+  title: __t.string(),
+  description: __t.string(),
+  cost: __t.u32(),
+  impact: __t.string(),
+  selected: __t.bool(),
+  createdAt: __t.timestamp().name("created_at"),
 });

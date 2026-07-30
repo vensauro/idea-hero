@@ -25,6 +25,7 @@ import type {
   StageAssignment,
   StageOutcome,
   StageSession,
+  TestingOption,
   VisibleContribution,
   Vote,
   VoteStatus,
@@ -58,11 +59,15 @@ import {
   EconomyEventOverlay,
   MarketingStage,
   PilotStage,
+  PolishingStage,
   PrototypeStage,
+  PrototypeShowcase,
   RunwayFinalStage,
   RunwayWallet,
   SalesStage,
+  TestingStage,
   TopbarMoneyChip,
+  artifactSource,
 } from "./runway-experience";
 import { formatCredits } from "./runway-format";
 import { PILOT_FEEDBACK } from "../spacetimedb/src/economy";
@@ -72,17 +77,19 @@ export const BOARD_STATES = [
   "PROBLEM",
   "INSIGHT",
   "SOLUTION",
+  "POLISHING",
   "PROTOTYPE",
-  "PILOT",
-  "MARKETING",
-  "SALES",
+  "TESTING",
+  "CONQUERING",
+  "FINAL",
 ] as const;
 
 type BoardState = (typeof BOARD_STATES)[number];
 
-export const COLLABORATIVE_STAGES = new Set<BoardState>(
-  BOARD_STATES.slice(0, 4),
-);
+export const COLLABORATIVE_STAGES = new Set<BoardState>([
+  ...BOARD_STATES.slice(0, 5),
+  "CONQUERING",
+]);
 export const COLLABORATIVE_PHASES = [
   "CONTRIBUTING",
   "VOTING",
@@ -162,6 +169,13 @@ const STAGE_CONTENT: Record<
     prompt: "Que solução inesperada conecta cenário, problema e insight?",
     icon: "◇",
   },
+  POLISHING: {
+    title: "Vamos lapidar a ideia",
+    eyebrow: "Lapidando",
+    objective: "Explore e refine a ideia vencedora com o grupo.",
+    prompt: "O que pode tornar esta ideia ainda melhor?",
+    icon: "✧",
+  },
   PROTOTYPE: {
     title: "Vamos criar o protótipo",
     eyebrow: "Protótipo",
@@ -169,27 +183,36 @@ const STAGE_CONTENT: Record<
     prompt: "Qual é a menor representação que torna a ideia compreensível?",
     icon: "▱",
   },
-  PILOT: {
-    title: "Vamos testar no piloto",
-    eyebrow: "Piloto",
-    objective: "Confronte o protótipo com uma condição de realidade.",
-    prompt: "O que este teste ensina e o que precisa mudar?",
+  TESTING: {
+    title: "Vamos testar com recursos",
+    eyebrow: "Testando",
+    objective: "Escolha uma estratégia para testar o protótipo com recursos.",
+    prompt: "Qual teste revela mais sobre a viabilidade da ideia?",
     icon: "↗",
   },
-  MARKETING: {
-    title: "Vamos planejar o marketing",
-    eyebrow: "Marketing",
-    objective: "Defina público, mensagem e caminho para alcançar pessoas.",
+  CONQUERING: {
+    title: "Vamos conquistar adesão",
+    eyebrow: "Conquistando",
+    objective: "Crie estratégias para conquistar pessoas.",
     prompt: "Como explicar o valor desta ideia em uma frase?",
     icon: "◎",
   },
-  SALES: {
-    title: "Vamos iniciar as vendas",
-    eyebrow: "Vendas",
-    objective: "Consolide a proposta e revele o que o grupo construiu.",
+  FINAL: {
+    title: "Vamos revelar a jornada",
+    eyebrow: "Final",
+    objective: "Consolide a jornada e descubra o que o grupo construiu.",
     prompt: "Qual é o próximo passo real para esta ideia?",
     icon: "★",
   },
+};
+
+const STAGE_PLAN_RESOLUTIONS: Record<string, "FACILITATOR" | "UNION" | "VOTE"> = {
+  SCENARIO: "FACILITATOR",
+  PROBLEM: "FACILITATOR",
+  INSIGHT: "UNION",
+  SOLUTION: "VOTE",
+  POLISHING: "UNION",
+  CONQUERING: "VOTE",
 };
 
 const AVATARS = ["seedling", "comet", "prism", "whale", "owl", "fox"] as const;
@@ -341,6 +364,9 @@ function App() {
     tables.marketing_plans,
   );
   const [salesResults, salesResultsReady] = useTable(tables.sales_results);
+  const [testingOptions, testingOptionsReady] = useTable(
+    tables.room_testing_options,
+  );
 
   const currentProfile = identity
     ? profiles.find((item) => sameIdentity(item.identity, identity))
@@ -508,6 +534,9 @@ function App() {
     (item) => item.roomId === currentRoom.id,
   );
   const roomSales = salesResults.find((item) => item.roomId === currentRoom.id);
+  const roomTestingOptions = testingOptions.filter(
+    (item) => item.roomId === currentRoom.id,
+  );
   const roomPublishedResult = publishedResults.find(
     (item) => item.roomId === currentRoom.id,
   );
@@ -539,6 +568,7 @@ function App() {
       prototypeArtifacts={roomPrototypeArtifacts}
       prototypeDrawingStrokes={roomPrototypeDrawingStrokes}
       groupVotes={roomGroupVotes}
+      testingOptions={roomTestingOptions}
       pilotSimulation={roomPilot}
       marketingPlan={roomMarketing}
       salesResult={roomSales}
@@ -936,66 +966,36 @@ function Lobby({
       </header>
 
       <section className="lobby-hero">
-        <p className="kicker">Sala de preparação</p>
         <h1>
           {enoughPlayers
             ? "O grupo está se formando"
             : "Esperando mais um herói"}
         </h1>
-        <p>
-          {enoughPlayers
-            ? "Quando todos estiverem prontos, o anfitrião começa a jornada."
-            : `Convide pelo menos mais ${waitingForPlayers} ${
-                waitingForPlayers === 1 ? "pessoa" : "pessoas"
-              } para começar.`}
-        </p>
+        {!enoughPlayers && (
+          <p className="lobby-hero-sub">
+            {`Convide pelo menos mais ${waitingForPlayers} ${
+              waitingForPlayers === 1 ? "pessoa" : "pessoas"
+            } para começar.`}
+          </p>
+        )}
 
-        <button className="room-code" onClick={() => void shareInvite()}>
-          <small className="invite-action">Toque para enviar o convite</small>
-          <span>{room.code}</span>
-          <small>
-            {copied
-              ? "✓ Convite compartilhado ou copiado"
-              : "Compartilhar ou copiar link"}
-          </small>
+        <button
+          className="room-code-badge"
+          onClick={() => void shareInvite()}
+          aria-label="Compartilhar convite da sala"
+        >
+          <span className="code-text">{room.code}</span>
+          <span className="copy-action-text">
+            {copied ? "✓ Convite copiado!" : "Compartilhar convite"}
+          </span>
         </button>
-        <small className="invite-help">
-          O link abre diretamente esta sala e expira quando a jornada termina.
-        </small>
       </section>
 
       <section className="players-panel" aria-labelledby="players-title">
         <div className="section-heading">
-          <div>
-            <p className="kicker">Mínimo 2 · máximo 6</p>
-            <h2 id="players-title">Heróis na sala</h2>
-          </div>
-          <span>
+          <h2 id="players-title">Heróis na sala</h2>
+          <span className={`players-ready-counter ${allReady ? "is-all-ready" : ""}`}>
             {readyCount}/{players.length} prontos
-          </span>
-        </div>
-
-        <div
-          className={`lobby-status ${allReady ? "is-ready" : ""}`}
-          role="status"
-        >
-          <strong>
-            {!enoughPlayers
-              ? "Aguardando participantes"
-              : allReady
-                ? "Tudo pronto para começar"
-                : "Aguardando confirmações"}
-          </strong>
-          <span>
-            {!enoughPlayers
-              ? `A jornada é colaborativa e começa com ${MIN_PLAYERS} pessoas.`
-              : allReady
-                ? "O anfitrião já pode abrir a primeira etapa."
-                : `${waitingForReady.map((item) => item.displayName).join(", ")} ${
-                    waitingForReady.length === 1
-                      ? "ainda está se preparando"
-                      : "ainda estão se preparando"
-                  }.`}
           </span>
         </div>
 
@@ -1005,7 +1005,7 @@ function Lobby({
               <span className="player-avatar" aria-hidden="true">
                 {AVATAR_GLYPHS[item.avatarId] ?? "✦"}
               </span>
-              <div>
+              <div className="player-info">
                 <strong>{item.displayName}</strong>
                 <small>
                   {sameIdentity(item.identity, room.ownerIdentity)
@@ -1014,60 +1014,69 @@ function Lobby({
                 </small>
               </div>
               <span className={`ready-chip ${item.ready ? "is-ready" : ""}`}>
-                {item.ready ? "Pronto" : "Preparando"}
+                {item.ready ? "✓ Pronto" : "Preparando"}
               </span>
             </article>
           ))}
         </div>
       </section>
 
-      <footer className="lobby-footer">
-        <p className="lobby-role-help">
-          {isHost
-            ? currentPlayer.ready
-              ? "Você é o anfitrião. Quando todo o grupo estiver pronto, inicie a jornada."
-              : "Você é o anfitrião: confirme que está pronto para liberar o início da jornada."
-            : "Marque-se como pronto quando puder começar. O anfitrião controla o início e as transições."}
-        </p>
-        {!isHost ? (
-          <button
-            className={
-              currentPlayer.ready ? "secondary-button" : "primary-button"
-            }
-            onClick={() =>
-              void invoke(() =>
-                setReady({ roomId: room.id, ready: !currentPlayer.ready }),
-              )
-            }
-          >
-            {currentPlayer.ready ? "Ainda não estou pronto" : "Estou pronto"}
-          </button>
-        ) : currentPlayer.ready ? (
-          <span className="ready-chip is-ready">✓ Você está pronto</span>
-        ) : (
-          <button
-            className="primary-button"
-            onClick={() =>
-              void invoke(() => setReady({ roomId: room.id, ready: true }))
-            }
-          >
-            Estou pronto
-          </button>
-        )}
-        {isHost && (
-          <button
-            className="primary-button"
-            disabled={!allReady}
-            onClick={() => void invoke(() => startGame({ roomId: room.id }))}
-          >
-            {!enoughPlayers
-              ? `Falta ${waitingForPlayers} participante`
-              : allReady
-                ? "Começar a jornada"
-                : "Esperando todos ficarem prontos"}
-          </button>
-        )}
-        {error && <p className="error-message">{error}</p>}
+      <footer className="lobby-sticky-footer">
+        <div className="lobby-action-container">
+          {error && <p className="error-message" role="alert">{error}</p>}
+          {!isHost ? (
+            <div className="cta-wrapper">
+              <button
+                className={
+                  currentPlayer.ready
+                    ? "secondary-button cta-btn"
+                    : "primary-button cta-btn cta-ready-highlight"
+                }
+                onClick={() =>
+                  void invoke(() =>
+                    setReady({ roomId: room.id, ready: !currentPlayer.ready }),
+                  )
+                }
+              >
+                {currentPlayer.ready ? "Ainda não estou pronto" : "Estou pronto"}
+              </button>
+              {currentPlayer.ready && (
+                <span className="ready-indicator-text">
+                  ✓ Você está pronto. Aguardando o anfitrião iniciar.
+                </span>
+              )}
+            </div>
+          ) : (
+            <div className="host-actions-group">
+              <button
+                className={
+                  currentPlayer.ready
+                    ? "secondary-button cta-btn"
+                    : "primary-button cta-btn cta-ready-highlight"
+                }
+                onClick={() =>
+                  void invoke(() =>
+                    setReady({ roomId: room.id, ready: !currentPlayer.ready }),
+                  )
+                }
+              >
+                {currentPlayer.ready ? "Desmarcar pronto" : "Estou pronto"}
+              </button>
+
+              <button
+                className="primary-button cta-btn cta-start-highlight"
+                disabled={!allReady}
+                onClick={() => void invoke(() => startGame({ roomId: room.id }))}
+              >
+                {!enoughPlayers
+                  ? `Falta ${waitingForPlayers} participante`
+                  : allReady
+                    ? "Começar a jornada 🚀"
+                    : "Esperando o grupo"}
+              </button>
+            </div>
+          )}
+        </div>
       </footer>
     </main>
   );
@@ -1095,6 +1104,7 @@ function GameBoard({
   prototypeArtifacts,
   prototypeDrawingStrokes,
   groupVotes,
+  testingOptions = [],
   pilotSimulation,
   marketingPlan,
   salesResult,
@@ -1121,6 +1131,7 @@ function GameBoard({
   prototypeArtifacts: readonly PrototypeArtifact[];
   prototypeDrawingStrokes: readonly PrototypeDrawingStroke[];
   groupVotes: readonly GroupVote[];
+  testingOptions?: readonly TestingOption[];
   pilotSimulation?: PilotSimulation;
   marketingPlan?: MarketingPlan;
   salesResult?: SalesResult;
@@ -1134,7 +1145,7 @@ function GameBoard({
   const endJourney = useReducer(reducers.endJourney);
   const stage = room.currentStage as BoardState;
   const content = STAGE_CONTENT[stage] ?? STAGE_CONTENT.SCENARIO;
-  const guidance = STAGE_GUIDANCE[stage];
+  const guidance = STAGE_GUIDANCE[stage as keyof typeof STAGE_GUIDANCE] ?? STAGE_GUIDANCE.SCENARIO;
   const stageDraw = cardDraws.find(
     (item) => item.roomId === room.id && item.stage === stage && item.active,
   );
@@ -1147,11 +1158,16 @@ function GameBoard({
   const stageContributionStatuses = contributionStatuses.filter(
     (item) => item.stage === stage,
   );
+  const isHost = sameIdentity(currentPlayer.identity, room.ownerIdentity);
   const stageSession = stageSessions.find(
     (item) => item.roomId === room.id && item.stage === stage,
   );
   const phase = stageSession?.phase ?? "CONTRIBUTING";
-  const usesUnion = stageSession?.resolution === "UNION";
+  const defaultResolution = STAGE_PLAN_RESOLUTIONS[stage] ?? "VOTE";
+  const resolution = stageSession?.resolution ?? defaultResolution;
+  const usesUnion = resolution === "UNION";
+  const usesFacilitator = resolution === "FACILITATOR";
+
   const currentAssignments = stageAssignments
     .filter((item) => item.stage === stage)
     .slice()
@@ -1161,7 +1177,7 @@ function GameBoard({
   );
   const stageOutcome = stageOutcomes.find((item) => item.stage === stage);
   const assignedPlaceholder =
-    ownAssignment?.actionPlaceholder ?? guidance.placeholder;
+    ownAssignment?.actionPlaceholder ?? guidance?.placeholder ?? "";
   const collaborative = COLLABORATIVE_STAGES.has(stage);
   const stageVotes = votes.filter(
     (item) => item.roomId === room.id && item.stage === stage,
@@ -1198,6 +1214,39 @@ function GameBoard({
             sameIdentity(assignment.playerIdentity, player.identity),
           ),
         );
+  const facilitatorPlayer = useMemo(() => {
+    if (!usesFacilitator) return undefined;
+    const ordered = [...participatingPlayers].sort((a, b) =>
+      a.id < b.id ? -1 : 1,
+    );
+    if (ordered.length === 0) return undefined;
+    return ordered[room.stageIndex % ordered.length];
+  }, [usesFacilitator, participatingPlayers, room.stageIndex]);
+
+  const turnPlayer = useMemo(() => {
+    const ordered = [...participatingPlayers].sort((a, b) =>
+      a.id < b.id ? -1 : 1,
+    );
+    if (ordered.length === 0) return undefined;
+    return ordered[room.stageIndex % ordered.length];
+  }, [participatingPlayers, room.stageIndex]);
+
+  // Keep the UI's active player calculation identical to the server rule.
+  const polishingActivePlayer = useMemo(() => {
+    const ordered = players
+      .filter((player) => player.active && player.online)
+      .slice()
+      .sort((a, b) => (a.id < b.id ? -1 : 1));
+    return ordered[room.stageIndex % ordered.length];
+  }, [players, room.stageIndex]);
+
+  const isFacilitator =
+    usesFacilitator &&
+    sameIdentity(facilitatorPlayer?.identity, currentPlayer.identity);
+  const isPolishingLead =
+    stage === "POLISHING" &&
+    sameIdentity(polishingActivePlayer?.identity, currentPlayer.identity);
+  const canAdvanceStage = usesFacilitator ? isFacilitator : isHost;
   const contributingPlayers = participatingPlayers.filter((player) =>
     stageContributionStatuses.some((item) =>
       sameIdentity(item.authorIdentity, player.identity),
@@ -1223,7 +1272,6 @@ function GameBoard({
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
   const [actionPending, setActionPending] = useState(false);
-  const isHost = sameIdentity(currentPlayer.identity, room.ownerIdentity);
   const [productType, setProductType] = useState<ProductType>("digital");
   const [copilotSuggestion, setCopilotSuggestion] = useState("");
   const [voiceSuggestion, setVoiceSuggestion] = useState("");
@@ -1345,6 +1393,9 @@ function GameBoard({
         currentPlayer={currentPlayer}
         economy={economy}
         transactions={economyTransactions}
+        projectPrototype={projectPrototype}
+        prototypeArtifacts={prototypeArtifacts}
+        prototypeDrawingStrokes={prototypeDrawingStrokes}
         pilotSimulation={pilotSimulation}
         salesResult={salesResult}
         publishedResult={publishedResult}
@@ -1386,6 +1437,12 @@ function GameBoard({
                   const isCurrent = index === room.stageIndex;
                   const isComplete = index < room.stageIndex;
                   const stageData = STAGE_CONTENT[item];
+                  const draw = cardDraws.find(
+                    (d) => d.roomId === room.id && d.stage === item && d.active,
+                  );
+                  const stageCard = draw
+                    ? cards.find((c) => c.id === draw.cardId)
+                    : undefined;
                   const stageDecision = decisions.find(
                     (d) => d.roomId === room.id && d.stage === item
                   );
@@ -1412,6 +1469,44 @@ function GameBoard({
                         {stageData.icon} {stageData.eyebrow}
                       </strong>
                       <p className="stage-hub-objective">{stageData.objective}</p>
+
+                      {index < 4 && stageCard && (
+                        <div className="stage-hub-card-card-box">
+                          <img
+                            src={stageCard.imagePath}
+                            alt={stageCard.altText}
+                            className="stage-hub-card-thumb"
+                          />
+                          <div className="stage-hub-card-info">
+                            <small className="stage-hub-card-lens">Lente {stageCard.lens}</small>
+                            <strong className="stage-hub-card-title">{stageCard.title}</strong>
+                          </div>
+                        </div>
+                      )}
+
+                      {item === "PROTOTYPE" && (projectPrototype || prototypeArtifacts.length > 0 || prototypeDrawingStrokes.length > 0) && (
+                        <div className="stage-hub-prototype-box">
+                          <div className="stage-hub-proto-header">
+                            <span className="stage-hub-proto-tag">🎨 Protótipo</span>
+                            {projectPrototype?.caption && <strong>“{projectPrototype.caption}”</strong>}
+                          </div>
+                          {prototypeDrawingStrokes.length > 0 && (
+                            <div className="stage-hub-drawing-indicator">
+                              <span>✎ Desenho colaborativo ({prototypeDrawingStrokes.length} traços)</span>
+                            </div>
+                          )}
+                          {prototypeArtifacts.map((art) => (
+                            <div key={art.id.toString()} className="stage-hub-artifact-item">
+                              {art.artifactKind === "AUDIO" ? (
+                                <audio controls src={artifactSource(art.artifactData)} className="stage-hub-audio" />
+                              ) : (
+                                <img src={artifactSource(art.artifactData)} alt={art.caption || "Artefato"} className="stage-hub-art-thumb" />
+                              )}
+                              {art.caption && <small>{art.caption}</small>}
+                            </div>
+                          ))}
+                        </div>
+                      )}
 
                       {(stageDecision || stageOutcome || stageContribs.length > 0) && (
                         <div className="stage-hub-memory">
@@ -1564,14 +1659,16 @@ function GameBoard({
         <article className="contribution-panel">
           {collaborative && (
             <div className="phase-ribbon" aria-label="Fase da decisão coletiva">
-              {(usesUnion
+              {(usesUnion || usesFacilitator
                 ? (["CONTRIBUTING", "REVIEW"] as const)
                 : COLLABORATIVE_PHASES
               ).map((item, index, phases) => {
                 const phaseIndex = phases.findIndex((value) => value === phase);
                 const labels = usesUnion
                   ? ["Criar", "Unir"]
-                  : ["Criar", "Escolher", "Revelar"];
+                  : usesFacilitator
+                    ? ["Narrar", "Revelar"]
+                    : ["Criar", "Escolher", "Revelar"];
                 return (
                   <span
                     key={item}
@@ -1590,14 +1687,22 @@ function GameBoard({
             >
               <strong>
                 {phase === "CONTRIBUTING"
-                  ? "Crie sem influência"
+                  ? usesFacilitator
+                    ? isFacilitator
+                      ? "Você é o narrador desta etapa"
+                      : `${facilitatorPlayer?.displayName ?? "O facilitador"} está narrando`
+                    : "Crie sem influência"
                   : phase === "VOTING"
                     ? "As ideias foram abertas"
                     : "A escolha agora faz parte da jornada"}
               </strong>
               <span>
                 {phase === "CONTRIBUTING"
-                  ? "Crie em particular. Veja apenas o progresso do grupo."
+                  ? usesFacilitator
+                    ? isFacilitator
+                      ? "Registre a narrativa à luz da carta. O grupo aguarda."
+                      : "Aguarde o facilitador registrar. Você verá em seguida."
+                    : "Crie em particular. Veja apenas o progresso do grupo."
                   : phase === "VOTING"
                     ? "Escolha uma proposta sem ver a autoria."
                     : "Veja a escolha do grupo e avance quando estiverem prontos."}
@@ -1605,24 +1710,26 @@ function GameBoard({
             </div>
           )}
           {collaborative &&
-            isHost &&
-            ((phase === "CONTRIBUTING" && groupReady && !usesUnion) ||
-              (phase === "VOTING" && allVoted) ||
-              phase === "REVIEW") && (
+            ((stage === "POLISHING" && phase === "CONTRIBUTING" && isPolishingLead) ||
+              (isHost && phase === "CONTRIBUTING" && groupReady && !usesUnion && !usesFacilitator) ||
+              (isHost && phase === "VOTING" && allVoted) ||
+              (phase === "REVIEW" && canAdvanceStage)) && (
             <section
-              className="host-stage-action is-host"
-              aria-label="Próxima ação do anfitrião"
+              className={`host-stage-action ${isHost || isFacilitator ? "is-host" : ""}`}
+              aria-label="Ação da etapa"
             >
               <div>
                 <strong>
-                  {phase === "CONTRIBUTING"
+                  {stage === "POLISHING"
+                    ? "Pronto para continuar"
+                    : phase === "CONTRIBUTING"
                     ? "Pronto para abrir a votação"
                     : phase === "VOTING"
                       ? "Pronto para revelar a decisão"
                       : "Pronto para avançar"}
                 </strong>
               </div>
-              {phase === "CONTRIBUTING" && (
+              {phase === "CONTRIBUTING" && isHost && !usesUnion && !usesFacilitator && (
                 <button
                   className="primary-button"
                   disabled={actionPending}
@@ -1633,7 +1740,18 @@ function GameBoard({
                   Abrir votação
                 </button>
               )}
-              {phase === "VOTING" && (
+              {stage === "POLISHING" && phase === "CONTRIBUTING" && isPolishingLead && (
+                <button
+                  className="primary-button"
+                  disabled={actionPending}
+                  onClick={() =>
+                    void runStageAction(() => advanceStage({ roomId: room.id }))
+                  }
+                >
+                  Continuar para Protótipo
+                </button>
+              )}
+              {phase === "VOTING" && isHost && (
                 <button
                   className="primary-button"
                   disabled={actionPending}
@@ -1644,7 +1762,7 @@ function GameBoard({
                   Revelar decisão coletiva
                 </button>
               )}
-              {phase === "REVIEW" && (
+              {stage !== "POLISHING" && phase === "REVIEW" && canAdvanceStage && (
                 <button
                   className="primary-button"
                   disabled={actionPending}
@@ -1652,14 +1770,19 @@ function GameBoard({
                     void runStageAction(() => advanceStage({ roomId: room.id }))
                   }
                 >
-                  {stage === "SALES"
+                  {stage === "FINAL"
                     ? "Concluir a jornada"
                     : `Confirmar e avançar para ${
-                        STAGE_CONTENT[BOARD_STATES[room.stageIndex + 1]].eyebrow
+                        STAGE_CONTENT[BOARD_STATES[room.stageIndex + 1]]?.eyebrow ?? "próxima etapa"
                       }`}
                 </button>
               )}
             </section>
+          )}
+          {stage === "POLISHING" && phase === "CONTRIBUTING" && !isPolishingLead && (
+            <p className="waiting-note" aria-live="polite">
+              {polishingActivePlayer?.displayName ?? "O jogador ativo"} pode continuar para Protótipo quando o grupo terminar.
+            </p>
           )}
           {stage === "PROTOTYPE" && phase === "CONTRIBUTING" && (
             <section
@@ -1718,29 +1841,21 @@ function GameBoard({
               </small>
             </section>
           )}
-          {collaborative && phase !== "CONTRIBUTING" && (
+          {collaborative && phase === "VOTING" && (
             <div className="section-heading">
               <div>
-                <p className="kicker">
-                  {phase === "VOTING"
-                    ? "✦ Escolha individual"
-                    : "★ Decisão coletiva"}
-                </p>
-                <h2>
-                  {phase === "VOTING"
-                    ? "Qual proposta deve guiar esta etapa?"
-                    : "O grupo escolheu um caminho"}
-                </h2>
+                <p className="kicker">✦ Escolha individual</p>
+                <h2>Qual proposta deve guiar esta etapa?</h2>
               </div>
               <span>
-                {phase === "VOTING"
-                  ? `${activeStageVotes.length}/${participatingPlayers.length} votos`
-                  : `${contributingPlayers.length}/${participatingPlayers.length} enviadas`}
+                {activeStageVotes.length}/{participatingPlayers.length} votos
               </span>
             </div>
           )}
 
-          {collaborative && phase === "CONTRIBUTING" && (
+          {collaborative &&
+            phase === "CONTRIBUTING" &&
+            (!usesFacilitator || isFacilitator) && (
             <>
               <form onSubmit={saveContribution} className="contribution-form">
                 <label className="sr-only" htmlFor="contribution">
@@ -1753,7 +1868,7 @@ function GameBoard({
                   placeholder={assignedPlaceholder}
                   minLength={2}
                   maxLength={280}
-                  required
+                  required={stage !== "POLISHING"}
                 />
                 <div className="form-input-meta">
                   <div className="contribution-status" aria-live="polite">
@@ -1783,7 +1898,10 @@ function GameBoard({
                     disabled={saving}
                     onResult={applyContributionVoice}
                   />
-                  <button className="primary-button" disabled={saving}>
+                  <button
+                    className="primary-button"
+                    disabled={saving || (stage === "POLISHING" && draft.trim().length === 0)}
+                  >
                     {saving
                       ? "Salvando…"
                       : ownContribution
@@ -1803,6 +1921,21 @@ function GameBoard({
             </>
           )}
 
+          {collaborative && phase === "CONTRIBUTING" && usesFacilitator && !isFacilitator && (
+            <div className="facilitator-waiting">
+              <div className="facilitator-waiting-avatar">
+                <span aria-hidden="true">
+                  {AVATAR_GLYPHS[facilitatorPlayer?.avatarId ?? ""] ?? "✦"}
+                </span>
+              </div>
+              <strong>{facilitatorPlayer?.displayName ?? "O facilitador"}</strong>
+              <p>
+                está narrando {stage === "SCENARIO" ? "o cenário" : "o problema"} do grupo.
+              </p>
+              <small>Você verá o resultado assim que for registrado.</small>
+            </div>
+          )}
+
           {!collaborative && (
             <div className="stage-activity-workspace">
               {stage === "PROTOTYPE" && (
@@ -1817,27 +1950,16 @@ function GameBoard({
                   economy={economy}
                 />
               )}
-              {stage === "PILOT" && (
-                <PilotStage
+              {stage === "TESTING" && (
+                <TestingStage
                   room={room}
-                  pilot={pilotSimulation}
+                  testOptions={testingOptions}
                   groupVotes={groupVotes}
                   currentPlayer={currentPlayer}
                   players={players}
                 />
               )}
-              {stage === "MARKETING" && (
-                <MarketingStage
-                  room={room}
-                  marketing={marketingPlan}
-                  economy={economy}
-                  groupVotes={groupVotes}
-                  currentPlayer={currentPlayer}
-                  players={players}
-                  card={stageCard}
-                />
-              )}
-              {stage === "SALES" && (
+              {stage === "FINAL" && (
                 <SalesStage
                   economy={economy}
                   sales={salesResult}
@@ -1852,25 +1974,23 @@ function GameBoard({
                   disabled={
                     actionPending ||
                     (stage === "PROTOTYPE" && !projectPrototype?.committed) ||
-                    (stage === "PILOT" && !pilotSimulation?.completed) ||
-                    (stage === "MARKETING" && !marketingPlan?.committed) ||
-                    (stage === "SALES" && !salesResult)
+                    (stage === "TESTING" && !testingOptions.some((o) => o.selected))
                   }
                   onClick={() =>
                     void runStageAction(() => advanceStage({ roomId: room.id }))
                   }
                 >
-                  {stage === "SALES"
+                  {stage === "FINAL"
                     ? "Concluir a jornada"
                     : `Confirmar e avançar para ${
-                        STAGE_CONTENT[BOARD_STATES[room.stageIndex + 1]].eyebrow
+                        STAGE_CONTENT[BOARD_STATES[room.stageIndex + 1]]?.eyebrow ?? "próxima etapa"
                       }`}
                 </button>
               </div>
             </div>
           )}
 
-          {collaborative && phase !== "REVIEW" && (
+          {collaborative && phase !== "REVIEW" && !usesFacilitator && (
             <div
               className="participant-progress"
               aria-label="Progresso do grupo"
@@ -1943,21 +2063,40 @@ function GameBoard({
             </section>
           )}
 
-          {phase === "REVIEW" && usesUnion && stageOutcome && (
+          {phase === "REVIEW" && stage === "PROTOTYPE" && projectPrototype && (
+            <PrototypeShowcase
+              prototype={projectPrototype}
+              artifacts={prototypeArtifacts}
+              drawingStrokes={prototypeDrawingStrokes}
+              players={players}
+              currentPlayer={currentPlayer}
+            />
+          )}
+
+          {phase === "REVIEW" && (usesUnion || usesFacilitator) && stageOutcome && (
             <section
               className="decision-reveal union-reveal"
               aria-live="polite"
             >
               <span className="decision-star" aria-hidden="true">
-                ✦
+                {usesFacilitator ? "★" : "✦"}
               </span>
-              <p className="kicker">Composicao do grupo</p>
+              <p className="kicker">
+                {usesFacilitator ? "Registro da Etapa" : "Composicao do grupo"}
+              </p>
               <div className="union-result">
-                {stageOutcome.summary.split("\n").map((entry, index) => (
-                  <p key={`${entry}-${index}`}>{entry}</p>
-                ))}
+                {stageOutcome.summary.split("\n").map((entry, index) => {
+                  const cleaned = entry.includes(":")
+                    ? entry.slice(entry.indexOf(":") + 1).trim()
+                    : entry;
+                  return <p key={`${entry}-${index}`}>{cleaned}</p>;
+                })}
               </div>
-              <p>{stageOutcome.sourceCount} pecas reunidas na mesma ideia.</p>
+              <p>
+                {usesFacilitator
+                  ? "Sintetizado pelo facilitador da etapa."
+                  : `${stageOutcome.sourceCount} pecas reunidas na mesma ideia.`}
+              </p>
             </section>
           )}
 
@@ -2021,15 +2160,13 @@ function GameBoard({
             </div>
           )}
 
-          {!collaborative && <p className="next-up">{guidance.next}</p>}
-
-          {!isHost && phase === "REVIEW" && (
+          {collaborative && phase === "REVIEW" && !canAdvanceStage && (
             <p className="waiting-note">
-              {phase === "REVIEW"
-                ? "O anfitrião confirma a escolha e avança a jornada."
-                : "O anfitrião abre a próxima ação quando o grupo estiver pronto."}
+              Aguardando {usesFacilitator ? (facilitatorPlayer?.displayName ?? "o facilitador") : "o anfitrião"} confirmar e avançar a jornada.
             </p>
           )}
+
+
           {!isHost && phase === "VOTING" && ownVote && (
             <p className="waiting-note">
               Seu voto está seguro. Esperando o grupo.
@@ -2054,6 +2191,9 @@ function JourneyResult({
   currentPlayer,
   economy,
   transactions,
+  projectPrototype,
+  prototypeArtifacts = [],
+  prototypeDrawingStrokes = [],
   pilotSimulation,
   salesResult,
   publishedResult,
@@ -2069,6 +2209,9 @@ function JourneyResult({
   currentPlayer: Player;
   economy: RoomEconomy;
   transactions: readonly EconomyTransaction[];
+  projectPrototype?: ProjectPrototype;
+  prototypeArtifacts?: readonly PrototypeArtifact[];
+  prototypeDrawingStrokes?: readonly PrototypeDrawingStroke[];
   pilotSimulation?: PilotSimulation;
   salesResult?: SalesResult;
   publishedResult?: PublishedResult;
@@ -2447,7 +2590,7 @@ function JourneyResult({
           <p className="kicker">A aventura completa</p>
           <h2>Como a ideia ganhou forma</h2>
         </div>
-        <span>8 etapas · {players.length} heróis</span>
+        <span>9 etapas · {players.length} heróis</span>
       </div>
       <section className="journey-document">
         {BOARD_STATES.map((stage) => {
@@ -2482,6 +2625,15 @@ function JourneyResult({
                     ★ “{stageDecision.summary}”{" "}
                     <small>— escolha do grupo</small>
                   </p>
+                )}
+                {stage === "PROTOTYPE" && projectPrototype && (
+                  <PrototypeShowcase
+                    prototype={projectPrototype}
+                    artifacts={prototypeArtifacts}
+                    drawingStrokes={prototypeDrawingStrokes}
+                    players={players}
+                    currentPlayer={currentPlayer}
+                  />
                 )}
                 {entries
                   .filter(

@@ -6,25 +6,28 @@ import {
 } from "./App";
 
 describe("Idea Hero board cycle", () => {
-  it("preserves the canonical eight-stage journey", () => {
+  it("preserves the canonical nine-stage journey", () => {
     expect(BOARD_STATES).toEqual([
       "SCENARIO",
       "PROBLEM",
       "INSIGHT",
       "SOLUTION",
+      "POLISHING",
       "PROTOTYPE",
-      "PILOT",
-      "MARKETING",
-      "SALES",
+      "TESTING",
+      "CONQUERING",
+      "FINAL",
     ]);
   });
 
-  it("uses collective creation, voting and review in the first four stages", () => {
+  it("uses collective creation, voting and review in collaborative stages", () => {
     expect([...COLLABORATIVE_STAGES]).toEqual([
       "SCENARIO",
       "PROBLEM",
       "INSIGHT",
       "SOLUTION",
+      "POLISHING",
+      "CONQUERING",
     ]);
     expect(COLLABORATIVE_PHASES).toEqual(["CONTRIBUTING", "VOTING", "REVIEW"]);
   });

@@ -101,10 +101,10 @@ export function buildJourneyMarkdown(input: JourneyArtifactInput) {
         `> ${decision.totalVotes} ${decision.totalVotes === 1 ? "voto" : "votos"}`,
       );
     }
-    if (stageOutcome?.resolution === "UNION") {
+    if (stageOutcome) {
       lines.push(
         "",
-        "> **Composicao coletiva:**",
+        `> **${stageOutcome.resolution === "FACILITATOR" ? "Registro da etapa" : "Composicao coletiva"}:**`,
         ...stageOutcome.summary
           .split("\n")
           .map((entry) => `> ${cleanText(entry)}`),

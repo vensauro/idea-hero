@@ -24,6 +24,7 @@ import type {
   SalesResult,
   StageCost,
   StageOutcome,
+  TestingOption,
   VisibleContribution,
 } from "./module_bindings/types";
 import { JourneySummary } from "./JourneySummary";
@@ -40,10 +41,11 @@ const STAGES = [
   "PROBLEM",
   "INSIGHT",
   "SOLUTION",
+  "POLISHING",
   "PROTOTYPE",
-  "PILOT",
-  "MARKETING",
-  "SALES",
+  "TESTING",
+  "CONQUERING",
+  "FINAL",
 ] as const;
 
 const STAGE_LABELS: Record<string, string> = {
@@ -51,17 +53,19 @@ const STAGE_LABELS: Record<string, string> = {
   PROBLEM: "Problema",
   INSIGHT: "Insight",
   SOLUTION: "Solução",
+  POLISHING: "Lapidando",
   PROTOTYPE: "Protótipo",
-  PILOT: "Piloto",
-  MARKETING: "Marketing",
-  SALES: "Vendas",
+  TESTING: "Testando",
+  CONQUERING: "Conquistando",
+  FINAL: "Final",
 };
 
 const STAGE_TITLES: Record<string, string> = {
+  POLISHING: "Vamos lapidar a ideia",
   PROTOTYPE: "Vamos criar o protótipo",
-  PILOT: "Vamos testar no piloto",
-  MARKETING: "Vamos planejar o marketing",
-  SALES: "Vamos iniciar as vendas",
+  TESTING: "Vamos testar com recursos",
+  CONQUERING: "Vamos conquistar adesão",
+  FINAL: "Vamos revelar a jornada",
 };
 
 const AUDIENCE_LABELS: Record<string, string> = {
@@ -444,11 +448,13 @@ function VoteProgress({
     [],
   );
   const majorityInstruction =
-    onlinePlayers.length === 2
-      ? "Há 2 pessoas online: as 2 precisam escolher a mesma opção."
-      : onlinePlayers.length === 3
-        ? "Há 3 pessoas online: 2 precisam escolher a mesma opção."
-        : `Há ${onlinePlayers.length} pessoas online: ${required} precisam escolher a mesma opção.`;
+    label === "confirmaram para avançar"
+      ? `Há ${onlinePlayers.length} pessoas online: todas (${onlinePlayers.length}) precisam confirmar para avançar.`
+      : onlinePlayers.length === 2
+        ? "Há 2 pessoas online: as 2 precisam escolher a mesma opção."
+        : onlinePlayers.length === 3
+          ? "Há 3 pessoas online: 2 precisam escolher a mesma opção."
+          : `Há ${onlinePlayers.length} pessoas online: ${required} precisam escolher a mesma opção.`;
 
   return (
     <div className="group-vote-progress" aria-live="polite">
@@ -559,6 +565,7 @@ type RunwayFinalStageProps = {
   prototypeArtifacts: readonly PrototypeArtifact[];
   prototypeDrawingStrokes: readonly PrototypeDrawingStroke[];
   groupVotes: readonly GroupVote[];
+  testOptions?: readonly TestingOption[];
   pilot?: PilotSimulation;
   marketing?: MarketingPlan;
   sales?: SalesResult;
@@ -581,6 +588,7 @@ export function RunwayFinalStage(props: RunwayFinalStageProps) {
     prototypeArtifacts,
     prototypeDrawingStrokes,
     groupVotes,
+    testOptions = [],
     pilot,
     marketing,
     sales,
@@ -589,6 +597,7 @@ export function RunwayFinalStage(props: RunwayFinalStageProps) {
   const stage = room.currentStage;
   const isHost = sameIdentity(currentPlayer.identity, room.ownerIdentity);
   const advanceStage = useReducer(reducers.advanceStage);
+  const voteStageAdvance = useReducer(reducers.voteStageAdvance);
   const endJourney = useReducer(reducers.endJourney);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState("");
@@ -600,10 +609,10 @@ export function RunwayFinalStage(props: RunwayFinalStageProps) {
     ? onlinePlayers
     : [currentPlayer, ...onlinePlayers];
   const stageReady =
+    stage === "POLISHING" ||
     (stage === "PROTOTYPE" && prototype?.committed) ||
-    (stage === "PILOT" && pilot?.completed) ||
-    (stage === "MARKETING" && marketing?.committed) ||
-    (stage === "SALES" && Boolean(sales));
+    (stage === "TESTING" && testOptions.some((opt) => opt.selected)) ||
+    (stage === "FINAL" && Boolean(sales));
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, [room.stageIndex]);
@@ -665,7 +674,7 @@ export function RunwayFinalStage(props: RunwayFinalStageProps) {
       <section className="runway-stage-flow">
         <header className="runway-stage-heading">
           <p className="kicker">
-            Etapa {room.stageIndex + 1} de 8 · {STAGE_LABELS[stage]}
+            Etapa {room.stageIndex + 1} de 9 · {STAGE_LABELS[stage]}
           </p>
           <div
             className="stage-presence"
@@ -693,6 +702,20 @@ export function RunwayFinalStage(props: RunwayFinalStageProps) {
             <span aria-hidden="true">✦</span>
             <span>Atividade da etapa</span>
           </div>
+          {stage === "POLISHING" && (
+            <PolishingStage
+              card={card}
+              winningIdea={
+                decisions.find((d) => d.stage === "SOLUTION")?.summary ??
+                contributions.find((c) => c.stage === "SOLUTION" && c.kind === "MAIN")?.content
+              }
+              turnPlayer={presencePlayers[room.stageIndex % presencePlayers.length]}
+              isTurnPlayer={sameIdentity(
+                presencePlayers[room.stageIndex % presencePlayers.length]?.identity,
+                currentPlayer.identity,
+              )}
+            />
+          )}
           {stage === "PROTOTYPE" && (
             <PrototypeStage
               room={room}
@@ -705,27 +728,16 @@ export function RunwayFinalStage(props: RunwayFinalStageProps) {
               economy={economy}
             />
           )}
-          {stage === "PILOT" && (
-            <PilotStage
+          {stage === "TESTING" && (
+            <TestingStage
               room={room}
-              pilot={pilot}
+              testOptions={testOptions}
               groupVotes={groupVotes}
               currentPlayer={currentPlayer}
               players={players}
             />
           )}
-          {stage === "MARKETING" && (
-            <MarketingStage
-              room={room}
-              marketing={marketing}
-              economy={economy}
-              groupVotes={groupVotes}
-              currentPlayer={currentPlayer}
-              players={players}
-              card={card}
-            />
-          )}
-          {stage === "SALES" && (
+          {stage === "FINAL" && (
             <SalesStage
               economy={economy}
               sales={sales}
@@ -734,20 +746,45 @@ export function RunwayFinalStage(props: RunwayFinalStageProps) {
             />
           )}
 
-          {stageReady && (
-            <button
-              className="primary-button next-stage-button"
-              disabled={pending}
-              onClick={() => void run(() => advanceStage({ roomId: room.id }))}
-            >
-              {stage === "SALES"
-                ? "Concluir e ver a jornada"
-                : `Avançar para ${STAGE_LABELS[STAGES[room.stageIndex + 1]]}`}
-            </button>
-          )}
+          {stageReady && (() => {
+            const stageAdvanceTopic = `STAGE_ADVANCE_${stage}`;
+            const stageAdvanceVotes = groupVotes.filter((item) => item.topic === stageAdvanceTopic);
+            const hasConfirmedStageAdvance = stageAdvanceVotes.some((item) => sameIdentity(item.playerIdentity, currentPlayer.identity));
+            return (
+              <div className="stage-advance-collective-panel" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px', marginTop: '20px' }}>
+                <VoteProgress
+                  votes={stageAdvanceVotes}
+                  required={onlinePlayers.length}
+                  players={players}
+                  label="confirmaram para avançar"
+                  hideInstruction={false}
+                />
+                <button
+                  type="button"
+                  className={`primary-button next-stage-button ${hasConfirmedStageAdvance ? "is-confirmed" : ""}`}
+                  disabled={pending}
+                  onClick={() =>
+                    void run(() =>
+                      voteStageAdvance({
+                        roomId: room.id,
+                        stage,
+                        ready: !hasConfirmedStageAdvance,
+                      }),
+                    )
+                  }
+                >
+                  {hasConfirmedStageAdvance
+                    ? "✓ Aguardando a equipe..."
+                    : stage === "FINAL"
+                      ? "Concluir e ver a jornada"
+                      : `Avançar para ${STAGE_LABELS[STAGES[room.stageIndex + 1]] ?? "próxima etapa"}`}
+                </button>
+              </div>
+            );
+          })()}
           {!stageReady && (
             <p className="waiting-note">
-              A etapa avança quando uma escolha alcança a maioria do grupo.
+              Conclua a atividade da etapa para liberar o avanço.
             </p>
           )}
           {isHost && (
@@ -793,7 +830,7 @@ async function uploadPrototypeFile(
   return result.key;
 }
 
-function artifactSource(data: string) {
+export function artifactSource(data: string) {
   return data.startsWith("idea-hero/prototype/")
     ? `/api/storage?key=${encodeURIComponent(data)}`
     : data;
@@ -1689,6 +1726,184 @@ export function PrototypeStage({
   );
 }
 
+export function PolishingStage({
+  card,
+  winningIdea,
+  turnPlayer,
+  isTurnPlayer,
+}: {
+  card?: Card;
+  winningIdea?: string;
+  turnPlayer?: Player;
+  isTurnPlayer?: boolean;
+}) {
+  return (
+    <>
+      {turnPlayer && (
+        <section
+          className={`turn-player-banner ${isTurnPlayer ? "is-active-turn" : ""}`}
+          style={{
+            padding: "1rem 1.25rem",
+            borderRadius: "0.75rem",
+            background: isTurnPlayer
+              ? "rgba(99, 102, 241, 0.15)"
+              : "rgba(255, 255, 255, 0.05)",
+            border: isTurnPlayer
+              ? "1px solid rgba(99, 102, 241, 0.4)"
+              : "1px solid rgba(255, 255, 255, 0.1)",
+            marginBottom: "1.25rem",
+            display: "flex",
+            alignItems: "center",
+            gap: "0.75rem",
+          }}
+        >
+          <span style={{ fontSize: "1.5rem" }}>🎯</span>
+          <div>
+            <strong>
+              {isTurnPlayer
+                ? "Sua vez! Conduza o debate com o grupo."
+                : `Jogador da vez: ${turnPlayer.displayName} conduz a conversa.`}
+            </strong>
+            <p
+              style={{
+                margin: "0.25rem 0 0 0",
+                opacity: 0.8,
+                fontSize: "0.875rem",
+              }}
+            >
+              Explore a ideia vencedora com o grupo usando a provocação da carta. Não é necessário digitar nada.
+            </p>
+          </div>
+        </section>
+      )}
+      {card && (
+        <section className="pilot-feedback-card">
+          <div className="pilot-feedback-portrait" aria-hidden="true">
+            <span>✧</span>
+            <b>Lapidando</b>
+          </div>
+          <div>
+            <p className="kicker">Carta de provocação</p>
+            <h2>{card.title}</h2>
+            <p>{card.provocation}</p>
+          </div>
+        </section>
+      )}
+      {winningIdea && (
+        <section className="pilot-learning">
+          <span aria-hidden="true">◇</span>
+          <div>
+            <small>Ideia vencedora da etapa anterior</small>
+            <h2>{winningIdea}</h2>
+          </div>
+        </section>
+      )}
+      <div className="section-heading">
+        <div>
+          <p className="kicker">Rodada oral</p>
+          <h2>Debatam e explorem a ideia juntos</h2>
+        </div>
+        <span>Sem registro — apenas conversa</span>
+      </div>
+      <p className="simulation-disclaimer">
+        Esta é uma rodada de brainstorming livre. O jogador da vez ({turnPlayer?.displayName ?? "indicado acima"}) conduz a conversa e o grupo explora novas perspectivas sobre a ideia vencedora à luz da carta.
+      </p>
+    </>
+  );
+}
+
+export function TestingStage({
+  room,
+  testOptions,
+  groupVotes,
+  currentPlayer,
+  players,
+}: {
+  room: Room;
+  testOptions: readonly TestingOption[];
+  groupVotes: readonly GroupVote[];
+  currentPlayer: Player;
+  players: readonly Player[];
+}) {
+  const selectOption = useReducer(reducers.selectTestOption);
+  const [pending, setPending] = useState(false);
+  const [error, setError] = useState("");
+  const votes = topicVotes(groupVotes, "TESTING_OPTION", players);
+  const ownVote = ownTopicVote(groupVotes, "TESTING_OPTION", currentPlayer);
+  const required = majorityFor(players);
+  const selectedOption = testOptions.find((opt) => opt.selected);
+
+  async function choose(optionKey: string) {
+    setPending(true);
+    setError("");
+    try {
+      await selectOption({ roomId: room.id, optionKey });
+    } catch (caught) {
+      setError(errorMessage(caught));
+    } finally {
+      setPending(false);
+    }
+  }
+
+  if (selectedOption) {
+    return (
+      <section className="pilot-learning">
+        <span aria-hidden="true">✓</span>
+        <div>
+          <small>Teste escolhido pela equipe</small>
+          <h2>{selectedOption.title}</h2>
+          <p>{selectedOption.impact}</p>
+          <strong>Custo: {formatCredits(selectedOption.cost)}</strong>
+        </div>
+      </section>
+    );
+  }
+
+  if (testOptions.length === 0) {
+    return <p className="empty-state">Gerando opções de teste…</p>;
+  }
+
+  return (
+    <>
+      <div className="section-heading">
+        <div>
+          <p className="kicker">5 possibilidades de teste</p>
+          <h2>Qual teste faz mais sentido para o protótipo?</h2>
+        </div>
+        <span>Maioria decide</span>
+      </div>
+      <div className="pilot-option-grid">
+        {testOptions.map((option) => {
+          const count = votes.filter(
+            (vote) => vote.choice === option.optionKey,
+          ).length;
+          return (
+            <button
+              type="button"
+              className={
+                ownVote?.choice === option.optionKey ? "is-selected" : ""
+              }
+              disabled={pending}
+              key={option.optionKey}
+              onClick={() => void choose(option.optionKey)}
+            >
+              <span>{formatCredits(option.cost)}</span>
+              <strong>{option.title}</strong>
+              <p>{option.description}</p>
+              <em>{option.impact}</em>
+              <small>
+                {count} {count === 1 ? "voto" : "votos"}
+              </small>
+            </button>
+          );
+        })}
+      </div>
+      <VoteProgress votes={votes} required={required} players={players} />
+      {error && <p className="error-message">{error}</p>}
+    </>
+  );
+}
+
 export function PilotStage({
   room,
   pilot,
@@ -2035,5 +2250,120 @@ export function SalesStage({
         <p>{TIER_LABELS[sales.tier]}</p>
       </section>
     </>
+  );
+}
+
+export function PrototypeShowcase({
+  prototype,
+  artifacts,
+  drawingStrokes,
+  players,
+  currentPlayer,
+}: {
+  prototype?: ProjectPrototype;
+  artifacts: readonly PrototypeArtifact[];
+  drawingStrokes: readonly PrototypeDrawingStroke[];
+  players: readonly Player[];
+  currentPlayer?: Player;
+}) {
+  if (!prototype) return null;
+
+  const usedKinds = new Set(artifacts.map((artifact) => artifact.artifactKind));
+  if (drawingStrokes.length > 0) usedKinds.add("DRAWING");
+
+  const mediaArtifacts = artifacts.filter(
+    (artifact) =>
+      artifact.artifactKind === "IMAGE" ||
+      artifact.artifactKind === "AI_IMAGE" ||
+      artifact.artifactKind === "AUDIO",
+  );
+
+  return (
+    <section className="shared-artifact prototype-showcase-card" aria-live="polite">
+      <div className="shared-artifact-heading">
+        <div>
+          <p className="kicker">✦ Protótipo da Equipe · {prototype.challengeTitle}</p>
+          <h3>{prototype.caption || "Protótipo construído em grupo"}</h3>
+        </div>
+        <span>{usedKinds.size}/4 linguagens criativas</span>
+      </div>
+
+      <div
+        className="creative-bonus-progress"
+        aria-label="Bônus por linguagens criativas"
+      >
+        {(["DRAWING", "IMAGE", "AI_IMAGE", "AUDIO"] as const).map((kind) => (
+          <span
+            className={usedKinds.has(kind) ? "is-earned" : ""}
+            key={kind}
+          >
+            {kind === "DRAWING"
+              ? "Desenho"
+              : kind === "IMAGE"
+                ? "Foto"
+                : kind === "AI_IMAGE"
+                  ? "Imagem com IA"
+                  : "Som"}
+            <b>+{PROTOTYPE_CREATIVE_BONUS}</b>
+          </span>
+        ))}
+      </div>
+
+      {drawingStrokes.length > 0 && (
+        <div className="prototype-showcase-drawing-block" style={{ marginTop: "1rem" }}>
+          <p className="kicker" style={{ marginBottom: "0.5rem" }}>✎ Desenho Colaborativo</p>
+          <DrawingBoard
+            strokes={drawingStrokes}
+            players={players}
+            currentPlayer={currentPlayer ?? players[0]}
+            editable={false}
+            onSubmitStroke={() => undefined}
+            onClearOwnStrokes={() => undefined}
+          />
+        </div>
+      )}
+
+      {mediaArtifacts.map((artifact) => (
+        <figure
+          className="prototype-media-artifact"
+          key={artifact.id.toString()}
+        >
+          <figcaption>
+            {artifact.caption ||
+              (artifact.artifactKind === "AUDIO"
+                ? "Registro em áudio"
+                : artifact.artifactKind === "AI_IMAGE"
+                  ? "Imagem com IA"
+                  : "Registro em foto")}
+          </figcaption>
+          {artifact.artifactKind === "AUDIO" ? (
+            <audio controls src={artifactSource(artifact.artifactData)}>
+              Seu navegador não reproduz este áudio.
+            </audio>
+          ) : (
+            <img
+              src={artifactSource(artifact.artifactData)}
+              alt={artifact.caption || "Protótipo em imagem"}
+            />
+          )}
+        </figure>
+      ))}
+
+      {prototype.artifactData && artifacts.length === 0 && (
+        <figure className="prototype-media-artifact">
+          <figcaption>{prototype.caption || "Artefato do protótipo"}</figcaption>
+          {prototype.artifactKind === "AUDIO" ? (
+            <audio controls src={artifactSource(prototype.artifactData)}>
+              Seu navegador não reproduz este áudio.
+            </audio>
+          ) : (
+            <img
+              src={artifactSource(prototype.artifactData)}
+              alt={prototype.caption || "Protótipo compartilhado"}
+            />
+          )}
+        </figure>
+      )}
+    </section>
   );
 }

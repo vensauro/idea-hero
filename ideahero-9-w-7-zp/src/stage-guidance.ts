@@ -3,10 +3,11 @@ export type StageName =
   | "PROBLEM"
   | "INSIGHT"
   | "SOLUTION"
+  | "POLISHING"
   | "PROTOTYPE"
-  | "PILOT"
-  | "MARKETING"
-  | "SALES";
+  | "TESTING"
+  | "CONQUERING"
+  | "FINAL";
 
 export const STAGE_GUIDANCE: Record<
   StageName,
@@ -18,20 +19,20 @@ export const STAGE_GUIDANCE: Record<
 > = {
   SCENARIO: {
     steps: [
-      "Observe a carta por alguns segundos.",
-      "Diga o que existe nesse mundo — sem buscar resposta certa.",
-      "Registre uma frase que dê contexto ao grupo.",
+      "Você é o narrador desta etapa.",
+      "Observe a carta e descreva o mundo à luz dela.",
+      "O grupo ouvirá e avançará com o cenário que você registrar.",
     ],
-    placeholder: "Neste mundo, as pessoas…",
+    placeholder: "Neste mundo, as pessoas vivem…",
     next: "Depois, o grupo vai procurar uma tensão dentro deste cenário.",
   },
   PROBLEM: {
     steps: [
-      "Olhe para a carta como uma tensão ou necessidade.",
-      "Pense em quem sente essa dificuldade com mais força.",
-      "Formule o problema sem antecipar uma solução.",
+      "Você é o facilitador desta etapa.",
+      "Peça que todos narrem oralmente sua leitura do problema.",
+      "Sintetize as perspectivas e registre a visão coletiva.",
     ],
-    placeholder: "O desafio é que [pessoa] não consegue…",
+    placeholder: "O problema central que o grupo identificou é…",
     next: "Depois, vocês investigarão o que ainda não foi percebido.",
   },
   INSIGHT: {
@@ -50,7 +51,16 @@ export const STAGE_GUIDANCE: Record<
       "Proponha uma solução em uma frase clara e ousada.",
     ],
     placeholder: "E se criássemos uma forma de…",
-    next: "Depois, a proposta ganhará forma em um protótipo simples.",
+    next: "Depois, a proposta será lapidada em uma rodada oral.",
+  },
+  POLISHING: {
+    steps: [
+      "Uma nova carta foi revelada como provocação.",
+      "Debatam oralmente sobre como lapidar a ideia vencedora.",
+      "Quando o grupo estiver satisfeito, avancem juntos.",
+    ],
+    placeholder: "Como podemos lapidar e enriquecer esta ideia?…",
+    next: "Depois, o grupo vai construir um protótipo visual da ideia.",
   },
   PROTOTYPE: {
     steps: [
@@ -61,31 +71,31 @@ export const STAGE_GUIDANCE: Record<
     placeholder: "A pessoa começa por… e então consegue…",
     next: "Depois, essa representação enfrentará uma condição real de teste.",
   },
-  PILOT: {
+  TESTING: {
     steps: [
-      "Transforme a carta em uma condição inesperada do teste.",
-      "Decida o que observar para aprender.",
-      "Registre o ajuste que a ideia precisará fazer.",
+      "Cinco opções de teste aparecerão na tela.",
+      "Votem na opção que melhor testa o protótipo.",
+      "O custo será descontado do runway da equipe.",
     ],
-    placeholder: "Se acontecer…, aprenderemos que precisamos…",
-    next: "Depois, vocês decidirão como contar o valor da solução.",
+    placeholder: "Qual é a melhor estratégia de teste para esta fase?…",
+    next: "Depois, vocês criarão estratégias para conquistar adesão.",
   },
-  MARKETING: {
+  CONQUERING: {
     steps: [
-      "Escolha quem precisa ouvir esta história primeiro.",
-      "Conecte a imagem a uma emoção ou promessa.",
-      "Combine público, mensagem e canal em uma frase.",
+      "Pensem em como convencer pessoas a aderirem à ideia.",
+      "Cada um registra uma proposta de conquista.",
+      "O grupo vota na melhor estratégia.",
     ],
-    placeholder: "Para [público], nossa mensagem será… por meio de…",
-    next: "Depois, a jornada termina com impacto, aliados e próximo passo.",
+    placeholder: "Para conquistar adesão, eu proporia...",
+    next: "Depois, a jornada será consolidada com a ajuda da inteligência artificial.",
   },
-  SALES: {
+  FINAL: {
     steps: [
       "Relembre o valor construído durante a jornada.",
-      "Imagine a primeira evidência concreta de impacto.",
-      "Escolha um próximo passo pequeno, real e assumido pelo grupo.",
+      "A IA vai consolidar toda a história.",
+      "Descubra o documento final da jornada do grupo.",
     ],
-    placeholder: "Nosso primeiro passo real será…",
+    placeholder: "Reflexão final sobre a jornada percorrida pelo grupo…",
     next: "Ao concluir, o Idea Hero montará o documento de toda a jornada.",
   },
 };

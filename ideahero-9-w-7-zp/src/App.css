@@ -388,59 +388,63 @@ textarea:focus {
   font-weight: 750;
 }
 
+.lobby-page {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  padding-bottom: 6rem;
+}
+
 .lobby-hero {
-  max-width: 760px;
+  max-width: 680px;
   margin: 0 auto;
-  padding: clamp(3rem, 10vw, 7rem) 1.25rem 2rem;
+  padding: clamp(1.25rem, 4vw, 2.5rem) 1.25rem 1rem;
   text-align: center;
 }
 .lobby-hero h1 {
   margin-inline: auto;
   max-width: none;
+  font-size: clamp(1.6rem, 5vw, 2.2rem);
+  font-weight: 800;
+  margin-bottom: 0.25rem;
 }
-.lobby-hero > p:not(.kicker) {
+.lobby-hero-sub {
   color: var(--muted);
+  font-size: 0.92rem;
+  margin-bottom: 0.75rem;
 }
-.room-code {
-  display: grid;
-  gap: 0.25rem;
-  margin: 2rem auto 0;
-  padding: 1rem 2rem;
+
+.room-code-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.85rem;
+  margin: 0.5rem auto 0;
+  padding: 0.65rem 1.35rem;
   border: 2px dashed var(--line);
   border-radius: 16px;
   background: var(--lime);
   color: var(--ink);
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  transition: transform 0.15s ease, background-color 0.15s ease, box-shadow 0.15s ease;
 }
-.room-code span {
+.room-code-badge:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+.room-code-badge .code-text {
   font-family: ui-monospace, monospace;
-  font-size: 1.45rem;
-  font-weight: 900;
-}
-.room-code small {
-  color: var(--muted);
-}
-.room-code .invite-action {
-  color: var(--pink-dark);
+  font-size: 1.35rem;
   font-weight: 900;
   letter-spacing: 0.06em;
+}
+.room-code-badge .copy-action-text {
+  color: var(--pink-dark);
+  font-weight: 800;
+  font-size: 0.8rem;
+  letter-spacing: 0.03em;
   text-transform: uppercase;
-}
-.lobby-status {
-  display: grid;
-  gap: 0.25rem;
-  margin: 1rem 0;
-  padding: 0.9rem 1rem;
-  border: 2px dashed rgba(52, 44, 59, 0.35);
-  border-radius: 14px;
-  background: var(--paper-deep);
-}
-.lobby-status.is-ready {
-  border-style: solid;
-  background: rgba(217, 237, 131, 0.55);
-}
-.lobby-status span {
-  color: var(--muted);
-  font-size: 0.85rem;
 }
 
 .players-panel,
@@ -451,25 +455,34 @@ textarea:focus {
   background: rgba(255, 248, 236, 0.96);
 }
 .players-panel {
-  width: min(calc(100% - 2rem), 900px);
-  margin: 0 auto;
-  padding: clamp(1.25rem, 4vw, 2rem);
+  width: min(calc(100% - 2rem), 720px);
+  margin: 0 auto 1.5rem;
+  padding: clamp(1rem, 3vw, 1.5rem);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
 }
 .section-heading {
   display: flex;
   justify-content: space-between;
-  align-items: flex-start;
+  align-items: center;
   gap: 1rem;
+  margin-bottom: 0.75rem;
 }
 .section-heading h2 {
-  margin-bottom: 0.5rem;
+  margin: 0;
+  font-size: 1.25rem;
 }
-.section-heading > span {
-  padding: 0.45rem 0.7rem;
+.players-ready-counter {
+  padding: 0.4rem 0.8rem;
   border-radius: 999px;
   background: var(--paper-deep);
-  font-size: 0.78rem;
+  font-size: 0.82rem;
+  font-weight: 800;
   white-space: nowrap;
+  transition: background-color 0.2s ease;
+}
+.players-ready-counter.is-all-ready {
+  background: var(--lime);
+  color: var(--ink);
 }
 .players-grid {
   display: grid;
@@ -483,6 +496,9 @@ textarea:focus {
   padding: 0.8rem;
   border-top: 1px solid rgba(102, 94, 104, 0.25);
 }
+.player-card:first-child {
+  border-top: none;
+}
 .player-avatar,
 .presence-avatar > span {
   display: grid;
@@ -493,36 +509,110 @@ textarea:focus {
   border-radius: 50%;
   background: var(--sun);
 }
-.player-card strong,
-.player-card small {
-  display: block;
+.player-info {
+  min-width: 0;
 }
-.player-card small {
+.player-info strong {
+  display: block;
+  font-size: 0.98rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.player-info small {
+  display: block;
   color: var(--muted);
+  font-size: 0.78rem;
 }
 .ready-chip {
-  padding: 0.35rem 0.55rem;
+  padding: 0.4rem 0.75rem;
   border-radius: 999px;
   background: var(--paper-deep);
-  font-size: 0.72rem;
+  font-size: 0.75rem;
   font-weight: 800;
+  color: var(--muted);
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition: background-color 0.2s ease, color 0.2s ease;
 }
 .ready-chip.is-ready {
   background: var(--lime);
+  color: var(--ink);
 }
-.lobby-footer {
-  display: grid;
-  justify-items: center;
-  gap: 0.75rem;
-  padding: 2rem 1rem 4rem;
+
+/* Sticky Action Footer for Lobby CTA */
+.lobby-sticky-footer {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  width: 100%;
+  padding: 0.85rem 1rem max(0.85rem, env(safe-area-inset-bottom));
+  background: rgba(255, 248, 236, 0.95);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-top: 2px solid var(--line);
+  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.08);
 }
-.lobby-role-help {
-  max-width: 560px;
-  margin: 0;
-  color: var(--muted);
-  font-size: 0.86rem;
-  line-height: 1.5;
+.lobby-action-container {
+  max-width: 600px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.4rem;
+}
+.cta-wrapper {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.4rem;
+}
+.ready-indicator-text {
+  font-size: 0.82rem;
+  color: var(--teal-dark);
+  font-weight: 700;
   text-align: center;
+}
+.cta-btn {
+  width: 100%;
+  max-width: 440px;
+  padding: 0.95rem 1.5rem;
+  font-size: 1.05rem;
+  font-weight: 800;
+  border-radius: 16px;
+  letter-spacing: 0.02em;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.cta-btn:not(:disabled):active {
+  transform: scale(0.98);
+}
+.cta-ready-highlight {
+  box-shadow: 0 4px 14px rgba(242, 100, 137, 0.25);
+}
+.cta-start-highlight:not(:disabled) {
+  animation: pulse-start-btn 2s infinite;
+  box-shadow: 0 4px 16px rgba(217, 233, 147, 0.6);
+}
+@keyframes pulse-start-btn {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.02); }
+  100% { transform: scale(1); }
+}
+.host-actions-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  width: 100%;
+  max-width: 440px;
+  align-items: center;
+}
+@media (min-width: 520px) {
+  .host-actions-group {
+    flex-direction: row;
+  }
 }
 
 .game-shell {
@@ -844,13 +934,6 @@ textarea:focus {
   .form-footer {
     align-items: stretch;
     flex-direction: column;
-  }
-  .player-card {
-    grid-template-columns: auto 1fr;
-  }
-  .ready-chip {
-    grid-column: 2;
-    justify-self: start;
   }
   .game-brand {
     width: 100%;

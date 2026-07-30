@@ -1,10 +1,16 @@
 import type {
+  Card,
+  CardDraw,
   Decision,
   Player,
+  ProjectPrototype,
+  PrototypeArtifact,
+  PrototypeDrawingStroke,
   Room,
   StageOutcome,
   VisibleContribution,
 } from "./module_bindings/types";
+import { artifactSource } from "./runway-experience";
 
 const JOURNEY_STAGES = [
   "SCENARIO",
@@ -55,12 +61,22 @@ export function JourneySummary({
   players,
   decisions,
   outcomes = [],
+  cards = [],
+  cardDraws = [],
+  projectPrototype,
+  artifacts = [],
+  drawingStrokes = [],
 }: {
   room: Room;
   contributions: readonly VisibleContribution[];
   players: readonly Player[];
   decisions: readonly Decision[];
   outcomes?: readonly StageOutcome[];
+  cards?: readonly Card[];
+  cardDraws?: readonly CardDraw[];
+  projectPrototype?: ProjectPrototype;
+  artifacts?: readonly PrototypeArtifact[];
+  drawingStrokes?: readonly PrototypeDrawingStroke[];
 }) {
   return (
     <aside className="journey-summary" aria-labelledby="journey-summary-title">
@@ -94,6 +110,12 @@ export function JourneySummary({
           const stageOutcome = outcomes.find(
             (item) => item.roomId === room.id && item.stage === stage,
           );
+          const draw = cardDraws.find(
+            (item) => item.roomId === room.id && item.stage === stage && item.active,
+          );
+          const stageCard = draw
+            ? cards.find((item) => item.id === draw.cardId)
+            : undefined;
           const isCurrent = stage === room.currentStage;
           return (
             <section
@@ -105,6 +127,45 @@ export function JourneySummary({
                 <span>{index + 1}</span>
                 <strong>{STAGE_LABELS[stage]}</strong>
               </div>
+
+              {index < 4 && stageCard && (
+                <div className="stage-hub-card-card-box">
+                  <img
+                    src={stageCard.imagePath}
+                    alt={stageCard.altText}
+                    className="stage-hub-card-thumb"
+                  />
+                  <div className="stage-hub-card-info">
+                    <small className="stage-hub-card-lens">Lente {stageCard.lens}</small>
+                    <strong className="stage-hub-card-title">{stageCard.title}</strong>
+                  </div>
+                </div>
+              )}
+
+              {stage === "PROTOTYPE" && (projectPrototype || artifacts.length > 0 || drawingStrokes.length > 0) && (
+                <div className="stage-hub-prototype-box">
+                  <div className="stage-hub-proto-header">
+                    <span className="stage-hub-proto-tag">🎨 Protótipo</span>
+                    {projectPrototype?.caption && <strong>“{projectPrototype.caption}”</strong>}
+                  </div>
+                  {drawingStrokes.length > 0 && (
+                    <div className="stage-hub-drawing-indicator">
+                      <span>✎ Desenho colaborativo ({drawingStrokes.length} traços)</span>
+                    </div>
+                  )}
+                  {artifacts.map((art) => (
+                    <div key={art.id.toString()} className="stage-hub-artifact-item">
+                      {art.artifactKind === "AUDIO" ? (
+                        <audio controls src={artifactSource(art.artifactData)} className="stage-hub-audio" />
+                      ) : (
+                        <img src={artifactSource(art.artifactData)} alt={art.caption || "Artefato"} className="stage-hub-art-thumb" />
+                      )}
+                      {art.caption && <small>{art.caption}</small>}
+                    </div>
+                  ))}
+                </div>
+              )}
+
               {stageDecision ? (
                 <p className="journey-decision">
                   ★ {stageDecision.summary} <em>— escolha do grupo</em>

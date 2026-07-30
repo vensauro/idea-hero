@@ -10,10 +10,11 @@ export const BOARD_STAGES = [
   "PROBLEM",
   "INSIGHT",
   "SOLUTION",
+  "POLISHING",
   "PROTOTYPE",
-  "PILOT",
-  "MARKETING",
-  "SALES",
+  "TESTING",
+  "CONQUERING",
+  "FINAL",
 ] as const;
 
 export type EconomyStage = (typeof BOARD_STAGES)[number];
@@ -136,10 +137,11 @@ export const STAGE_COST_LABELS: Record<EconomyStage, string> = {
   PROBLEM: "Descoberta",
   INSIGHT: "Análise",
   SOLUTION: "Design",
+  POLISHING: "Exploração criativa",
   PROTOTYPE: "Construção",
-  PILOT: "Teste",
-  MARKETING: "Preparação do lançamento",
-  SALES: "Operação de lançamento",
+  TESTING: "Teste de recursos",
+  CONQUERING: "Conquista de adesão",
+  FINAL: "Cerimônia final",
 };
 
 const COST_PAIRS = [
@@ -147,6 +149,7 @@ const COST_PAIRS = [
   [750, 1_000],
   [1_000, 1_500],
   [750, 1_000],
+  [750, 750],
 ] as const;
 
 export type StageCostDefinition = {
@@ -174,9 +177,11 @@ export function createStageCosts(seed: number): StageCostDefinition[] {
   return COST_PAIRS.flatMap((pair, pairIndex) => {
     const shouldSwap = deterministicIndex(seed, pairIndex, 2) === 1;
     const ordered = shouldSwap ? [pair[1], pair[0]] : [pair[0], pair[1]];
-    return ordered.map((amount, offset) => {
-      const stage = BOARD_STAGES[pairIndex * 2 + offset];
-      return { stage, amount, label: STAGE_COST_LABELS[stage] };
+    return ordered.flatMap((amount, offset) => {
+      const stageIndex = pairIndex * 2 + offset;
+      if (stageIndex >= BOARD_STAGES.length) return [];
+      const stage = BOARD_STAGES[stageIndex];
+      return [{ stage, amount, label: STAGE_COST_LABELS[stage] }];
     });
   });
 }
@@ -185,8 +190,55 @@ export const FUNDING_STAGES = [
   "INSIGHT",
   "SOLUTION",
   "PROTOTYPE",
-  "PILOT",
+  "TESTING",
 ] as const satisfies readonly EconomyStage[];
+
+export const TEST_OPTIONS = [
+  {
+    key: "REAL_USER",
+    title: "Teste com pessoa real",
+    description: "Convide alguém de fora do grupo para usar o protótipo e observe.",
+    cost: 300,
+    impact: "Feedback direto e revelação de fricções invisíveis.",
+  },
+  {
+    key: "STRESS_TEST",
+    title: "Teste de estresse",
+    description: "Simule o uso por muitas pessoas ao mesmo tempo e veja onde quebra.",
+    cost: 500,
+    impact: "Descobre gargalos antes que eles virem crises.",
+  },
+  {
+    key: "COMPETITOR_LENS",
+    title: "Olhar do concorrente",
+    description: "Analise como um concorrente reagiria e o que faria diferente.",
+    cost: 800,
+    impact: "Revela diferenciais e vulnerabilidades competitivas.",
+  },
+  {
+    key: "RESOURCE_LIMIT",
+    title: "Com recursos mínimos",
+    description: "Tire metade dos recursos e veja se a ideia ainda funciona.",
+    cost: 1_000,
+    impact: "Encontra a essência inegociável da proposta.",
+  },
+  {
+    key: "FUTURE_SCENARIO",
+    title: "Cenário futuro",
+    description: "Projete a ideia daqui a dois anos e avalie sua resistência ao tempo.",
+    cost: 1_200,
+    impact: "Testa a longevidade e adaptabilidade da solução.",
+  },
+] as const;
+
+export function generateTestOptions(seed: number) {
+  const shuffled = [...TEST_OPTIONS];
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = deterministicIndex(seed, 50 + i, i + 1);
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+  return shuffled.slice(0, 5);
+}
 
 export const FUNDING_VALUES = [2_000, 3_000, 4_000] as const;
 

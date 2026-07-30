@@ -4937,6 +4937,109 @@ h1 {
   border: 1px solid rgba(52, 44, 59, 0.18);
 }
 
+/* Stage Hub Card Media & Prototype Content */
+.stage-hub-card-card-box {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.4rem 0.5rem;
+  background: rgba(255, 255, 255, 0.95);
+  border: 1.5px solid var(--line, #342c3b);
+  border-radius: 10px;
+  margin-top: 0.25rem;
+}
+
+.stage-hub-card-thumb {
+  width: 2.2rem;
+  height: 2.8rem;
+  object-fit: cover;
+  border-radius: 6px;
+  border: 1px solid var(--line, #342c3b);
+  flex-shrink: 0;
+}
+
+.stage-hub-card-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  min-width: 0;
+}
+
+.stage-hub-card-lens {
+  font-size: 0.6rem;
+  color: var(--teal-dark, #0d9488);
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.stage-hub-card-title {
+  font-size: 0.75rem;
+  font-weight: 900;
+  color: var(--ink, #342c3b);
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.stage-hub-prototype-box {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  padding: 0.45rem 0.55rem;
+  background: #fffdf0;
+  border: 1.5px solid var(--line, #342c3b);
+  border-radius: 10px;
+  margin-top: 0.3rem;
+}
+
+.stage-hub-proto-header {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.stage-hub-proto-header strong {
+  font-size: 0.72rem;
+  color: var(--ink, #342c3b);
+}
+
+.stage-hub-proto-tag {
+  font-size: 0.6rem;
+  font-weight: 950;
+  color: var(--pink-dark, #be185d);
+  text-transform: uppercase;
+}
+
+.stage-hub-drawing-indicator {
+  font-size: 0.7rem;
+  font-weight: 850;
+  color: var(--ink, #342c3b);
+  padding: 0.25rem 0.4rem;
+  background: var(--sun, #fef08a);
+  border-radius: 6px;
+  border: 1px solid var(--line, #342c3b);
+}
+
+.stage-hub-artifact-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.stage-hub-art-thumb {
+  max-width: 100%;
+  max-height: 90px;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 1px solid var(--line, #342c3b);
+}
+
+.stage-hub-audio {
+  width: 100%;
+  height: 28px;
+}
+
 .stage-contrib-list {
   display: flex;
   flex-direction: column;
@@ -6928,5 +7031,53 @@ h1 {
   font-size: 0.64rem;
   color: var(--muted);
   font-weight: 750;
+}
+
+/* Facilitator Waiting Card */
+.facilitator-waiting {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 2.2rem 1.5rem;
+  background: var(--card-bg, rgba(255, 255, 255, 0.95));
+  border: 2px solid var(--line, #1e1b4b);
+  border-radius: 20px;
+  text-align: center;
+  box-shadow: 4px 4px 0 var(--line, #1e1b4b);
+  animation: fadeIn 0.35s ease;
+  margin-bottom: 1.5rem;
+}
+
+.facilitator-waiting-avatar {
+  width: 3.5rem;
+  height: 3.5rem;
+  border-radius: 50%;
+  background: var(--sun, #fef08a);
+  border: 2px solid var(--line, #1e1b4b);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.8rem;
+  box-shadow: 2px 2px 0 var(--line, #1e1b4b);
+}
+
+.facilitator-waiting strong {
+  font-size: 1.1rem;
+  font-weight: 900;
+  color: var(--ink, #1e1b4b);
+}
+
+.facilitator-waiting p {
+  font-size: 0.95rem;
+  color: var(--muted, #475569);
+  margin: 0;
+  font-weight: 700;
+}
+
+.facilitator-waiting small {
+  font-size: 0.8rem;
+  color: var(--muted, #64748b);
+  font-weight: 600;
 }
 

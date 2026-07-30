@@ -59,7 +59,9 @@ export function InspirationCard({
 }
 
 export function StageMission({ stage }: { stage: StageName }) {
-  const guidance = STAGE_GUIDANCE[stage];
+  const guidance =
+    STAGE_GUIDANCE[stage as keyof typeof STAGE_GUIDANCE] ?? STAGE_GUIDANCE.SCENARIO;
+  if (!guidance || !guidance.steps) return null;
   return (
     <section className="stage-mission" aria-labelledby="mission-title">
       <div>

@@ -8,16 +8,17 @@ import {
 } from "../spacetimedb/src/cards";
 
 describe("experiência canônica do Idea Hero", () => {
-  it("preserva as oito etapas na ordem definida pelo produto", () => {
+  it("preserva as nove etapas na ordem definida pelo produto", () => {
     expect(BOARD_STATES).toEqual([
       "SCENARIO",
       "PROBLEM",
       "INSIGHT",
       "SOLUTION",
+      "POLISHING",
       "PROTOTYPE",
-      "PILOT",
-      "MARKETING",
-      "SALES",
+      "TESTING",
+      "CONQUERING",
+      "FINAL",
     ]);
   });
 

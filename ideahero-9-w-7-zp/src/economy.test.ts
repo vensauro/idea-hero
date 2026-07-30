@@ -18,11 +18,11 @@ import {
 } from "../spacetimedb/src/economy";
 
 describe("economia de runway", () => {
-  it("sempre distribui 7.250 créditos de custo operacional", () => {
+  it("sempre distribui 8.000 créditos de custo operacional", () => {
     for (let seed = 1; seed <= 500; seed += 1) {
       const costs = createStageCosts(seed);
       expect(costs.map((item) => item.stage)).toEqual(BOARD_STAGES);
-      expect(costs.reduce((total, item) => total + item.amount, 0)).toBe(7_250);
+      expect(costs.reduce((total, item) => total + item.amount, 0)).toBe(8_000);
       expect(
         costs
           .slice(0, 2)

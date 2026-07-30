@@ -46,6 +46,7 @@ import OpenVotingReducer from "./open_voting_reducer";
 import PublishJourneyReducer from "./publish_journey_reducer";
 import RefreshRedrawnCardReducer from "./refresh_redrawn_card_reducer";
 import ResolveStageReducer from "./resolve_stage_reducer";
+import SelectTestOptionReducer from "./select_test_option_reducer";
 import SetProfileReducer from "./set_profile_reducer";
 import SetReadyReducer from "./set_ready_reducer";
 import StartGameReducer from "./start_game_reducer";
@@ -59,6 +60,7 @@ import VoteMarketingPlanReducer from "./vote_marketing_plan_reducer";
 import VotePilotResponseReducer from "./vote_pilot_response_reducer";
 import VotePrototypeExtensionReducer from "./vote_prototype_extension_reducer";
 import VotePrototypeReadyReducer from "./vote_prototype_ready_reducer";
+import VoteStageAdvanceReducer from "./vote_stage_advance_reducer";
 
 // Import all procedure arg schemas
 
@@ -85,6 +87,7 @@ import RoomStageAssignmentsRow from "./room_stage_assignments_table";
 import RoomStageCostsRow from "./room_stage_costs_table";
 import RoomStageOutcomesRow from "./room_stage_outcomes_table";
 import RoomStageSessionsRow from "./room_stage_sessions_table";
+import RoomTestingOptionsRow from "./room_testing_options_table";
 import RoomVoteStatusRow from "./room_vote_status_table";
 import SalesResultsRow from "./sales_results_table";
 import VisibleContributionsRow from "./visible_contributions_table";
@@ -262,6 +265,13 @@ const tablesSchema = __schema({
     constraints: [
     ],
   }, RoomStageSessionsRow),
+  room_testing_options: __table({
+    name: 'room_testing_options',
+    indexes: [
+    ],
+    constraints: [
+    ],
+  }, RoomTestingOptionsRow),
   room_vote_status: __table({
     name: 'room_vote_status',
     indexes: [
@@ -299,6 +309,7 @@ const reducersSchema = __reducers(
   __reducerSchema("publish_journey", PublishJourneyReducer),
   __reducerSchema("refresh_redrawn_card", RefreshRedrawnCardReducer),
   __reducerSchema("resolve_stage", ResolveStageReducer),
+  __reducerSchema("select_test_option", SelectTestOptionReducer),
   __reducerSchema("set_profile", SetProfileReducer),
   __reducerSchema("set_ready", SetReadyReducer),
   __reducerSchema("start_game", StartGameReducer),
@@ -312,6 +323,7 @@ const reducersSchema = __reducers(
   __reducerSchema("vote_pilot_response", VotePilotResponseReducer),
   __reducerSchema("vote_prototype_extension", VotePrototypeExtensionReducer),
   __reducerSchema("vote_prototype_ready", VotePrototypeReadyReducer),
+  __reducerSchema("vote_stage_advance", VoteStageAdvanceReducer),
 );
 
 /** The schema information for all procedures in this module. This is defined the same way as the procedures would have been defined in the server. */

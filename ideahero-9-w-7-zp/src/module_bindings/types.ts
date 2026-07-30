@@ -316,6 +316,9 @@ export type RoomStageOutcomes = __Infer<typeof RoomStageOutcomes>;
 export const RoomStageSessions = __t.object("RoomStageSessions", {});
 export type RoomStageSessions = __Infer<typeof RoomStageSessions>;
 
+export const RoomTestingOptions = __t.object("RoomTestingOptions", {});
+export type RoomTestingOptions = __Infer<typeof RoomTestingOptions>;
+
 export const RoomVoteStatus = __t.object("RoomVoteStatus", {});
 export type RoomVoteStatus = __Infer<typeof RoomVoteStatus>;
 
@@ -327,7 +330,6 @@ export const SalesResult = __t.object("SalesResult", {
   simulatedSales: __t.u32(),
   finalRunway: __t.u32(),
   tier: __t.string(),
-  createdAt: __t.timestamp(),
 });
 export type SalesResult = __Infer<typeof SalesResult>;
 
@@ -381,6 +383,19 @@ export const StageSession = __t.object("StageSession", {
   resolution: __t.string(),
 });
 export type StageSession = __Infer<typeof StageSession>;
+
+export const TestingOption = __t.object("TestingOption", {
+  id: __t.u64(),
+  roomId: __t.u64(),
+  optionKey: __t.string(),
+  title: __t.string(),
+  description: __t.string(),
+  cost: __t.u32(),
+  impact: __t.string(),
+  selected: __t.bool(),
+  createdAt: __t.timestamp(),
+});
+export type TestingOption = __Infer<typeof TestingOption>;
 
 export const VisibleContribution = __t.object("VisibleContribution", {
   id: __t.u64(),
