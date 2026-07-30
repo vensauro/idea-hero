@@ -249,15 +249,57 @@ const STAGE_PLAN_RESOLUTIONS: Record<string, "FACILITATOR" | "UNION" | "VOTE"> =
   };
 
 const GAME_FLOW_STEPS = [
-  "Cenário",
-  "Problema",
-  "Insights",
-  "Ideias",
-  "Lapidar",
-  "Protótipo",
-  "Teste",
-  "Conquistar",
-  "Final",
+  {
+    title: "Cenário",
+    description: "Imaginem o mundo em que a ideia vai existir.",
+    instruction: "Conversem sobre pessoas, contexto e oportunidade.",
+  },
+  {
+    title: "Problema",
+    description: "Encontrem uma tensão que vale resolver.",
+    instruction: "Juntem as leituras do grupo em um desafio claro.",
+  },
+  {
+    title: "Insights",
+    description: "Procurem novos jeitos de enxergar o desafio.",
+    instruction: "Cada pessoa compartilha uma descoberta ou hipótese.",
+  },
+  {
+    title: "Ideias",
+    description: "Transformem os insights em possíveis respostas.",
+    instruction: "Registrem propostas e escolham uma para seguir.",
+  },
+  {
+    title: "Lapidar",
+    description: "Deem mais forma à ideia escolhida.",
+    instruction: "Explorem como ela pode ficar mais útil e desejável.",
+  },
+  {
+    title: "Protótipo",
+    description: "Mostrem a ideia em uma versão simples.",
+    instruction: "Criem algo que outra pessoa consiga entender.",
+  },
+  {
+    title: "Teste",
+    description: "Escolham como colocar o protótipo à prova.",
+    instruction: "Usem o resultado para decidir o que melhorar.",
+  },
+  {
+    title: "Conquistar",
+    description: "Planejem como convidar pessoas para a ideia.",
+    instruction: "Criem e escolham uma forma de gerar adesão.",
+  },
+  {
+    title: "Final",
+    description: "Reúnam o que a jornada construiu.",
+    instruction: "Vejam a história da ideia e definam o próximo passo.",
+  },
+] as const;
+
+const GAME_FLOW_CHAPTERS = [
+  { title: "1. Descobrir", description: "Entendam o desafio", steps: [0, 1, 2] },
+  { title: "2. Criar", description: "Deem forma a uma resposta", steps: [3, 4, 5] },
+  { title: "3. Lançar", description: "Testem e façam a ideia ganhar vida", steps: [6, 7, 8] },
 ] as const;
 
 const AVATARS = ["seedling", "comet", "prism", "whale", "owl", "fox"] as const;
@@ -962,6 +1004,7 @@ function Lobby({
   const startGame = useReducer(reducers.startGame);
   const [error, setError] = useState("");
   const [copied, setCopied] = useState(false);
+  const [selectedFlowStep, setSelectedFlowStep] = useState(0);
   const isHost = sameIdentity(currentPlayer.identity, room.ownerIdentity);
   const enoughPlayers = players.length >= MIN_PLAYERS;
   const allReady = enoughPlayers && players.every((item) => item.ready);
@@ -1055,12 +1098,9 @@ function Lobby({
         </button>
       </section>
 
-      <section className="game-flow-panel" aria-labelledby="game-flow-title">
+      <section className="game-flow-panel" aria-label="Fluxo do jogo">
         <div className="game-flow-copy">
           <p className="kicker">Fluxo do jogo</p>
-          <h2 id="game-flow-title">
-            Nove etapas para transformar conversa em ideia
-          </h2>
           <p>
             O grupo percorre a jornada junto, da criação do cenário ao final.
           </p>
@@ -1083,7 +1123,22 @@ function Lobby({
             {GAME_FLOW_STEPS.map((step, index) => {
               const slice = pizzaSlice(index);
               return (
-                <g className="game-flow-slice" key={step}>
+                <g
+                  className={`game-flow-slice ${
+                    selectedFlowStep === index ? "is-selected" : ""
+                  }`}
+                  key={step.title}
+                  role="button"
+                  tabIndex={0}
+                  aria-label={`Ver instruções da etapa ${index + 1}: ${step.title}`}
+                  onClick={() => setSelectedFlowStep(index)}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter" || event.key === " ") {
+                      event.preventDefault();
+                      setSelectedFlowStep(index);
+                    }
+                  }}
+                >
                   <path d={slice.path} />
                   <text x={slice.labelX} y={slice.labelY} dy="0.35em">
                     {index + 1}
@@ -1100,14 +1155,43 @@ function Lobby({
             </text>
           </svg>
 
-          <ol className="game-flow-legend">
-            {GAME_FLOW_STEPS.map((step, index) => (
-              <li key={step}>
-                <span aria-hidden="true">{index + 1}</span>
-                {step}
-              </li>
-            ))}
-          </ol>
+          <div className="game-flow-guide">
+            <article className="game-flow-step-detail" aria-live="polite">
+              <span>Etapa {selectedFlowStep + 1} de 9</span>
+              <h3>{GAME_FLOW_STEPS[selectedFlowStep].title}</h3>
+              <p>{GAME_FLOW_STEPS[selectedFlowStep].description}</p>
+              <strong>Em grupo: </strong>
+              {GAME_FLOW_STEPS[selectedFlowStep].instruction}
+            </article>
+
+            <div className="game-flow-chapters" aria-label="Etapas da jornada">
+              {GAME_FLOW_CHAPTERS.map((chapter) => (
+                <section className="game-flow-chapter" key={chapter.title}>
+                  <div>
+                    <strong>{chapter.title}</strong>
+                    <small>{chapter.description}</small>
+                  </div>
+                  <div className="game-flow-step-buttons">
+                    {chapter.steps.map((index) => {
+                      const step = GAME_FLOW_STEPS[index];
+                      return (
+                        <button
+                          type="button"
+                          className={selectedFlowStep === index ? "is-selected" : ""}
+                          key={step.title}
+                          aria-pressed={selectedFlowStep === index}
+                          onClick={() => setSelectedFlowStep(index)}
+                        >
+                          <span>{index + 1}</span>
+                          {step.title}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </section>
+              ))}
+            </div>
+          </div>
         </div>
       </section>
 

@@ -488,24 +488,22 @@ textarea:focus {
   font-weight: 900;
   text-anchor: middle;
 }
-.game-flow-slice:nth-of-type(1) path,
-.game-flow-legend li:nth-child(1) span { fill: var(--pink); }
-.game-flow-slice:nth-of-type(2) path,
-.game-flow-legend li:nth-child(2) span { fill: var(--sun); }
-.game-flow-slice:nth-of-type(3) path,
-.game-flow-legend li:nth-child(3) span { fill: var(--lime); }
-.game-flow-slice:nth-of-type(4) path,
-.game-flow-legend li:nth-child(4) span { fill: var(--teal); }
-.game-flow-slice:nth-of-type(5) path,
-.game-flow-legend li:nth-child(5) span { fill: #b9a8f5; }
-.game-flow-slice:nth-of-type(6) path,
-.game-flow-legend li:nth-child(6) span { fill: #ffb38c; }
-.game-flow-slice:nth-of-type(7) path,
-.game-flow-legend li:nth-child(7) span { fill: #9edfc0; }
-.game-flow-slice:nth-of-type(8) path,
-.game-flow-legend li:nth-child(8) span { fill: #8ed8e3; }
-.game-flow-slice:nth-of-type(9) path,
-.game-flow-legend li:nth-child(9) span { fill: #f6a8c3; }
+.game-flow-slice {
+  cursor: pointer;
+}
+.game-flow-slice:focus-visible path,
+.game-flow-slice.is-selected path {
+  stroke-width: 2.8;
+}
+.game-flow-slice:nth-of-type(1) path { fill: var(--pink); }
+.game-flow-slice:nth-of-type(2) path { fill: var(--sun); }
+.game-flow-slice:nth-of-type(3) path { fill: var(--lime); }
+.game-flow-slice:nth-of-type(4) path { fill: var(--teal); }
+.game-flow-slice:nth-of-type(5) path { fill: #b9a8f5; }
+.game-flow-slice:nth-of-type(6) path { fill: #ffb38c; }
+.game-flow-slice:nth-of-type(7) path { fill: #9edfc0; }
+.game-flow-slice:nth-of-type(8) path { fill: #8ed8e3; }
+.game-flow-slice:nth-of-type(9) path { fill: #f6a8c3; }
 .game-flow-center {
   fill: var(--paper);
   stroke: var(--line);
@@ -518,21 +516,96 @@ textarea:focus {
   letter-spacing: 0.08em;
   text-anchor: middle;
 }
-.game-flow-legend {
+.game-flow-guide {
+  min-width: 0;
+}
+.game-flow-chapters {
+  display: grid;
+  gap: 0.7rem;
+}
+.game-flow-chapter {
+  padding-bottom: 0.7rem;
+  border-bottom: 1px solid rgba(102, 94, 104, 0.2);
+}
+.game-flow-chapter:last-child {
+  padding-bottom: 0;
+  border-bottom: 0;
+}
+.game-flow-chapter > div:first-child {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.6rem;
+  margin-bottom: 0.38rem;
+}
+.game-flow-chapter strong {
+  font-size: 0.8rem;
+}
+.game-flow-chapter small {
+  color: var(--muted);
+  font-size: 0.7rem;
+}
+.game-flow-step-buttons {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 0.55rem;
-  padding: 0;
-  margin: 0;
-  list-style: none;
+  gap: 0.35rem;
 }
-.game-flow-legend li {
-  display: flex;
+.game-flow-step-buttons button {
+  display: inline-flex;
   align-items: center;
-  gap: 0.38rem;
-  min-width: 0;
-  font-size: 0.78rem;
+  justify-content: center;
+  gap: 0.3rem;
+  width: 100%;
+  border: 1.5px solid var(--line);
+  border-radius: 999px;
+  padding: 0.28rem 0.5rem;
+  background: var(--white);
+  color: var(--ink);
+  font-size: 0.72rem;
   font-weight: 800;
+}
+.game-flow-step-buttons button:hover,
+.game-flow-step-buttons button.is-selected {
+  background: var(--lime);
+  box-shadow: 2px 2px 0 var(--line);
+  transform: translate(-1px, -1px);
+}
+.game-flow-step-buttons button:focus-visible {
+  outline: 3px solid var(--teal);
+  outline-offset: 2px;
+}
+.game-flow-step-buttons span {
+  display: grid;
+  place-items: center;
+  width: 1.15rem;
+  height: 1.15rem;
+  border-radius: 50%;
+  background: var(--paper-deep);
+  font-size: 0.65rem;
+}
+.game-flow-step-detail {
+  margin: 0 0 0.9rem;
+  padding: 0.8rem 0.9rem;
+  border: 2px solid var(--line);
+  border-radius: 14px;
+  background: var(--paper-deep);
+  font-size: 0.82rem;
+  line-height: 1.38;
+}
+.game-flow-step-detail > span {
+  color: var(--pink-dark);
+  font-size: 0.68rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.game-flow-step-detail h3 {
+  margin: 0.14rem 0 0.18rem;
+  font-size: 1.1rem;
+}
+.game-flow-step-detail p {
+  margin: 0 0 0.4rem;
+  color: var(--muted);
 }
 .game-flow-legend span {
   display: grid;
@@ -716,9 +789,6 @@ textarea:focus {
 @media (max-width: 480px) {
   .game-flow-content {
     grid-template-columns: 1fr;
-  }
-  .game-flow-legend {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
