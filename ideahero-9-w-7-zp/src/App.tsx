@@ -3628,6 +3628,7 @@ function JourneyResult({
       contributions: exportableContributions,
       decisions,
       stageOutcomes,
+      stageInsights: roomStageInsights,
       cards,
       cardDraws,
     });
@@ -3912,6 +3913,16 @@ function JourneyResult({
           const stageDecision = decisions.find(
             (item) => item.roomId === room.id && item.stage === stage,
           );
+          const stageOutcome = stageOutcomes.find(
+            (item) => item.roomId === room.id && item.stage === stage,
+          );
+          const stageInsight = roomStageInsights.find(
+            (item) => item.roomId === room.id && item.stage === stage,
+          );
+          const selectedTestingOption = stage === "TESTING"
+            ? testingOptions.find((item) => item.roomId === room.id && item.selected)
+            : undefined;
+
           return (
             <article key={stage}>
               {stageCard && (
@@ -3931,6 +3942,28 @@ function JourneyResult({
                   <p className="document-decision">
                     ★ “{stageDecision.summary}”{" "}
                     <small>— escolha do grupo</small>
+                  </p>
+                )}
+                {stageOutcome && !stageDecision && (
+                  <p className="document-outcome">
+                    ✦ “{stageOutcome.summary}”{" "}
+                    <small>
+                      —{" "}
+                      {stageOutcome.resolution === "FACILITATOR"
+                        ? "síntese do facilitador"
+                        : "composição do grupo"}
+                    </small>
+                  </p>
+                )}
+                {stageInsight && (
+                  <div className="document-insight-card" style={{ marginTop: "0.5rem", marginBottom: "0.5rem", padding: "0.75rem 1rem", background: "rgba(255,255,255,0.04)", borderRadius: "8px" }}>
+                    <h3 style={{ margin: "0 0 0.25rem 0", fontSize: "1.05rem", color: "var(--accent-color, #e8a838)" }}>{stageInsight.headline}</h3>
+                    <p style={{ margin: 0, opacity: 0.9, whiteSpace: "pre-wrap" }}>{stageInsight.body}</p>
+                  </div>
+                )}
+                {selectedTestingOption && (
+                  <p className="document-testing-choice">
+                    ↗ <strong>Teste escolhido:</strong> {selectedTestingOption.title} — {selectedTestingOption.description}
                   </p>
                 )}
                 {stage === "PROTOTYPE" && projectPrototype && (
@@ -4091,6 +4124,29 @@ function PublicJourneyResult({ result }: { result?: PublishedResult }) {
   }
 
   const publishedOn = result.publishedAt.toDate().toLocaleDateString("pt-BR");
+
+  type PublishedStageItem = {
+    stage: string;
+    eyebrow: string;
+    title: string;
+    card?: { title: string; lens: string; imagePath: string; altText: string } | null;
+    decision?: { summary: string; totalVotes: number } | null;
+    outcome?: { resolution: string; summary: string } | null;
+    insight?: { headline: string; body: string } | null;
+    testingOption?: { title: string; description: string } | null;
+    prototype?: { challengeTitle: string; caption: string } | null;
+    contributions: Array<{ content: string; authorName?: string }>;
+  };
+
+  let history: PublishedStageItem[] = [];
+  if (result.historyJson) {
+    try {
+      history = JSON.parse(result.historyJson) as PublishedStageItem[];
+    } catch {
+      history = [];
+    }
+  }
+
   return (
     <main className="public-result-page">
       <header className="result-topbar">
@@ -4122,6 +4178,133 @@ function PublicJourneyResult({ result }: { result?: PublishedResult }) {
         </div>
         <p className="public-result-date">Publicado em {publishedOn}.</p>
       </section>
+
+      {history.length > 0 && (
+        <section
+          className="public-journey-history"
+          style={{ maxWidth: "760px", margin: "2rem auto", padding: "0 1rem" }}
+        >
+          <div className="document-heading">
+            <div>
+              <p className="kicker">A aventura completa</p>
+              <h2>Histórico, escolhas e desfecho da jornada</h2>
+            </div>
+            <span>{history.length} etapas</span>
+          </div>
+          <div className="journey-document">
+            {history.map((item, index) => (
+              <article key={item.stage}>
+                {item.card && (
+                  <img
+                    className="document-card-image"
+                    src={item.card.imagePath}
+                    alt={item.card.altText}
+                  />
+                )}
+                <div className="document-stage-number">{index + 1}</div>
+                <div>
+                  <p className="kicker">{item.eyebrow}</p>
+                  <h2>{item.title}</h2>
+
+                  {item.decision && (
+                    <p className="document-decision">
+                      ★ “{item.decision.summary}”{" "}
+                      <small>— escolha do grupo</small>
+                    </p>
+                  )}
+
+                  {item.outcome && (
+                    <p className="document-outcome">
+                      ✦ “{item.outcome.summary}”{" "}
+                      <small>
+                        —{" "}
+                        {item.outcome.resolution === "FACILITATOR"
+                          ? "síntese do facilitador"
+                          : "composição do grupo"}
+                      </small>
+                    </p>
+                  )}
+
+                  {item.insight && (
+                    <div
+                      className="document-insight-card"
+                      style={{
+                        marginTop: "0.5rem",
+                        marginBottom: "0.5rem",
+                        padding: "0.75rem 1rem",
+                        background: "rgba(255,255,255,0.04)",
+                        borderRadius: "8px",
+                      }}
+                    >
+                      <h3
+                        style={{
+                          margin: "0 0 0.25rem 0",
+                          fontSize: "1.05rem",
+                          color: "var(--accent-color, #e8a838)",
+                        }}
+                      >
+                        {item.insight.headline}
+                      </h3>
+                      <p
+                        style={{
+                          margin: 0,
+                          opacity: 0.9,
+                          whiteSpace: "pre-wrap",
+                        }}
+                      >
+                        {item.insight.body}
+                      </p>
+                    </div>
+                  )}
+
+                  {item.testingOption && (
+                    <p className="document-testing-choice">
+                      ↗ <strong>Teste escolhido:</strong> {item.testingOption.title}{" "}
+                      — {item.testingOption.description}
+                    </p>
+                  )}
+
+                  {item.prototype && (
+                    <div
+                      className="document-prototype-box"
+                      style={{
+                        marginTop: "0.5rem",
+                        padding: "0.5rem 0.75rem",
+                        background: "rgba(255,255,255,0.03)",
+                        borderRadius: "6px",
+                      }}
+                    >
+                      <p style={{ margin: 0 }}>
+                        🎨 <strong>Protótipo:</strong>{" "}
+                        {item.prototype.challengeTitle}
+                      </p>
+                      {item.prototype.caption && (
+                        <p
+                          style={{
+                            margin: "0.25rem 0 0 0",
+                            fontStyle: "italic",
+                            opacity: 0.9,
+                          }}
+                        >
+                          “{item.prototype.caption}”
+                        </p>
+                      )}
+                    </div>
+                  )}
+
+                  {item.contributions.map((contrib, i) => (
+                    <p key={i}>
+                      “{contrib.content}”{" "}
+                      <small>— {contrib.authorName ?? "Anônimo"}</small>
+                    </p>
+                  ))}
+                </div>
+              </article>
+            ))}
+          </div>
+        </section>
+      )}
+
       <footer className="public-result-footer">
         <p>
           IDEA HERO transforma conversas em ideias que podem ganhar o mundo.

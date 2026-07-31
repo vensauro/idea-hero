@@ -21,4 +21,5 @@ export default __t.row({
   finalRunway: __t.u32().name("final_runway"),
   publishedAt: __t.timestamp().name("published_at"),
   updatedAt: __t.timestamp().name("updated_at"),
+  historyJson: __t.string().name("history_json"),
 });

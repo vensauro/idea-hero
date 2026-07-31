@@ -250,6 +250,7 @@ export const PublishedResult = __t.object("PublishedResult", {
   finalRunway: __t.u32(),
   publishedAt: __t.timestamp(),
   updatedAt: __t.timestamp(),
+  historyJson: __t.string(),
 });
 export type PublishedResult = __Infer<typeof PublishedResult>;
 

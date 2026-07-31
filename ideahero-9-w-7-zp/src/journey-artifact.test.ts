@@ -65,7 +65,7 @@ describe("artefato compartilhável da jornada", () => {
     expect(markdown).toContain(
       "- O bairro compartilha recursos e histórias. — Bia",
     );
-    expect(markdown.match(/^## /gm)).toHaveLength(8);
+    expect(markdown.match(/^## /gm)).toHaveLength(9);
   });
 
   it("gera nome de arquivo seguro e texto curto para compartilhamento", () => {
@@ -94,5 +94,23 @@ describe("artefato compartilhável da jornada", () => {
     expect(markdown).toContain("> **Composicao coletiva:**");
     expect(markdown).toContain("> O lugar: Pracas abertas.");
     expect(markdown).not.toContain("> **Escolha do grupo:**");
+  });
+
+  it("inclui o desfecho da etapa 9 final no markdown", () => {
+    const markdown = buildJourneyMarkdown({
+      ...artifact,
+      stageInsights: [
+        {
+          stage: "FINAL",
+          headline: "O Despertar da Cidade Conectada",
+          body: "A jornada culminou em um grande movimento comunitário.",
+        },
+      ],
+    });
+
+    expect(markdown).toContain("## 9. Final");
+    expect(markdown).toContain("> **Desfecho da etapa:**");
+    expect(markdown).toContain("> **O Despertar da Cidade Conectada**");
+    expect(markdown).toContain("> A jornada culminou em um grande movimento comunitário.");
   });
 });

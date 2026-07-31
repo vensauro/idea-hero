@@ -6,18 +6,20 @@ import type {
   Journey,
   Player,
   Room,
+  StageInsight,
   StageOutcome,
 } from "./module_bindings/types";
 
 const ARTIFACT_STAGES = [
   ["SCENARIO", "Cenário"],
   ["PROBLEM", "Problema"],
-  ["INSIGHT", "Insight"],
-  ["SOLUTION", "Solução"],
-  ["PROTOTYPE", "Protótipo"],
-  ["PILOT", "Piloto"],
-  ["MARKETING", "Marketing"],
-  ["SALES", "Vendas"],
+  ["INSIGHT", "Insights"],
+  ["SOLUTION", "Ideias"],
+  ["POLISHING", "Lapidando"],
+  ["PROTOTYPE", "Prototipando"],
+  ["TESTING", "Testando"],
+  ["CONQUERING", "Convidando"],
+  ["FINAL", "Final"],
 ] as const;
 
 export type JourneyArtifactInput = {
@@ -35,6 +37,10 @@ export type JourneyArtifactInput = {
   stageOutcomes: readonly Pick<
     StageOutcome,
     "stage" | "resolution" | "summary" | "sourceCount"
+  >[];
+  stageInsights?: readonly Pick<
+    StageInsight,
+    "stage" | "headline" | "body"
   >[];
   cards: readonly Pick<Card, "id" | "title" | "lens">[];
   cardDraws: readonly Pick<CardDraw, "stage" | "cardId">[];
@@ -85,6 +91,9 @@ export function buildJourneyMarkdown(input: JourneyArtifactInput) {
     const stageOutcome = input.stageOutcomes.find(
       (item) => item.stage === stage,
     );
+    const stageInsight = input.stageInsights?.find(
+      (item) => item.stage === stage,
+    );
     const draw = input.cardDraws.find((item) => item.stage === stage);
     const card = draw
       ? input.cards.find((item) => item.id === draw.cardId)
@@ -110,6 +119,16 @@ export function buildJourneyMarkdown(input: JourneyArtifactInput) {
           .map((entry) => `> ${cleanText(entry)}`),
       );
     }
+    if (stageInsight) {
+      lines.push(
+        "",
+        `> **Desfecho da etapa:**`,
+        `> **${cleanText(stageInsight.headline)}**`,
+        ...stageInsight.body
+          .split("\n")
+          .map((entry) => `> ${cleanText(entry)}`),
+      );
+    }
 
     const supportingEntries = decision
       ? entries.filter((item) => item.id !== decision.selectedContributionId)
@@ -125,7 +144,7 @@ export function buildJourneyMarkdown(input: JourneyArtifactInput) {
         );
       }
     }
-    if (!decision && !stageOutcome && supportingEntries.length === 0) {
+    if (!decision && !stageOutcome && !stageInsight && supportingEntries.length === 0) {
       lines.push("", "_Etapa sem registro._");
     }
   });

@@ -573,6 +573,7 @@ const publishedResult = table(
     finalRunway: t.u32(),
     publishedAt: t.timestamp(),
     updatedAt: t.timestamp(),
+    historyJson: t.string().default(""),
   },
 );
 
@@ -3993,23 +3994,113 @@ export const end_journey = spacetimedb.reducer(
     });
   },
 );
+const STAGE_EYEBROWS: Record<string, string> = {
+  SCENARIO: "Cenário",
+  PROBLEM: "Problema",
+  INSIGHT: "Insights",
+  SOLUTION: "Ideias",
+  POLISHING: "Lapidando",
+  PROTOTYPE: "Prototipando",
+  TESTING: "Testando",
+  CONQUERING: "Convidando",
+  FINAL: "Final",
+};
+
+const STAGE_TITLES: Record<string, string> = {
+  SCENARIO: "Vamos criar o cenário",
+  PROBLEM: "Vamos entender o problema",
+  INSIGHT: "Vamos encontrar insights",
+  SOLUTION: "Vamos criar ideias",
+  POLISHING: "Vamos lapidar a ideia",
+  PROTOTYPE: "Vamos prototipar",
+  TESTING: "Vamos testar",
+  CONQUERING: "Vamos convidar o mundo",
+  FINAL: "Final da jornada",
+};
+
+function buildStageHistoryJson(ctx: any, roomId: bigint): string {
+  const players = Array.from(ctx.db.player.roomId.filter(roomId)) as any[];
+  const cardDraws = Array.from(ctx.db.cardDraw.roomId.filter(roomId)) as any[];
+  const decisions = Array.from(ctx.db.decision.roomId.filter(roomId)) as any[];
+  const stageOutcomes = Array.from(ctx.db.stageOutcome.roomId.filter(roomId)) as any[];
+  const stageInsights = Array.from(ctx.db.stageInsight.roomId.filter(roomId)) as any[];
+  const testingOptions = Array.from(ctx.db.testingOption.roomId.filter(roomId)) as any[];
+  const contributions = Array.from(ctx.db.contribution.roomId.filter(roomId)) as any[];
+  const prototype = ctx.db.projectPrototype.roomId.find(roomId);
+
+  const history = BOARD_STATES.map((stage) => {
+    const draw = cardDraws.find(
+      (item) => item.stage === stage && item.active,
+    );
+    const card = draw ? ctx.db.card.id.find(draw.cardId) : null;
+    const dec = decisions.find((item) => item.stage === stage);
+    const out = stageOutcomes.find((item) => item.stage === stage);
+    const ins = stageInsights.find((item) => item.stage === stage);
+    const testOpt = testingOptions.find((item) => item.selected);
+    const proto = stage === "PROTOTYPE" && prototype ? prototype : null;
+
+    const stageContribs = contributions
+      .filter(
+        (item) =>
+          item.stage === stage && item.id !== dec?.selectedContributionId,
+      )
+      .map((item) => {
+        const author = item.authorIdentity
+          ? players.find((p) => p.identity.isEqual(item.authorIdentity))
+          : null;
+        return {
+          content: item.content,
+          authorName: author?.displayName ?? "Anônimo",
+        };
+      });
+
+    return {
+      stage,
+      eyebrow: STAGE_EYEBROWS[stage] ?? stage,
+      title: STAGE_TITLES[stage] ?? stage,
+      card: card
+        ? {
+            title: card.title,
+            lens: card.lens,
+            imagePath: card.imagePath,
+            altText: card.altText,
+          }
+        : null,
+      decision: dec
+        ? { summary: dec.summary, totalVotes: dec.totalVotes }
+        : null,
+      outcome: out
+        ? { resolution: out.resolution, summary: out.summary }
+        : null,
+      insight: ins
+        ? { headline: ins.headline, body: ins.body }
+        : null,
+      testingOption:
+        stage === "TESTING" && testOpt
+          ? { title: testOpt.title, description: testOpt.description }
+          : null,
+      prototype: proto
+        ? { challengeTitle: proto.challengeTitle, caption: proto.caption }
+        : null,
+      contributions: stageContribs,
+    };
+  });
+
+  return JSON.stringify(history);
+}
+
 export const update_journey = spacetimedb.reducer(
   { roomId: t.u64(), title: t.string(), summary: t.string() },
   (ctx, { roomId, title, summary }) => {
     const currentRoom = ctx.db.room.id.find(roomId);
     if (!currentRoom || currentRoom.status !== "FINISHED") {
-      throw new SenderError("A jornada ainda não foi concluída.");
+      throw new SenderError("A jornada precisa estar concluida para editar.");
     }
     if (!currentRoom.ownerIdentity.isEqual(ctx.sender)) {
-      throw new SenderError(
-        "Apenas o anfitrião pode editar o manifesto final.",
-      );
+      throw new SenderError("Apenas o anfitriao pode editar o manifesto.");
     }
-    const currentPlayer = [...ctx.db.player.iter()].find(
-      (item) =>
-        item.roomId === roomId &&
-        item.active &&
-        item.identity.isEqual(ctx.sender),
+    const currentPlayer = Array.from(ctx.db.player.roomId.filter(roomId)).find(
+      (item) => item.identity.isEqual(ctx.sender),
     );
     if (!currentPlayer) {
       throw new SenderError("Você não pertence a esta sala.");
@@ -4017,6 +4108,7 @@ export const update_journey = spacetimedb.reducer(
 
     const normalizedTitle = normalizeJourneyTitle(title);
     const normalizedSummary = normalizeJourneySummary(summary);
+    const historyJson = buildStageHistoryJson(ctx, roomId);
     const currentJourney = ctx.db.journey.roomId.find(roomId);
     if (currentJourney) {
       ctx.db.journey.id.update({
@@ -4033,6 +4125,7 @@ export const update_journey = spacetimedb.reducer(
           publicId: currentJourney.publicId || journeyPublicId(roomId),
           title: normalizedTitle,
           summary: normalizedSummary,
+          historyJson,
           updatedAt: ctx.timestamp,
         });
       }
@@ -4071,6 +4164,7 @@ export const publish_journey = spacetimedb.reducer(
 
     const sales = ctx.db.salesResult.roomId.find(roomId);
     const existing = ctx.db.publishedResult.roomId.find(roomId);
+    const historyJson = buildStageHistoryJson(ctx, roomId);
     const snapshot = {
       roomId,
       publicId: currentJourney.publicId || journeyPublicId(roomId),
@@ -4079,6 +4173,7 @@ export const publish_journey = spacetimedb.reducer(
       participantCount: Array.from(ctx.db.player.roomId.filter(roomId)).length,
       hasSalesResult: Boolean(sales),
       finalRunway: sales?.finalRunway ?? 0,
+      historyJson,
       updatedAt: ctx.timestamp,
     };
 
