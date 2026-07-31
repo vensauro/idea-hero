@@ -113,6 +113,7 @@ export const COLLABORATIVE_PHASES = [
   "REVIEW",
 ] as const;
 const MIN_PLAYERS = 2;
+const INTRO_VIDEO_SEEN_KEY = "idea-hero-intro-video-seen-v1";
 const PRODUCT_TYPES = [
   {
     id: "physical",
@@ -901,6 +902,14 @@ function RoomEntry({
   const hasInvite = Boolean(invitedCode);
   const [error, setError] = useState("");
   const [pendingAction, setPendingAction] = useState<"create" | "join">();
+  const [showIntroVideo, setShowIntroVideo] = useState(() => {
+    if (typeof window === "undefined") return false;
+    return window.localStorage.getItem(INTRO_VIDEO_SEEN_KEY) !== "true";
+  });
+
+  function markIntroVideoSeen() {
+    window.localStorage.setItem(INTRO_VIDEO_SEEN_KEY, "true");
+  }
 
   async function run(name: "create" | "join", action: () => Promise<unknown>) {
     setPendingAction(name);
@@ -1041,10 +1050,77 @@ function RoomEntry({
             {error}
           </p>
         )}
+        <button
+          type="button"
+          className="intro-video-trigger"
+          onClick={() => setShowIntroVideo(true)}
+        >
+          Ver como funciona
+        </button>
       </section>
+      {showIntroVideo && (
+        <IntroVideoDialog
+          onClose={() => setShowIntroVideo(false)}
+          onWatched={markIntroVideoSeen}
+        />
+      )}
     </main>
   );
 }
+
+function IntroVideoDialog({
+  onClose,
+  onWatched,
+}: {
+  onClose: () => void;
+  onWatched: () => void;
+}) {
+  return (
+    <div
+      className="intro-video-backdrop"
+      role="presentation"
+      onMouseDown={(event) => {
+        if (event.target === event.currentTarget) onClose();
+      }}
+    >
+      <section
+        className="intro-video-dialog"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="intro-video-title"
+      >
+        <button
+          type="button"
+          className="intro-video-close"
+          onClick={onClose}
+          aria-label="Fechar vídeo de introdução"
+        >
+          ×
+        </button>
+        <p className="kicker">Antes de começar</p>
+        <h2 id="intro-video-title">Conheça a aventura Idea Hero</h2>
+        <p>
+          Em pouco mais de um minuto, veja como as cartas conduzem o grupo até
+          uma ideia compartilhada.
+        </p>
+        <video
+          className="intro-video-player"
+          src="/video/idea-hero-intro.mp4"
+          controls
+          playsInline
+          preload="metadata"
+          onEnded={onWatched}
+        >
+          Seu navegador não conseguiu carregar o vídeo de introdução.
+        </video>
+        <button type="button" className="primary-button" onClick={onClose}>
+          Jogar
+        </button>
+      </section>
+    </div>
+  );
+}
+
 function Lobby({
   room,
   players,
