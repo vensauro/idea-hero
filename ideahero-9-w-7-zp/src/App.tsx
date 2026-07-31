@@ -53,6 +53,11 @@ import {
 } from "./room-invite";
 import { createRoomWithAvailableCode } from "./room-code";
 import { latestOpenSession } from "./room-session";
+import {
+  clearRecoverableRoom,
+  recoverableRoomCode,
+  saveRecoverableRoom,
+} from "./room-recovery";
 import { VoiceInputButton, type VoiceInputResult } from "./VoiceInputButton";
 import { JourneySummary } from "./JourneySummary";
 import {
@@ -472,6 +477,9 @@ function App() {
     ? profiles.find((item) => sameIdentity(item.identity, identity))
     : undefined;
   const [editingProfile, setEditingProfile] = useState(false);
+  const resumeRoom = useReducer(reducers.joinRoom);
+  const [resumingRoom, setResumingRoom] = useState(false);
+  const attemptedRecovery = useRef<string>();
 
   const currentSession = useMemo(() => {
     if (!identity) return undefined;
@@ -502,12 +510,43 @@ function App() {
 
   useEffect(() => {
     if (!currentRoomCode) return;
+    saveRecoverableRoom(currentRoomCode);
     window.history.replaceState(
       null,
       "",
       buildRoomInviteUrl(currentRoomCode, window.location.href),
     );
   }, [currentRoomCode]);
+
+  useEffect(() => {
+    if (
+      !profilesReady ||
+      !roomsReady ||
+      !playersReady ||
+      !currentProfile?.displayName ||
+      !currentProfile.avatarId ||
+      currentRoom
+    ) {
+      return;
+    }
+
+    const code = recoverableRoomCode();
+    if (!code || attemptedRecovery.current === code) return;
+
+    attemptedRecovery.current = code;
+    setResumingRoom(true);
+    void resumeRoom({ code })
+      .catch(() => clearRecoverableRoom())
+      .finally(() => setResumingRoom(false));
+  }, [
+    currentProfile?.avatarId,
+    currentProfile?.displayName,
+    currentRoom,
+    playersReady,
+    profilesReady,
+    resumeRoom,
+    roomsReady,
+  ]);
 
   if (!connected || !identity) {
     return <LoadingScreen label="Conectando sua identidade criativa…" />;
@@ -568,6 +607,9 @@ function App() {
   }
 
   if (!currentRoom || !currentPlayer) {
+    if (resumingRoom) {
+      return <LoadingScreen label="Retomando sua sala…" />;
+    }
     return (
       <RoomEntry
         displayName={currentProfile.displayName}
@@ -712,10 +754,12 @@ function LeaveRoomButton({
     setLeaving(true);
     setError("");
     const previousUrl = window.location.href;
+    clearRecoverableRoom();
     window.history.replaceState(null, "", clearRoomInviteUrl(previousUrl));
     try {
       await leaveRoom({ roomId: room.id });
     } catch (caught) {
+      saveRecoverableRoom(room.code);
       window.history.replaceState(null, "", previousUrl);
       setError(errorMessage(caught));
       setLeaving(false);
@@ -1034,6 +1078,7 @@ function Lobby({
   async function shareInvite() {
     setError("");
     const url = buildRoomInviteUrl(room.code, window.location.href);
+    saveRecoverableRoom(room.code);
     try {
       if (navigator.share) {
         await navigator.share({
@@ -3585,6 +3630,7 @@ function JourneyResult({
       return;
     }
     const previousUrl = window.location.href;
+    clearRecoverableRoom();
     window.history.replaceState(null, "", clearRoomInviteUrl(previousUrl));
     const leftRoom = await runFinalAction(
       "leave",
@@ -3592,6 +3638,7 @@ function JourneyResult({
       "Tudo pronto para uma nova jornada.",
     );
     if (!leftRoom) {
+      saveRecoverableRoom(room.code);
       window.history.replaceState(null, "", previousUrl);
     }
   }
