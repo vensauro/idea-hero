@@ -1271,6 +1271,139 @@ h1 {
   font-weight: 800;
 }
 
+.feedback-editor {
+  order: 3.5;
+  margin-top: clamp(2rem, 5vw, 3rem);
+  padding: clamp(1.25rem, 5vw, 2.25rem);
+  border: 3px solid var(--line);
+  border-radius: 24px 16px 28px 18px;
+  background: #fdfaf3;
+  box-shadow: 8px 8px 0 var(--line);
+  transform: rotate(0.25deg);
+}
+
+.feedback-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.feedback-heading h2 {
+  margin-bottom: 0;
+  font-family: "Palmer Lake Print", Inter, sans-serif;
+  font-size: clamp(2.2rem, 5vw, 3.4rem);
+  font-weight: 400;
+}
+
+.feedback-heading > span {
+  padding: 0.45rem 0.7rem;
+  border: 2px solid var(--line);
+  border-radius: 999px;
+  background: var(--paper);
+  font-size: 0.68rem;
+  font-weight: 900;
+  white-space: nowrap;
+  text-transform: uppercase;
+}
+
+.feedback-editor form {
+  display: grid;
+  gap: 1.25rem;
+  margin-top: 1.5rem;
+}
+
+.feedback-editor label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  font-weight: 800;
+  font-size: 0.92rem;
+  color: var(--ink);
+}
+
+.feedback-editor input[type="email"] {
+  border: 2px solid var(--line);
+  border-radius: 12px;
+  padding: 0.75rem 1rem;
+  font-size: 1rem;
+  background: #fffdf8;
+  width: 100%;
+}
+
+.nps-container {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.nps-label {
+  font-weight: 800;
+  font-size: 0.92rem;
+  color: var(--ink);
+}
+
+.nps-selector {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: 0.35rem;
+}
+
+.nps-chip {
+  flex: 1 1 0px;
+  min-width: 36px;
+  height: 44px;
+  border: 2px solid var(--line);
+  border-radius: 12px;
+  background: var(--paper);
+  font-weight: 800;
+  font-size: 1rem;
+  color: var(--ink);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.nps-chip:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 0 var(--line);
+  background: #fff8e7;
+}
+
+.nps-chip.is-selected {
+  background: var(--coral, #e85671);
+  color: #ffffff;
+  border-color: var(--line);
+  box-shadow: 3px 3px 0 var(--line);
+  transform: scale(1.05);
+}
+
+.nps-scale-labels {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 0.25rem;
+  font-size: 0.78rem;
+  color: rgba(41, 35, 50, 0.72);
+  font-weight: 700;
+}
+
+.feedback-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-top: 0.5rem;
+}
+
+.feedback-footer small {
+  color: rgba(41, 35, 50, 0.72);
+  font-weight: 800;
+}
+
+
 .document-heading {
   align-items: end;
   margin-top: clamp(3.5rem, 9vw, 6rem);

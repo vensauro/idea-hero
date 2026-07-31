@@ -104,6 +104,17 @@ export const Journey = __t.object("Journey", {
 });
 export type Journey = __Infer<typeof Journey>;
 
+export const JourneyFeedback = __t.object("JourneyFeedback", {
+  id: __t.u64(),
+  roomId: __t.u64(),
+  authorIdentity: __t.identity(),
+  email: __t.string(),
+  nps: __t.u8(),
+  createdAt: __t.timestamp(),
+  updatedAt: __t.timestamp(),
+});
+export type JourneyFeedback = __Infer<typeof JourneyFeedback>;
+
 export const MarketingPlan = __t.object("MarketingPlan", {
   roomId: __t.u64(),
   optionKey: __t.string(),
@@ -297,6 +308,9 @@ export type RoomEconomyTransactions = __Infer<typeof RoomEconomyTransactions>;
 
 export const RoomGroupVotes = __t.object("RoomGroupVotes", {});
 export type RoomGroupVotes = __Infer<typeof RoomGroupVotes>;
+
+export const RoomJourneyFeedbacks = __t.object("RoomJourneyFeedbacks", {});
+export type RoomJourneyFeedbacks = __Infer<typeof RoomJourneyFeedbacks>;
 
 export const RoomJourneys = __t.object("RoomJourneys", {});
 export type RoomJourneys = __Infer<typeof RoomJourneys>;

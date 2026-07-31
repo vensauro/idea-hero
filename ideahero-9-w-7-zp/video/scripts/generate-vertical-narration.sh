@@ -10,6 +10,7 @@ TEXT="${VIDEO_DIR}/narration/pt-BR-vertical.txt"
 OUTPUT_DIR="${APP_DIR}/public/video"
 RAW_OUTPUT="${OUTPUT_DIR}/narration-vertical-raw.wav"
 FINAL_OUTPUT="${OUTPUT_DIR}/narration-vertical.wav"
+INSTRUCT="${OMNIVOICE_INSTRUCT:-female, middle-aged, moderate pitch, portuguese accent}"
 
 mkdir -p "${OUTPUT_DIR}"
 
@@ -30,7 +31,7 @@ if [[ -n "${OMNIVOICE_REF_WAV:-}" || -n "${OMNIVOICE_REF_TEXT:-}" ]]; then
   fi
   ARGS+=(--ref-wav "${OMNIVOICE_REF_WAV}" --ref-text "${OMNIVOICE_REF_TEXT}")
 else
-  ARGS+=(--instruct "female, middle-aged, moderate pitch, portuguese accent")
+  ARGS+=(--instruct "${INSTRUCT}")
 fi
 
 "${OMNIVOICE_DIR}/build/omnivoice-tts" "${ARGS[@]}" < "${TEXT}"
@@ -39,7 +40,7 @@ DURATION="$(ffprobe -v error -show_entries format=duration -of default=nk=1:nw=1
 TEMPO="$(python3 -c "print(float('${DURATION}') / 84.8)")"
 
 ffmpeg -y -i "${RAW_OUTPUT}" \
-  -filter:a "atempo=${TEMPO},loudnorm=I=-16:TP=-1.5:LRA=11" \
+  -filter:a "atempo=${TEMPO},highpass=f=75,equalizer=f=190:t=q:w=1.1:g=-1.8,equalizer=f=3200:t=q:w=1.0:g=2.2,deesser=i=0.16:m=0.45:f=0.55,acompressor=threshold=0.11:ratio=2.4:attack=18:release=220:makeup=1.35:knee=3,loudnorm=I=-16:TP=-1.5:LRA=8" \
   -ar 48000 -ac 1 "${FINAL_OUTPUT}"
 
 echo "Vertical narration ready: ${FINAL_OUTPUT}"

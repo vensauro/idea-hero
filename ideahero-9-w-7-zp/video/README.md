@@ -6,7 +6,7 @@ images, colors, and Palmer Lake font as the game.
 The project contains two compositions:
 
 - `IdeaHeroTutorial`: horizontal 1920x1080.
-- `IdeaHeroVertical`: vertical 1080x1920, approximately 85 seconds, with one
+- `IdeaHeroVertical`: vertical 1080x1920, approximately 96 seconds, with one
   visual focus at a time and scene changes aligned to the narration.
 
 ## Generate narration with ElevenLabs
@@ -23,6 +23,21 @@ The command uses Eleven Multilingual v2 with a slower, expressive narrator
 preset. It backs up the original local voice to
 `public/video/narration-vertical-omnivoice.wav` and writes the active track to
 `public/video/narration-vertical.wav`.
+
+## Generate narration with Gemini TTS
+
+The project already reads `GEMINI_API_KEY` from the root `.env` file. Generate a
+separate candidate track with:
+
+```bash
+cd video
+npm run narration:gemini
+```
+
+The Gemini 3.1 Flash TTS narrator is directed to use Brazilian Portuguese,
+clear diction, a measured pace, and natural breathing pauses. It writes to
+`public/video/narration-vertical-gemini.wav` and does not replace the active
+track until it has been reviewed and synchronized.
 
 ## Generate narration with local OmniVoice
 
@@ -50,6 +65,18 @@ bash video/scripts/generate-narration.sh
 
 Replace the final command with `generate-vertical-narration.sh` to clone the
 voice in the vertical version.
+
+To keep the original OmniVoice identity and add a light broadcast-style finish:
+
+```bash
+cd video
+npm run narration:polish:omnivoice
+```
+
+The finish adds a high-pass filter, gentle presence EQ, de-essing, compression,
+and streaming loudness normalization. The voice design can also be changed
+within OmniVoice's supported vocabulary by setting `OMNIVOICE_INSTRUCT` when
+regenerating.
 
 Only clone a voice with the speaker's permission.
 

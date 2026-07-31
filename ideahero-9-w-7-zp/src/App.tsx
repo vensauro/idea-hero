@@ -11,6 +11,7 @@ import type {
   EconomyTransaction,
   GroupVote,
   Journey,
+  JourneyFeedback,
   MarketingPlan,
   PilotSimulation,
   Player,
@@ -462,6 +463,10 @@ function App() {
   const [testingOptions, testingOptionsReady] = useTable(
     tables.room_testing_options,
   );
+  const [journeyFeedbacks, journeyFeedbacksReady] = useTable(
+    tables.room_journey_feedbacks,
+  );
+
 
   const currentProfile = identity
     ? profiles.find((item) => sameIdentity(item.identity, identity))
@@ -2130,6 +2135,7 @@ function GameBoard({
         pilotSimulation={pilotSimulation}
         salesResult={salesResult}
         publishedResult={publishedResult}
+        journeyFeedbacks={journeyFeedbacks}
       />
     );
   }
@@ -3235,6 +3241,7 @@ function JourneyResult({
   pilotSimulation,
   salesResult,
   publishedResult,
+  journeyFeedbacks = [],
 }: {
   room: Room;
   players: Player[];
@@ -3253,10 +3260,67 @@ function JourneyResult({
   pilotSimulation?: PilotSimulation;
   salesResult?: SalesResult;
   publishedResult?: PublishedResult;
+  journeyFeedbacks?: readonly JourneyFeedback[];
 }) {
   const updateJourney = useReducer(reducers.updateJourney);
   const leaveRoom = useReducer(reducers.leaveRoom);
   const publishJourney = useReducer(reducers.publishJourney);
+  const submitJourneyFeedback = useReducer(reducers.submitJourneyFeedback);
+  const myFeedback = journeyFeedbacks.find(
+    (item) =>
+      item.roomId === room.id &&
+      sameIdentity(item.authorIdentity, currentPlayer.identity),
+  );
+  const [feedbackEmail, setFeedbackEmail] = useState(myFeedback?.email ?? "");
+  const [feedbackNps, setFeedbackNps] = useState<number | undefined>(
+    myFeedback?.nps ?? undefined,
+  );
+  const [feedbackNotice, setFeedbackNotice] = useState("");
+  const [feedbackError, setFeedbackError] = useState("");
+  const [submittingFeedback, setSubmittingFeedback] = useState(false);
+
+  useEffect(() => {
+    if (myFeedback) {
+      setFeedbackEmail(myFeedback.email);
+      setFeedbackNps(myFeedback.nps);
+    }
+  }, [myFeedback?.email, myFeedback?.nps]);
+
+  async function handleFeedbackSubmit(event: FormEvent) {
+    event.preventDefault();
+    setFeedbackError("");
+    setFeedbackNotice("");
+
+    const trimmedEmail = feedbackEmail.trim();
+    if (!trimmedEmail) {
+      setFeedbackError("Por favor, informe seu e-mail.");
+      return;
+    }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(trimmedEmail)) {
+      setFeedbackError("Informe um e-mail válido.");
+      return;
+    }
+    if (feedbackNps === undefined || feedbackNps < 0 || feedbackNps > 10) {
+      setFeedbackError("Selecione uma nota de 0 a 10 para o NPS.");
+      return;
+    }
+
+    setSubmittingFeedback(true);
+    try {
+      await submitJourneyFeedback({
+        roomId: room.id,
+        email: trimmedEmail,
+        nps: feedbackNps,
+      });
+      setFeedbackNotice("Obrigado! Seu feedback foi salvo no banco de dados.");
+    } catch (caught) {
+      setFeedbackError(errorMessage(caught));
+    } finally {
+      setSubmittingFeedback(false);
+    }
+  }
+
   const solutionDecision = decisions.find(
     (item) => item.roomId === room.id && item.stage === "SOLUTION",
   );
@@ -3687,6 +3751,83 @@ function JourneyResult({
           </div>
         </form>
       </section>
+
+      <section className="feedback-editor" aria-labelledby="feedback-title">
+        <div className="feedback-heading">
+          <div>
+            <p className="kicker">Sua opinião é fundamental</p>
+            <h2 id="feedback-title">Avalie sua experiência</h2>
+          </div>
+          <span>{myFeedback ? "✓ Feedback salvo" : "Pesquisa NPS"}</span>
+        </div>
+        <form onSubmit={handleFeedbackSubmit}>
+          <label htmlFor="feedback-email">
+            E-mail para contato
+            <input
+              id="feedback-email"
+              type="email"
+              placeholder="seu@email.com"
+              value={feedbackEmail}
+              onChange={(e) => setFeedbackEmail(e.target.value)}
+              disabled={submittingFeedback}
+              required
+            />
+          </label>
+
+          <div className="nps-container">
+            <label className="nps-label">
+              Numa escala de 0 a 10, o quanto você recomendaria esta experiência?
+            </label>
+            <div
+              className="nps-selector"
+              role="radiogroup"
+              aria-label="Nota NPS de 0 a 10"
+            >
+              {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((score) => (
+                <button
+                  key={score}
+                  type="button"
+                  className={`nps-chip ${feedbackNps === score ? "is-selected" : ""}`}
+                  onClick={() => setFeedbackNps(score)}
+                  disabled={submittingFeedback}
+                  aria-checked={feedbackNps === score}
+                  role="radio"
+                >
+                  {score}
+                </button>
+              ))}
+            </div>
+            <div className="nps-scale-labels">
+              <small>0 = Pouco provável</small>
+              <small>10 = Muito provável</small>
+            </div>
+          </div>
+
+          <div className="feedback-footer">
+            <small>
+              {myFeedback
+                ? "Armazenado no SpacetimeDB"
+                : "Seu feedback é gravado com segurança no SpacetimeDB"}
+            </small>
+            <button
+              type="submit"
+              className="primary-button"
+              disabled={submittingFeedback}
+            >
+              {submittingFeedback
+                ? "Enviando..."
+                : myFeedback
+                  ? "Atualizar feedback"
+                  : "Enviar feedback"}
+            </button>
+          </div>
+          {feedbackNotice && (
+            <p className="success-message">✓ {feedbackNotice}</p>
+          )}
+          {feedbackError && <p className="error-message">{feedbackError}</p>}
+        </form>
+      </section>
+
 
       <div className="document-heading">
         <div>

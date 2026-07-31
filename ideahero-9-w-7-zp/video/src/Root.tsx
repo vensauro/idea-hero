@@ -4,7 +4,7 @@ import {IdeaHeroVertical} from "./IdeaHeroVertical";
 
 export const FPS = 30;
 export const DURATION_IN_FRAMES = 75 * FPS;
-export const VERTICAL_DURATION_IN_FRAMES = 85 * FPS;
+export const VERTICAL_DURATION_IN_FRAMES = 96 * FPS;
 
 export const VideoRoot = () => (
   <>

@@ -57,6 +57,7 @@ import SetTestingOptionsReducer from "./set_testing_options_reducer";
 import StartGameReducer from "./start_game_reducer";
 import StartPrototypeActivityReducer from "./start_prototype_activity_reducer";
 import SubmitContributionReducer from "./submit_contribution_reducer";
+import SubmitJourneyFeedbackReducer from "./submit_journey_feedback_reducer";
 import SubmitPrototypeArtifactReducer from "./submit_prototype_artifact_reducer";
 import SubmitPrototypeDrawingStrokeReducer from "./submit_prototype_drawing_stroke_reducer";
 import UpdateJourneyReducer from "./update_journey_reducer";
@@ -86,6 +87,7 @@ import RoomDecisionsRow from "./room_decisions_table";
 import RoomEconomiesRow from "./room_economies_table";
 import RoomEconomyTransactionsRow from "./room_economy_transactions_table";
 import RoomGroupVotesRow from "./room_group_votes_table";
+import RoomJourneyFeedbacksRow from "./room_journey_feedbacks_table";
 import RoomJourneysRow from "./room_journeys_table";
 import RoomPlayersRow from "./room_players_table";
 import RoomStageAssignmentsRow from "./room_stage_assignments_table";
@@ -229,6 +231,13 @@ const tablesSchema = __schema({
     constraints: [
     ],
   }, RoomGroupVotesRow),
+  room_journey_feedbacks: __table({
+    name: 'room_journey_feedbacks',
+    indexes: [
+    ],
+    constraints: [
+    ],
+  }, RoomJourneyFeedbacksRow),
   room_journeys: __table({
     name: 'room_journeys',
     indexes: [
@@ -333,6 +342,7 @@ const reducersSchema = __reducers(
   __reducerSchema("start_game", StartGameReducer),
   __reducerSchema("start_prototype_activity", StartPrototypeActivityReducer),
   __reducerSchema("submit_contribution", SubmitContributionReducer),
+  __reducerSchema("submit_journey_feedback", SubmitJourneyFeedbackReducer),
   __reducerSchema("submit_prototype_artifact", SubmitPrototypeArtifactReducer),
   __reducerSchema("submit_prototype_drawing_stroke", SubmitPrototypeDrawingStrokeReducer),
   __reducerSchema("update_journey", UpdateJourneyReducer),

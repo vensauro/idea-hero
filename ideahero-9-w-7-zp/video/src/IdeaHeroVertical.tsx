@@ -26,14 +26,14 @@ const C = {
 
 const STAGES = [
   ["Cenário", "◌", C.pink],
-  ["Problema", "△", C.orange],
-  ["Insights", "✦", C.sun],
-  ["Ideias", "◇", C.teal],
-  ["Lapidar", "✧", C.lime],
-  ["Protótipo", "▱", C.purple],
-  ["Testar", "↗", C.orange],
-  ["Conquistar", "◎", C.pink],
-  ["Final", "★", C.teal],
+  ["Desafio", "△", C.orange],
+  ["Pistas", "✦", C.sun],
+  ["Caminhos", "◇", C.teal],
+  ["Detalhes", "✧", C.lime],
+  ["Ganha forma", "▱", C.purple],
+  ["Experimentar", "↗", C.orange],
+  ["Companheiros", "◎", C.pink],
+  ["Surpresa", "★", C.teal],
 ] as const;
 
 const enter = (frame: number, fps: number, delay = 0) =>
@@ -151,8 +151,8 @@ const Progress = ({active}: {active: number}) => (
 const Intro = ({duration}: {duration: number}) => {
   const frame = useCurrentFrame();
   const {fps} = useVideoConfig();
-  const secondBeat = frame >= 72;
-  const local = secondBeat ? frame - 72 : frame;
+  const secondBeat = frame >= 86;
+  const local = secondBeat ? frame - 86 : frame;
   const scale = enter(local, fps);
   return (
     <Shell duration={duration} accent={C.teal}>
@@ -246,9 +246,14 @@ const Purpose = ({duration}: {duration: number}) => {
 const Journey = ({duration}: {duration: number}) => {
   const frame = useCurrentFrame();
   const {fps} = useVideoConfig();
-  const segment = duration / STAGES.length;
-  const active = Math.min(STAGES.length - 1, Math.floor(frame / segment));
-  const local = frame - active * segment;
+  // These anchors come from the timestamped Gemini narration. The steps are
+  // deliberately uneven because the spoken descriptions are uneven too.
+  const stageStartFrames = [0, 133, 240, 295, 343, 401, 471, 571, 653];
+  const active = stageStartFrames.reduce(
+    (current, start, index) => (frame >= start ? index : current),
+    0,
+  );
+  const local = frame - stageStartFrames[active];
   const [label, icon, color] = STAGES[active];
   const scale = enter(local, fps);
   const rotate = interpolate(scale, [0, 1], [-8, 0]);
@@ -378,8 +383,8 @@ const Surprise = ({duration}: {duration: number}) => {
 const Group = ({duration}: {duration: number}) => {
   const frame = useCurrentFrame();
   const {fps} = useVideoConfig();
-  const cardBeat = frame >= 210;
-  const local = cardBeat ? frame - 210 : frame;
+  const cardBeat = frame >= 256;
+  const local = cardBeat ? frame - 256 : frame;
   return (
     <Shell duration={duration} accent={C.teal}>
       <div style={{position: "absolute", inset: "150px 70px 120px"}}>
@@ -468,8 +473,8 @@ const Group = ({duration}: {duration: number}) => {
 const Cards = ({duration}: {duration: number}) => {
   const frame = useCurrentFrame();
   const {fps} = useVideoConfig();
-  const beat = frame < 96 ? 0 : frame < 251 ? 1 : 2;
-  const local = beat === 0 ? frame : beat === 1 ? frame - 96 : frame - 251;
+  const beat = frame < 88 ? 0 : frame < 239 ? 1 : 2;
+  const local = beat === 0 ? frame : beat === 1 ? frame - 88 : frame - 239;
   const scale = enter(local, fps);
   return (
     <Shell duration={duration} accent={[C.pink, C.sun, C.teal][beat]}>
@@ -641,29 +646,29 @@ export const IdeaHeroVertical = () => (
       }
     `}</style>
     <Audio src={staticFile("video/narration-vertical.wav")} volume={1} />
-    <Sequence from={0} durationInFrames={190}>
-      <Intro duration={190} />
+    <Sequence from={0} durationInFrames={242}>
+      <Intro duration={242} />
     </Sequence>
-    <Sequence from={190} durationInFrames={170}>
-      <Purpose duration={170} />
+    <Sequence from={242} durationInFrames={188}>
+      <Purpose duration={188} />
     </Sequence>
-    <Sequence from={360} durationInFrames={630}>
-      <Journey duration={630} />
+    <Sequence from={430} durationInFrames={737}>
+      <Journey duration={737} />
     </Sequence>
-    <Sequence from={990} durationInFrames={210}>
-      <Surprise duration={210} />
+    <Sequence from={1167} durationInFrames={209}>
+      <Surprise duration={209} />
     </Sequence>
-    <Sequence from={1200} durationInFrames={360}>
-      <Group duration={360} />
+    <Sequence from={1376} durationInFrames={400}>
+      <Group duration={400} />
     </Sequence>
-    <Sequence from={1560} durationInFrames={410}>
-      <Cards duration={410} />
+    <Sequence from={1776} durationInFrames={488}>
+      <Cards duration={488} />
     </Sequence>
-    <Sequence from={1970} durationInFrames={490}>
-      <Modes duration={490} />
+    <Sequence from={2264} durationInFrames={467}>
+      <Modes duration={467} />
     </Sequence>
-    <Sequence from={2460} durationInFrames={90}>
-      <CallToAction duration={90} />
+    <Sequence from={2731} durationInFrames={149}>
+      <CallToAction duration={149} />
     </Sequence>
   </AbsoluteFill>
 );

@@ -574,6 +574,19 @@ const publishedResult = table(
   },
 );
 
+const journeyFeedback = table(
+  { name: "journey_feedback" },
+  {
+    id: t.u64().primaryKey().autoInc(),
+    roomId: t.u64().index("btree"),
+    authorIdentity: t.identity().index("btree"),
+    email: t.string(),
+    nps: t.u8(),
+    createdAt: t.timestamp(),
+    updatedAt: t.timestamp(),
+  },
+);
+
 const contributionStatus = t.object("ContributionStatus", {
   id: t.u64(),
   roomId: t.u64(),
@@ -627,6 +640,7 @@ const spacetimedb = schema({
   decision,
   journey,
   publishedResult,
+  journeyFeedback,
 });
 export default spacetimedb;
 
@@ -1005,6 +1019,21 @@ export const room_journeys = spacetimedb.view(
       if (currentJourney) journeys.push(currentJourney);
     }
     return journeys;
+  },
+);
+
+export const room_journey_feedbacks = spacetimedb.view(
+  { name: "room_journey_feedbacks", public: true },
+  t.array(journeyFeedback.rowType),
+  (ctx) => {
+    const feedbacks = [];
+    for (const membership of ctx.db.player.identity.filter(ctx.sender)) {
+      if (!membership.active) continue;
+      feedbacks.push(
+        ...ctx.db.journeyFeedback.roomId.filter(membership.roomId),
+      );
+    }
+    return feedbacks;
   },
 );
 
@@ -4034,6 +4063,64 @@ export const publish_journey = spacetimedb.reducer(
     });
   },
 );
+
+export const submit_journey_feedback = spacetimedb.reducer(
+  { roomId: t.u64(), email: t.string(), nps: t.u8() },
+  (ctx, { roomId, email, nps }) => {
+    const currentRoom = ctx.db.room.id.find(roomId);
+    if (!currentRoom) {
+      throw new SenderError("Sala não encontrada.");
+    }
+    if (currentRoom.status !== "FINISHED") {
+      throw new SenderError(
+        "A jornada precisa estar concluída para enviar feedback.",
+      );
+    }
+    const currentPlayer = [...ctx.db.player.iter()].find(
+      (item) =>
+        item.roomId === roomId &&
+        item.active &&
+        item.identity.isEqual(ctx.sender),
+    );
+    if (!currentPlayer) {
+      throw new SenderError("Você não pertence a esta sala.");
+    }
+    const trimmedEmail = email.trim();
+    if (!trimmedEmail) {
+      throw new SenderError("Por favor, informe seu e-mail.");
+    }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(trimmedEmail)) {
+      throw new SenderError("Informe um e-mail válido.");
+    }
+    if (nps > 10) {
+      throw new SenderError("A nota NPS deve ser de 0 a 10.");
+    }
+
+    const existing = [...ctx.db.journeyFeedback.roomId.filter(roomId)].find(
+      (item) => item.authorIdentity.isEqual(ctx.sender),
+    );
+    if (existing) {
+      ctx.db.journeyFeedback.id.update({
+        ...existing,
+        email: trimmedEmail,
+        nps,
+        updatedAt: ctx.timestamp,
+      });
+    } else {
+      ctx.db.journeyFeedback.insert({
+        id: 0n,
+        roomId,
+        authorIdentity: ctx.sender,
+        email: trimmedEmail,
+        nps,
+        createdAt: ctx.timestamp,
+        updatedAt: ctx.timestamp,
+      });
+    }
+  },
+);
+
 
 export const leave_room = spacetimedb.reducer(
   { roomId: t.u64() },
