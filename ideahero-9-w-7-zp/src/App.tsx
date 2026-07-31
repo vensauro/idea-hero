@@ -2255,6 +2255,7 @@ function GameBoard({
         decisions={decisions}
         stageOutcomes={stageOutcomes}
         stageInsights={roomStageInsights}
+        testingOptions={testingOptions}
         journey={journeys.find((item) => item.roomId === room.id)}
         currentPlayer={currentPlayer}
         economy={economy}
@@ -3299,6 +3300,7 @@ function JourneyResult({
   decisions,
   stageOutcomes,
   stageInsights,
+  testingOptions,
   journey,
   currentPlayer,
   economy,
@@ -3319,6 +3321,7 @@ function JourneyResult({
   decisions: readonly Decision[];
   stageOutcomes: readonly StageOutcome[];
   stageInsights: readonly StageInsight[];
+  testingOptions: readonly TestingOption[];
   journey?: Journey;
   currentPlayer: Player;
   economy: RoomEconomy;
@@ -3572,6 +3575,15 @@ function JourneyResult({
       "copy-link",
       () => copyText(publishedUrl),
       "Link publico copiado.",
+    );
+  }
+
+  async function publishResult() {
+    const token = createPublicResultToken();
+    await runFinalAction(
+      "publish",
+      () => publishJourney({ roomId: room.id, token }),
+      "Resultado publicado. Link publico gerado.",
     );
   }
 
