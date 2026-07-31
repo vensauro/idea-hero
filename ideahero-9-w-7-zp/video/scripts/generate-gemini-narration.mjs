@@ -72,7 +72,7 @@ const synthesize = async (spokenText) => {
   return Buffer.from(inlineData.data, 'base64');
 };
 
-const [mainTranscript, closingTranscript] = transcript.split(/\n\s*\n(?=Agora é com você\.)/);
+const [mainTranscript, closingTranscript] = transcript.split(/\n\s*\n(?=Agora é com vocês!)/);
 if (!mainTranscript || !closingTranscript) {
   throw new Error('Could not split the narration before the call to action.');
 }

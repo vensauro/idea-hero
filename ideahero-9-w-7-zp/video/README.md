@@ -6,7 +6,7 @@ images, colors, and Palmer Lake font as the game.
 The project contains two compositions:
 
 - `IdeaHeroTutorial`: horizontal 1920x1080.
-- `IdeaHeroVertical`: vertical 1080x1920, approximately 96 seconds, with one
+- `IdeaHeroVertical`: vertical 1080x1920, approximately 99 seconds, with one
   visual focus at a time and scene changes aligned to the narration.
 
 ## Generate narration with ElevenLabs

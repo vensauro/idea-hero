@@ -151,8 +151,8 @@ const Progress = ({active}: {active: number}) => (
 const Intro = ({duration}: {duration: number}) => {
   const frame = useCurrentFrame();
   const {fps} = useVideoConfig();
-  const secondBeat = frame >= 86;
-  const local = secondBeat ? frame - 86 : frame;
+  const secondBeat = frame >= 87;
+  const local = secondBeat ? frame - 87 : frame;
   const scale = enter(local, fps);
   return (
     <Shell duration={duration} accent={C.teal}>
@@ -248,7 +248,7 @@ const Journey = ({duration}: {duration: number}) => {
   const {fps} = useVideoConfig();
   // These anchors come from the timestamped Gemini narration. The steps are
   // deliberately uneven because the spoken descriptions are uneven too.
-  const stageStartFrames = [0, 133, 240, 295, 343, 401, 471, 571, 653];
+  const stageStartFrames = [0, 154, 289, 360, 438, 493, 543, 619, 722];
   const active = stageStartFrames.reduce(
     (current, start, index) => (frame >= start ? index : current),
     0,
@@ -383,8 +383,8 @@ const Surprise = ({duration}: {duration: number}) => {
 const Group = ({duration}: {duration: number}) => {
   const frame = useCurrentFrame();
   const {fps} = useVideoConfig();
-  const cardBeat = frame >= 256;
-  const local = cardBeat ? frame - 256 : frame;
+  const cardBeat = frame >= 180;
+  const local = cardBeat ? frame - 180 : frame;
   return (
     <Shell duration={duration} accent={C.teal}>
       <div style={{position: "absolute", inset: "150px 70px 120px"}}>
@@ -473,8 +473,8 @@ const Group = ({duration}: {duration: number}) => {
 const Cards = ({duration}: {duration: number}) => {
   const frame = useCurrentFrame();
   const {fps} = useVideoConfig();
-  const beat = frame < 88 ? 0 : frame < 239 ? 1 : 2;
-  const local = beat === 0 ? frame : beat === 1 ? frame - 88 : frame - 239;
+  const beat = frame < 82 ? 0 : frame < 221 ? 1 : 2;
+  const local = beat === 0 ? frame : beat === 1 ? frame - 82 : frame - 221;
   const scale = enter(local, fps);
   return (
     <Shell duration={duration} accent={[C.pink, C.sun, C.teal][beat]}>
@@ -612,7 +612,7 @@ const CallToAction = ({duration}: {duration: number}) => {
           <FocusText size={126}>
             Agora é
             <br />
-            <span style={{color: C.pink}}>com você.</span>
+            <span style={{color: C.pink}}>com vocês!</span>
           </FocusText>
         </div>
         <div
@@ -629,7 +629,7 @@ const CallToAction = ({duration}: {duration: number}) => {
             fontWeight: 950,
           }}
         >
-          Junte a galera
+          Criem uma sala
           <br />e divirtam-se!
         </div>
       </div>
@@ -646,29 +646,29 @@ export const IdeaHeroVertical = () => (
       }
     `}</style>
     <Audio src={staticFile("video/narration-vertical.wav")} volume={1} />
-    <Sequence from={0} durationInFrames={242}>
-      <Intro duration={242} />
+    <Sequence from={0} durationInFrames={237}>
+      <Intro duration={237} />
     </Sequence>
-    <Sequence from={242} durationInFrames={188}>
-      <Purpose duration={188} />
+    <Sequence from={237} durationInFrames={180}>
+      <Purpose duration={180} />
     </Sequence>
-    <Sequence from={430} durationInFrames={737}>
-      <Journey duration={737} />
+    <Sequence from={417} durationInFrames={780}>
+      <Journey duration={780} />
     </Sequence>
-    <Sequence from={1167} durationInFrames={209}>
-      <Surprise duration={209} />
+    <Sequence from={1197} durationInFrames={240}>
+      <Surprise duration={240} />
     </Sequence>
-    <Sequence from={1376} durationInFrames={400}>
-      <Group duration={400} />
+    <Sequence from={1437} durationInFrames={360}>
+      <Group duration={360} />
     </Sequence>
-    <Sequence from={1776} durationInFrames={488}>
-      <Cards duration={488} />
+    <Sequence from={1797} durationInFrames={450}>
+      <Cards duration={450} />
     </Sequence>
-    <Sequence from={2264} durationInFrames={467}>
-      <Modes duration={467} />
+    <Sequence from={2247} durationInFrames={570}>
+      <Modes duration={570} />
     </Sequence>
-    <Sequence from={2731} durationInFrames={149}>
-      <CallToAction duration={149} />
+    <Sequence from={2817} durationInFrames={243}>
+      <CallToAction duration={243} />
     </Sequence>
   </AbsoluteFill>
 );

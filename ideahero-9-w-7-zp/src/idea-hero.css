@@ -1915,7 +1915,7 @@ h1 {
 
 .artifact-mode-tabs {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(3, 1fr);
   gap: 8px;
   margin: 18px 0 12px;
   padding: 5px;
@@ -2523,7 +2523,7 @@ h1 {
   }
 
   .artifact-mode-tabs {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(3, 1fr);
     gap: 3px;
   }
 

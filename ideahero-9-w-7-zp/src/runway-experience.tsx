@@ -1302,7 +1302,7 @@ export function PrototypeStage({
   const voteReady = useReducer(reducers.votePrototypeReady);
   const voteExtension = useReducer(reducers.votePrototypeExtension);
   const finishActivity = useReducer(reducers.finishPrototypeActivity);
-  const [mode, setMode] = useState<"DRAWING" | "IMAGE" | "AUDIO" | "AI">(
+  const [mode, setMode] = useState<"DRAWING" | "IMAGE" | "AUDIO">(
     "DRAWING",
   );
   const [caption, setCaption] = useState("");
@@ -1461,29 +1461,30 @@ export function PrototypeStage({
               <p className="kicker">Protótipo da equipe</p>
               <h3>Três formas de tornar a ideia real</h3>
             </div>
-            <span>{usedKinds.size}/4 linguagens criativas</span>
+            <span>
+              {(["DRAWING", "IMAGE", "AUDIO"] as const).filter((k) =>
+                usedKinds.has(k),
+              ).length}
+              /3 linguagens criativas
+            </span>
           </div>
           <div
             className="creative-bonus-progress"
             aria-label="Bônus por linguagens criativas"
           >
-            {(["DRAWING", "IMAGE", "AI_IMAGE", "AUDIO"] as const).map(
-              (kind) => (
-                <span
-                  className={usedKinds.has(kind) ? "is-earned" : ""}
-                  key={kind}
-                >
-                  {kind === "DRAWING"
-                    ? "Desenho"
-                    : kind === "IMAGE"
-                      ? "Foto"
-                      : kind === "AI_IMAGE"
-                        ? "Imagem com IA"
-                        : "Som"}
-                  <b>+{PROTOTYPE_CREATIVE_BONUS}</b>
-                </span>
-              ),
-            )}
+            {(["DRAWING", "IMAGE", "AUDIO"] as const).map((kind) => (
+              <span
+                className={usedKinds.has(kind) ? "is-earned" : ""}
+                key={kind}
+              >
+                {kind === "DRAWING"
+                  ? "Desenho"
+                  : kind === "IMAGE"
+                    ? "Foto"
+                    : "Som"}
+                <b>+{PROTOTYPE_CREATIVE_BONUS}</b>
+              </span>
+            ))}
           </div>
           {drawingStrokes.length > 0 && !canEdit && (
             <DrawingBoard
@@ -1530,7 +1531,7 @@ export function PrototypeStage({
             role="tablist"
             aria-label="Forma de criar o protótipo"
           >
-            {(["DRAWING", "IMAGE", "AUDIO", "AI"] as const).map((value) => (
+            {(["DRAWING", "IMAGE", "AUDIO"] as const).map((value) => (
               <button
                 type="button"
                 role="tab"
@@ -1543,35 +1544,19 @@ export function PrototypeStage({
                   ? "Desenhar"
                   : value === "IMAGE"
                     ? "Foto"
-                    : value === "AUDIO"
-                      ? "Som"
-                      : "Criar com IA"}
+                    : "Som"}
               </button>
             ))}
           </div>
-          {mode !== "AI" && (
-            <label className="artifact-caption">
-              Uma legenda curta, se ajudar
-              <input
-                value={caption}
-                maxLength={120}
-                onChange={(event) => setCaption(event.target.value)}
-                placeholder="O que estamos mostrando?"
-              />
-            </label>
-          )}
-          {mode === "AI" && (
-            <div id="prototype-tool-ai" role="tabpanel">
-              <IdeaImageStudio
-                room={room}
-                defaultIdea={caption || prototype.challengeDescription}
-                disabled={!canEdit || pending}
-                onChooseImage={(key, imageCaption, kind) =>
-                  saveArtifact(kind, key, imageCaption)
-                }
-              />
-            </div>
-          )}
+          <label className="artifact-caption">
+            Uma legenda curta, se ajudar
+            <input
+              value={caption}
+              maxLength={120}
+              onChange={(event) => setCaption(event.target.value)}
+              placeholder="O que estamos mostrando?"
+            />
+          </label>
           {mode === "DRAWING" ? (
             <div id="prototype-tool-drawing" role="tabpanel">
               <DrawingBoard
@@ -1585,7 +1570,7 @@ export function PrototypeStage({
                 }
               />
             </div>
-          ) : mode !== "AI" ? (
+          ) : (
             <div id={`prototype-tool-${mode.toLowerCase()}`} role="tabpanel">
               <label className="artifact-upload-card">
                 <span aria-hidden="true">{mode === "IMAGE" ? "▣" : "♪"}</span>
@@ -1609,7 +1594,7 @@ export function PrototypeStage({
                 />
               </label>
             </div>
-          ) : null}
+          )}
 
           {hasArtifact && (
             <div className="prototype-group-actions">
@@ -2426,22 +2411,25 @@ export function PrototypeShowcase({
           </p>
           <h3>{prototype.caption || "Protótipo construído em grupo"}</h3>
         </div>
-        <span>{usedKinds.size}/4 linguagens criativas</span>
+        <span>
+          {(["DRAWING", "IMAGE", "AUDIO"] as const).filter((k) =>
+            usedKinds.has(k),
+          ).length}
+          /3 linguagens criativas
+        </span>
       </div>
 
       <div
         className="creative-bonus-progress"
         aria-label="Bônus por linguagens criativas"
       >
-        {(["DRAWING", "IMAGE", "AI_IMAGE", "AUDIO"] as const).map((kind) => (
+        {(["DRAWING", "IMAGE", "AUDIO"] as const).map((kind) => (
           <span className={usedKinds.has(kind) ? "is-earned" : ""} key={kind}>
             {kind === "DRAWING"
               ? "Desenho"
               : kind === "IMAGE"
                 ? "Foto"
-                : kind === "AI_IMAGE"
-                  ? "Imagem com IA"
-                  : "Som"}
+                : "Som"}
             <b>+{PROTOTYPE_CREATIVE_BONUS}</b>
           </span>
         ))}

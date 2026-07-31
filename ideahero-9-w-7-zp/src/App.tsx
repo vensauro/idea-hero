@@ -584,7 +584,8 @@ function App() {
     !groupVotesReady ||
     !pilotSimulationsReady ||
     !marketingPlansReady ||
-    !salesResultsReady
+    !salesResultsReady ||
+    !journeyFeedbacksReady
   ) {
     return <LoadingScreen label="Sincronizando a jornada…" />;
   }
@@ -683,6 +684,9 @@ function App() {
   const roomPublishedResult = publishedResults.find(
     (item) => item.roomId === currentRoom.id,
   );
+  const roomJourneyFeedbacks = journeyFeedbacks.filter(
+    (item) => item.roomId === currentRoom.id,
+  );
 
   if (!roomEconomy) {
     return <LoadingScreen label="Preparando a economia da jornada…" />;
@@ -716,6 +720,7 @@ function App() {
       marketingPlan={roomMarketing}
       salesResult={roomSales}
       publishedResult={roomPublishedResult}
+      journeyFeedbacks={roomJourneyFeedbacks}
     />
   );
 }
@@ -1594,6 +1599,7 @@ function GameBoard({
   marketingPlan,
   salesResult,
   publishedResult,
+  journeyFeedbacks = [],
 }: {
   room: Room;
   players: Player[];
@@ -1621,6 +1627,7 @@ function GameBoard({
   marketingPlan?: MarketingPlan;
   salesResult?: SalesResult;
   publishedResult?: PublishedResult;
+  journeyFeedbacks?: readonly JourneyFeedback[];
 }) {
   const submitContribution = useReducer(reducers.submitContribution);
   const advanceStage = useReducer(reducers.advanceStage);
@@ -2023,14 +2030,14 @@ function GameBoard({
   }
 
   useEffect(() => {
-    if (!isHost || insightPending) return;
+    if (insightPending) return;
     if (stage !== "TESTING" && stage !== "CONQUERING") return;
     if (insightForStage || !insightTriggered) return;
     if (insightAttemptedRef.current.has(stage)) return;
     insightAttemptedRef.current.add(stage);
     void generateStageInsight(stage);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isHost, stage, insightForStage, insightTriggered, insightPending]);
+  }, [stage, insightForStage, insightTriggered, insightPending]);
 
   const guidanceTopic = `STAGE_GUIDANCE_${stage}`;
   const guidanceAcknowledgements = groupVotes.filter(
@@ -2985,21 +2992,7 @@ function GameBoard({
                 className="stage-insight-pending"
                 style={{ padding: "1rem 0" }}
               >
-                {insightPending ? (
-                  <p className="empty-state">Preparando a reação da etapa…</p>
-                ) : (
-                  <button
-                    type="button"
-                    className="primary-button"
-                    onClick={() =>
-                      void generateStageInsight(
-                        stage as "TESTING" | "CONQUERING",
-                      )
-                    }
-                  >
-                    Gerar reação da etapa
-                  </button>
-                )}
+                <p className="empty-state">Preparando a reação da etapa…</p>
                 {insightError && (
                   <p className="error-message">{insightError}</p>
                 )}
@@ -3927,11 +3920,7 @@ function JourneyResult({
           </div>
 
           <div className="feedback-footer">
-            <small>
-              {myFeedback
-                ? "Armazenado no SpacetimeDB"
-                : "Seu feedback é gravado com segurança no SpacetimeDB"}
-            </small>
+            <small>{myFeedback ? "Feedback salvo" : ""}</small>
             <button
               type="submit"
               className="primary-button"
