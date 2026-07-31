@@ -23,6 +23,7 @@ import type {
   RoomEconomy,
   SalesResult,
   StageCost,
+  StageInsight,
   StageAssignment,
   StageOutcome,
   StageSession,
@@ -2253,6 +2254,7 @@ function GameBoard({
         cardDraws={cardDraws}
         decisions={decisions}
         stageOutcomes={stageOutcomes}
+        stageInsights={roomStageInsights}
         journey={journeys.find((item) => item.roomId === room.id)}
         currentPlayer={currentPlayer}
         economy={economy}
@@ -3296,6 +3298,7 @@ function JourneyResult({
   cardDraws,
   decisions,
   stageOutcomes,
+  stageInsights,
   journey,
   currentPlayer,
   economy,
@@ -3315,6 +3318,7 @@ function JourneyResult({
   cardDraws: readonly CardDraw[];
   decisions: readonly Decision[];
   stageOutcomes: readonly StageOutcome[];
+  stageInsights: readonly StageInsight[];
   journey?: Journey;
   currentPlayer: Player;
   economy: RoomEconomy;
@@ -3327,6 +3331,9 @@ function JourneyResult({
   publishedResult?: PublishedResult;
   journeyFeedbacks?: readonly JourneyFeedback[];
 }) {
+  const roomStageInsights = stageInsights.filter(
+    (item) => item.roomId === room.id,
+  );
   const updateJourney = useReducer(reducers.updateJourney);
   const leaveRoom = useReducer(reducers.leaveRoom);
   const publishJourney = useReducer(reducers.publishJourney);
