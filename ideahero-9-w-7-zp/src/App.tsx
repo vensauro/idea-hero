@@ -1490,9 +1490,44 @@ function StageAdvanceConfirmationPanel({
     ? STAGE_CONTENT[nextStageKey]?.eyebrow
     : "";
   const isFinal = stage === "FINAL";
+  const activePlayer = [...onlinePlayers].sort((a, b) =>
+    a.id < b.id ? -1 : 1,
+  )[stageIndex % onlinePlayers.length];
+  const isActivePlayer = sameIdentity(
+    activePlayer?.identity,
+    currentPlayer.identity,
+  );
   const targetLabel = isFinal
     ? "Concluir jornada"
     : `Avançar para ${nextStageEyebrow || "próxima etapa"}`;
+
+  if (isFinal) {
+    return (
+      <div className="stage-advance-minimal-container" aria-live="polite">
+        {!stagePrerequisiteMet ? (
+          <div className="minimal-prereq-alert">
+            <span>{prerequisiteMessage}</span>
+          </div>
+        ) : isActivePlayer ? (
+          <button
+            type="button"
+            className="primary-button minimal-advance-btn"
+            disabled={actionPending}
+            onClick={() =>
+              void runStageAction(() => advanceStage({ roomId: room.id }))
+            }
+          >
+            {targetLabel}
+          </button>
+        ) : (
+          <p className="waiting-note">
+            {activePlayer?.displayName ?? "O jogador ativo"} pode concluir a
+            jornada.
+          </p>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div className="stage-advance-minimal-container" aria-live="polite">
@@ -2493,7 +2528,7 @@ function GameBoard({
                 {players.map((player) => {
                   const isPlayerHost = sameIdentity(
                     player.identity,
-                    room.hostIdentity,
+                    room.ownerIdentity,
                   );
                   return (
                     <div
@@ -2873,7 +2908,7 @@ function GameBoard({
                     placeholder={assignedPlaceholder}
                     minLength={2}
                     maxLength={280}
-                    required={stage !== "POLISHING"}
+                    required
                   />
                   <div className="form-input-meta">
                     <div className="contribution-status" aria-live="polite">
@@ -2905,10 +2940,7 @@ function GameBoard({
                     />
                     <button
                       className="primary-button"
-                      disabled={
-                        saving ||
-                        (stage === "POLISHING" && draft.trim().length === 0)
-                      }
+                      disabled={saving}
                     >
                       {saving
                         ? "Salvando…"

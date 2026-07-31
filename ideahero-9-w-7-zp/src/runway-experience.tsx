@@ -10,6 +10,7 @@ import { useReducer } from "spacetimedb/react";
 import { reducers } from "./module_bindings";
 import type {
   Card,
+  CardDraw,
   Decision,
   EconomyTransaction,
   GroupVote,
@@ -304,7 +305,7 @@ export function EconomyEventOverlay({
   const funding = visible.reason === "FUNDING_OPPORTUNITY";
 
   function skipAnimations() {
-    const latest = ordered.at(-1);
+    const latest = ordered[ordered.length - 1];
     if (latest)
       window.sessionStorage.setItem(storageKey, String(latest.sequence));
     if (latest) setSeenSequence(latest.sequence);
@@ -1215,7 +1216,7 @@ function DrawingBoard({
     const context = canvasRef.current?.getContext("2d");
     if (!context) return;
     const current = point(event);
-    const previous = pointsRef.current.at(-1);
+    const previous = pointsRef.current[pointsRef.current.length - 1];
     if (!previous) return;
     pointsRef.current.push(current);
     paintStroke(context, [previous, current], drawingColorFor(currentPlayer));

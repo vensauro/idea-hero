@@ -3271,6 +3271,9 @@ export const vote_stage_advance = spacetimedb.reducer(
         "A confirmação da equipe é feita a partir de Lapidando.",
       );
     }
+    if (stage === "FINAL") {
+      throw new SenderError("O jogador ativo conclui a jornada diretamente.");
+    }
 
     if (stage === "PROTOTYPE") {
       if (!ctx.db.projectPrototype.roomId.find(roomId)?.committed) {
@@ -3710,9 +3713,7 @@ export const advance_stage = spacetimedb.reducer(
     }
 
     if (
-      ["PROTOTYPE", "TESTING", "CONQUERING", "FINAL"].includes(
-        currentRoom.currentStage,
-      )
+      ["PROTOTYPE", "TESTING", "CONQUERING"].includes(currentRoom.currentStage)
     ) {
       const eligiblePlayers = Array.from(
         ctx.db.player.roomId.filter(roomId),
@@ -3728,6 +3729,19 @@ export const advance_stage = spacetimedb.reducer(
       );
       if (confirmedVotes.length < eligiblePlayers.length) {
         throw new SenderError("Toda a equipe precisa confirmar para avançar.");
+      }
+    }
+
+    if (currentRoom.currentStage === "FINAL") {
+      const activePlayers = Array.from(ctx.db.player.roomId.filter(roomId))
+        .filter((item) => item.active && item.online)
+        .sort((a, b) => (a.id < b.id ? -1 : 1));
+      const activePlayer =
+        activePlayers[Number(currentRoom.stageIndex) % activePlayers.length];
+      if (!activePlayer || !activePlayer.identity.isEqual(ctx.sender)) {
+        throw new SenderError(
+          "Apenas o jogador ativo pode concluir a jornada.",
+        );
       }
     }
 
