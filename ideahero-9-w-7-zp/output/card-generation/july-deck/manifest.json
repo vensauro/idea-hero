@@ -1,0 +1,367 @@
+{
+  "run": "july-deck",
+  "completed": 40,
+  "requested": 40,
+  "cards": [
+    {
+      "id": "f51867c6-b977-4f7a-8613-e0ed1b66fb32",
+      "stage": "SCENARIO",
+      "title": "O Gigante de Papel Flutuante",
+      "lens": "Delicadeza Monumental",
+      "imagePath": "/cards/generated/july-deck/01-f51867c6-b977-4f7a-8613-e0ed1b66fb32.png",
+      "altText": "Uma baleia gigante feita de origami de papel flutua através de uma névoa lilás sobre uma linha de trem abandonada e coberta por plantas.",
+      "provocation": "De que maneira a introdução de uma ideia delicada pode redefinir um contexto aparentemente abandonado?"
+    },
+    {
+      "id": "2b6f1d7b-090a-452e-9e80-0c6c2fe50522",
+      "stage": "SCENARIO",
+      "title": "Profundezas do Conforto",
+      "lens": "O familiar e o abismo",
+      "imagePath": "/cards/generated/july-deck/02-2b6f1d7b-090a-452e-9e80-0c6c2fe50522.png",
+      "altText": "Quarto silencioso com chão feito de água do mar calma e escura. Sob uma cama de madeira, águas-vivas brilhantes flutuam sob a superfície.",
+      "provocation": "Como nossa solução se comporta quando um ambiente seguro e cotidiano passa a conviver com incertezas ou oportunidades completamente inexploradas?"
+    },
+    {
+      "id": "635f255f-6e4c-4566-b022-26eb27da6afb",
+      "stage": "SCENARIO",
+      "title": "Biblioteca das Sequóias Ancestrais",
+      "lens": "Memória biológica",
+      "imagePath": "/cards/generated/july-deck/03-635f255f-6e4c-4566-b022-26eb27da6afb.png",
+      "altText": "Uma biblioteca ao ar livre com prateleiras de livros integradas aos troncos de gigantescas sequóias vermelhas, sob um céu crepuscular iluminado por duas luas e um brilho dourado.",
+      "provocation": "Como o seu projeto mudaria se todo o conhecimento acumulado precisasse coexistir e crescer organicamente dentro de um ecossistema vivo?"
+    },
+    {
+      "id": "20e2726d-8cb7-4298-9bdb-288029dc9b6a",
+      "stage": "SCENARIO",
+      "title": "Trilhos de Sopro e Areia",
+      "lens": "Infraestrutura Sonora",
+      "imagePath": "/cards/generated/july-deck/04-20e2726d-8cb7-4298-9bdb-288029dc9b6a.png",
+      "altText": "Trilhos de trem compostos por tubos de instrumentos musicais de latão serpenteando por dunas de areia rosa pastel sob iluminação suave.",
+      "provocation": "Como a fusão entre transporte e harmonia sonora pode redefinir os fluxos da nossa solução?"
+    },
+    {
+      "id": "2afbb6b6-efa8-466e-b699-5d93c17cc8ac",
+      "stage": "SCENARIO",
+      "title": "Santuário Efêmero nas Alturas",
+      "lens": "Proteção Efêmera",
+      "imagePath": "/cards/generated/july-deck/05-2afbb6b6-efa8-466e-b699-5d93c17cc8ac.png",
+      "altText": "Pintura em aquarela digital de uma casa de chá tradicional flutuando dentro de uma grande bolha de sabão translúcida sobre o pico de uma montanha coberta por névoa.",
+      "provocation": "Como poderíamos projetar soluções leves e temporárias que convivam com cenários monumentais e permanentes?"
+    },
+    {
+      "id": "84b60d60-b3d0-4d12-894e-0c265f9727e4",
+      "stage": "PROBLEM",
+      "title": "A Ilusão da Superfície",
+      "lens": "Aparências Enganosas",
+      "imagePath": "/cards/generated/july-deck/06-84b60d60-b3d0-4d12-894e-0c265f9727e4.png",
+      "altText": "Uma grande esfera emaranhada de fios dourados flutua no ar, projetando sombras em forma de fantoches que não correspondem ao seu formato real.",
+      "provocation": "Qual sintoma visível do nosso problema está mascarando uma causa raiz muito mais complexa e emaranhada?"
+    },
+    {
+      "id": "898ca192-8b1c-4292-82d6-ebed5f7935f3",
+      "stage": "PROBLEM",
+      "title": "Tempestade em Vaso Frágil",
+      "lens": "Limites de contenção",
+      "imagePath": "/cards/generated/july-deck/07-898ca192-8b1c-4292-82d6-ebed5f7935f3.png",
+      "altText": "Uma xícara de chá de porcelana rachada ao meio. Dentro dela, uma pequena nuvem de tempestade paira e chove sobre um minúsculo deserto seco.",
+      "provocation": "Que estrutura atual do nosso processo é frágil demais para conter o tamanho do problema que enfrentamos?"
+    },
+    {
+      "id": "2be65add-e487-4d34-b957-976d32aef258",
+      "stage": "PROBLEM",
+      "title": "Caminho de Vidro e Areia",
+      "lens": "Fragilidade temporal",
+      "imagePath": "/cards/generated/july-deck/08-2be65add-e487-4d34-b957-976d32aef258.png",
+      "altText": "Uma ponte feita de delicadas ampulhetas de vidro atravessa um abismo escuro, vazando lentamente areia neon no vazio.",
+      "provocation": "Qual elemento do nosso processo atual está se desgastando silenciosamente com o passar do tempo?"
+    },
+    {
+      "id": "f0e12939-4c74-455a-a68c-6f748b92fc40",
+      "stage": "PROBLEM",
+      "title": "O Labirinto das Escolhas",
+      "lens": "Excesso de Opções",
+      "imagePath": "/cards/generated/july-deck/09-f0e12939-4c74-455a-a68c-6f748b92fc40.png",
+      "altText": "Ilustração em tons suaves de um labirinto formado por grandes portas flutuantes. Cada porta aberta exibe um espelho que reflete uma estação do ano diferente.",
+      "provocation": "De que maneira o excesso de caminhos possíveis está gerando hesitação e impedindo a tomada de decisão?"
+    },
+    {
+      "id": "31d2ca57-315d-456a-91a1-9de490080bc7",
+      "stage": "PROBLEM",
+      "title": "A Fechadura Sem Porta",
+      "lens": "Contexto ausente",
+      "imagePath": "/cards/generated/july-deck/10-31d2ca57-315d-456a-91a1-9de490080bc7.png",
+      "altText": "Uma fechadura isolada flutua no meio de uma floresta coberta por névoa, emitindo um brilho azul pálido sem nenhuma porta conectada a ela.",
+      "provocation": "Que solução ou ferramenta já temos pronta que ainda está tentando encontrar o seu verdadeiro problema?"
+    },
+    {
+      "id": "d5cb5d0a-5be2-43f7-9504-3739bd2984c7",
+      "stage": "INSIGHT",
+      "title": "O Tempo de Amadurecer",
+      "lens": "Amadurecimento orgânico",
+      "imagePath": "/cards/generated/july-deck/11-d5cb5d0a-5be2-43f7-9504-3739bd2984c7.png",
+      "altText": "Uma lâmpada de vidro brilhante pendurada como um fruto no galho de um velho carvalho de outono, iluminando mariposas prateadas que voam ao seu redor.",
+      "provocation": "Como essa ideia se transformaria se permitíssemos que ela amadurecesse no seu próprio tempo natural?"
+    },
+    {
+      "id": "d94efb2e-71de-427f-bce0-c43e40727180",
+      "stage": "INSIGHT",
+      "title": "Além do Limite Visível",
+      "lens": "Potencial Oculto",
+      "imagePath": "/cards/generated/july-deck/12-d94efb2e-71de-427f-bce0-c43e40727180.png",
+      "altText": "Uma pessoa puxa a camada de um céu noturno estrelado como se fosse um papel de parede, revelando um gramado ensolarado e radiante por baixo.",
+      "provocation": "Qual limite aparente do nosso desafio podemos remover para revelar uma oportunidade oculta?"
+    },
+    {
+      "id": "ae006c96-bb62-4aba-88a9-dbb133942697",
+      "stage": "INSIGHT",
+      "title": "Caminhos Revelados Pelo Prisma",
+      "lens": "Visão Prismática",
+      "imagePath": "/cards/generated/july-deck/13-ae006c96-bb62-4aba-88a9-dbb133942697.png",
+      "altText": "Um prisma cristalino flutua sobre um rio sereno, decompondo um raio de luz da lua em uma escada colorida com as cores do arco-íris.",
+      "provocation": "Que observação simples do nosso cenário atual pode ser transformada em um caminho claro de oportunidade?"
+    },
+    {
+      "id": "ce56de13-001a-4c47-80b4-96776a7af66a",
+      "stage": "INSIGHT",
+      "title": "Pequenas Ações, Grandes Sistemas",
+      "lens": "Ponto de Alavancagem",
+      "imagePath": "/cards/generated/july-deck/14-ce56de13-001a-4c47-80b4-96776a7af66a.png",
+      "altText": "Uma chave antiga flutua e gira no ar, fazendo uma constelação geométrica de estrelas douradas se abrir como flores sobre um fundo azul-índigo.",
+      "provocation": "Qual pequena intervenção precisa podemos realizar agora para desencadear uma grande transformação em todo o sistema?"
+    },
+    {
+      "id": "0dc8f3a6-5e4a-468e-b2a2-088e375ffd17",
+      "stage": "INSIGHT",
+      "title": "Transformando Proteção em Liberdade",
+      "lens": "Inversão de defesa",
+      "imagePath": "/cards/generated/july-deck/15-0dc8f3a6-5e4a-468e-b2a2-088e375ffd17.png",
+      "altText": "Uma silhueta em um ambiente escuro abre um guarda-chuva, de onde brotam borboletas brilhantes como brasas que se espalham pela sala.",
+      "provocation": "Como podemos transformar uma medida de segurança ou proteção em nossa principal fonte de inovação?"
+    },
+    {
+      "id": "98d2cca9-1d49-43bb-8060-f15340d9ffcd",
+      "stage": "SOLUTION",
+      "title": "Conectividade de Extrema Leveza",
+      "lens": "Leveza estrutural",
+      "imagePath": "/cards/generated/july-deck/16-98d2cca9-1d49-43bb-8060-f15340d9ffcd.png",
+      "altText": "Uma ponte flutuante feita de sementes reluzentes de dente-de-leão entrelaçadas conecta dois penhascos íngremes e cobertos de neve.",
+      "provocation": "Como podemos unir dois pontos distantes do nosso desafio utilizando elementos extremamente leves e colaborativos?"
+    },
+    {
+      "id": "04aba883-e3da-408e-97f5-9d20a004ed4c",
+      "stage": "SOLUTION",
+      "title": "Costura Meticulosa de Microações",
+      "lens": "Microintervenções de Precisão",
+      "imagePath": "/cards/generated/july-deck/17-04aba883-e3da-408e-97f5-9d20a004ed4c.png",
+      "altText": "Um beija-flor mecânico feito de engrenagens costura um rasgo em uma nuvem de seda usando um fio dourado.",
+      "provocation": "Qual microação altamente precisa pode reparar uma grande falha ou interrupção na nossa proposta?"
+    },
+    {
+      "id": "a330b149-f56d-4dbb-8ff6-71e361bf5252",
+      "stage": "SOLUTION",
+      "title": "Harmonia em Transição",
+      "lens": "Transição Estruturada",
+      "imagePath": "/cards/generated/july-deck/18-a330b149-f56d-4dbb-8ff6-71e361bf5252.png",
+      "altText": "Um grande zíper de bronze une duas extensões de água: do lado esquerdo, um oceano tempestuoso com ondas agitadas sob um céu escuro; do lado direito, uma lagoa turquesa calma e transparente.",
+      "provocation": "Como podemos criar um mecanismo claro para transformar um processo caótico em uma experiência simples e organizada?"
+    },
+    {
+      "id": "32744e66-bf63-4656-9676-2f1fcb42ec43",
+      "stage": "SOLUTION",
+      "title": "Ativação do Núcleo Vital",
+      "lens": "Revitalização focada",
+      "imagePath": "/cards/generated/july-deck/19-32744e66-bf63-4656-9676-2f1fcb42ec43.png",
+      "altText": "Uma pedra geométrica brilhante encaixada na cavidade do peito de uma grande figura de pedra antiga, irradiando uma luz quente em tons terrosos.",
+      "provocation": "Qual elemento central e específico podemos encaixar em nossa solução para trazer nova vida a uma estrutura rígida ou ultrapassada?"
+    },
+    {
+      "id": "98718464-8054-4d98-8a69-0e3dcdbe23db",
+      "stage": "SOLUTION",
+      "title": "Farol de Purificação Passiva",
+      "lens": "Purificação passiva",
+      "imagePath": "/cards/generated/july-deck/20-98718464-8054-4d98-8a69-0e3dcdbe23db.png",
+      "altText": "Uma lanterna de papel flutua sobre a água, transformando ondas escuras e turvas em um vidro cristalino verde-esmeralda enquanto desliza suavemente sob uma iluminação ambiente suave.",
+      "provocation": "Como nossa solução pode melhorar um ambiente adverso de maneira passiva, apenas estando presente e em movimento?"
+    },
+    {
+      "id": "56ef7e01-1b28-440f-aebc-e0f6a8514377",
+      "stage": "PROTOTYPE",
+      "title": "Primeiro Passo da Criação",
+      "lens": "Vitalidade Rústica",
+      "imagePath": "/cards/generated/july-deck/21-56ef7e01-1b28-440f-aebc-e0f6a8514377.png",
+      "altText": "Uma pequena criatura feita de engrenagens de madeira desparelhadas, ponteiros de relógio e musgo verde macio dando um passo sobre uma bancada com iluminação acolhedora.",
+      "provocation": "Quais materiais brutos e essenciais podemos unir agora para testar a primeira versão funcional do nosso projeto?"
+    },
+    {
+      "id": "8318d0a5-0494-459c-8c49-932b0416dab3",
+      "stage": "PROTOTYPE",
+      "title": "Metrópole na Lente Antiga",
+      "lens": "Simulação em Microescala",
+      "imagePath": "/cards/generated/july-deck/22-8318d0a5-0494-459c-8c49-932b0416dab3.png",
+      "altText": "Uma cidade em miniatura construída no interior de uma câmera fotográfica antiga e cavada, iluminada por fios incandescentes de fibra óptica sob uma iluminação dourada.",
+      "provocation": "Como podemos construir uma versão em microescala da nossa solução para testar suas dinâmicas em um ambiente controlado?"
+    },
+    {
+      "id": "6c528d9a-22c9-4e6e-9b22-fcb715a98d1d",
+      "stage": "PROTOTYPE",
+      "title": "Da Teoria à Forma Física",
+      "lens": "Concretização",
+      "imagePath": "/cards/generated/july-deck/23-6c528d9a-22c9-4e6e-9b22-fcb715a98d1d.png",
+      "altText": "Desenho técnico em giz branco sobre um fundo de ardósia escura, onde linhas bidimensionais ganham volume e se transformam no ar em um pássaro de vidro transparente.",
+      "provocation": "Qual é a forma mais rápida e simples de transformar a teoria do nosso conceito em um protótipo físico?"
+    },
+    {
+      "id": "22eaf288-5534-482f-b96e-ba3a4897a5c0",
+      "stage": "PROTOTYPE",
+      "title": "Resistência de Papel e Arame",
+      "lens": "Resiliência Simbólica",
+      "imagePath": "/cards/generated/july-deck/24-22eaf288-5534-482f-b96e-ba3a4897a5c0.png",
+      "altText": "Um pequeno barco a vela feito de retalhos de pergaminho e fios de cobre navega sobre um mar de gotas de tinta azul.",
+      "provocation": "Como podemos simular o funcionamento do nosso conceito usando apenas materiais simples para testar sua resistência inicial?"
+    },
+    {
+      "id": "ee52cea6-2e32-4d87-91ff-860d1f1f75db",
+      "stage": "PROTOTYPE",
+      "title": "Conexões de Argila e Cobre",
+      "lens": "Hibridismo de Materiais",
+      "imagePath": "/cards/generated/july-deck/25-ee52cea6-2e32-4d87-91ff-860d1f1f75db.png",
+      "altText": "Uma escultura em forma de árvore feita de argila e bobinas de cobre, com folhas de vidro iluminadas conectadas por fios delicados sobre uma mesa em iluminação dramática.",
+      "provocation": "Como podemos combinar materiais rústicos e componentes tecnológicos para criar um modelo físico tangível da nossa solução?"
+    },
+    {
+      "id": "d78b45f2-fc5e-44d4-9e50-44020021d40c",
+      "stage": "PILOT",
+      "title": "Sondas em Territórios Desconhecidos",
+      "lens": "Observação controlada",
+      "imagePath": "/cards/generated/july-deck/26-d78b45f2-fc5e-44d4-9e50-44020021d40c.png",
+      "altText": "Um pequeno submersível transparente descendo em uma caverna subterrânea escura, repleta de flora gigante bioluminescente em tons azuis e luzes neon.",
+      "provocation": "Qual pequeno experimento controlado podemos enviar para explorar os maiores riscos de um território totalmente novo?"
+    },
+    {
+      "id": "473f76db-93c8-4daa-9819-c8eb619972a4",
+      "stage": "PILOT",
+      "title": "Ensaio Real de Ideias Ousadas",
+      "lens": "Validação no mundo real",
+      "imagePath": "/cards/generated/july-deck/27-473f76db-93c8-4daa-9819-c8eb619972a4.png",
+      "altText": "Uma criança em uma colina gramada e ventilada ao amanhecer vestindo asas feitas de vitrais coloridos e penas de pavão sob a luz do sol nascente.",
+      "provocation": "Qual experimento prático no mundo real pode testar a resistência da nossa ideia mais ambiciosa?"
+    },
+    {
+      "id": "c07c1a11-d359-49c6-8bed-782c2b9fdc8d",
+      "stage": "PILOT",
+      "title": "Primeiros Voos no Escuro",
+      "lens": "Iteração inicial",
+      "imagePath": "/cards/generated/july-deck/28-c07c1a11-d359-49c6-8bed-782c2b9fdc8d.png",
+      "altText": "Um avião de papel brilhante voa sobre uma floresta densa e escura em direção a um farol iluminado no horizonte durante o anoitecer.",
+      "provocation": "Qual é a versão mais simples que podemos lançar agora para validar se estamos seguindo no rumo certo?"
+    },
+    {
+      "id": "c4481146-78aa-4581-87ba-2592780ef511",
+      "stage": "PILOT",
+      "title": "Broto de Luz na Pedra",
+      "lens": "Prova de Conceito",
+      "imagePath": "/cards/generated/july-deck/29-c4481146-78aa-4581-87ba-2592780ef511.png",
+      "altText": "Um pequeno broto de madeira emerge de uma rachadura em uma rua de pedras calçadas, sustentando uma única esfera luminosa em miniatura sob um foco de luz suave.",
+      "provocation": "Qual é a menor vitória mensurável que podemos alcançar para provar o valor da nossa ideia em um ambiente adverso?"
+    },
+    {
+      "id": "ab8afa93-ace0-42f3-9665-152868aefc95",
+      "stage": "PILOT",
+      "title": "Equilíbrio em Território Desconhecido",
+      "lens": "Navegação de Riscos",
+      "imagePath": "/cards/generated/july-deck/30-ab8afa93-ace0-42f3-9665-152868aefc95.png",
+      "altText": "Uma figura solitária caminha sobre uma corda bamba feita de luz acima de um mar de nuvens, segurando uma bússola brilhante.",
+      "provocation": "Qual indicador nos ajudará a manter o equilíbrio e a direção certa ao testarmos esta solução em um ambiente incerto?"
+    },
+    {
+      "id": "40246c12-e280-4d8a-a6d4-b2896a5e4efb",
+      "stage": "MARKETING",
+      "title": "Farol de Luzes Vibrantes",
+      "lens": "Magnetismo Visual",
+      "imagePath": "/cards/generated/july-deck/31-40246c12-e280-4d8a-a6d4-b2896a5e4efb.png",
+      "altText": "Um farol projeta um feixe de luz nas cores do arco-íris no céu noturno, enquanto um bando de pássaros brilhantes se reúne ao redor da iluminação.",
+      "provocation": "Como podemos emitir um sinal forte e vibrante para atrair públicos diversos para a nossa marca?"
+    },
+    {
+      "id": "6f3be076-75f4-4b8e-a555-aff04592004f",
+      "stage": "MARKETING",
+      "title": "A Voz Que Floresce",
+      "lens": "Amplificação Afetiva",
+      "imagePath": "/cards/generated/july-deck/32-6f3be076-75f4-4b8e-a555-aff04592004f.png",
+      "altText": "Um megafone gigante de cristal esculpido lança pétalas de flores no ar, flutuando sobre uma multidão reunida.",
+      "provocation": "Como podemos transformar a mensagem da nossa marca em uma experiência visual e encantadora que contagia as pessoas?"
+    },
+    {
+      "id": "c3560416-0a5c-4c8c-b866-6eb90e32153f",
+      "stage": "MARKETING",
+      "title": "Despertando a Imaginação Coletiva",
+      "lens": "Experiência Espetacular",
+      "imagePath": "/cards/generated/july-deck/33-c3560416-0a5c-4c8c-b866-6eb90e32153f.png",
+      "altText": "Um artista lança poeira estelar brilhante ao vento, atraindo uma multidão encantada sob uma grande lona de circo iluminada por auroras em tons de roxo profundo e dourado.",
+      "provocation": "De que maneira podemos transformar nossa mensagem em um espetáculo imersivo que envolva e fascine o nosso público-alvo?"
+    },
+    {
+      "id": "e1752056-8042-4ab4-aecb-932cd567b6ac",
+      "stage": "MARKETING",
+      "title": "O Reflexo da Comunidade",
+      "lens": "Espelhamento",
+      "imagePath": "/cards/generated/july-deck/34-e1752056-8042-4ab4-aecb-932cd567b6ac.png",
+      "altText": "Uma constelação de estrelas no céu noturno forma o desenho de uma mão gigante reluzente, que segura um espelho direcionado para o planeta Terra logo abaixo.",
+      "provocation": "Como nossa estratégia de marketing pode refletir as verdadeiras aspirações da comunidade em grande escala para o mundo?"
+    },
+    {
+      "id": "05eeb264-c707-4418-8b61-43964d9dbb26",
+      "stage": "MARKETING",
+      "title": "Espetáculo nos Detalhes Sutis",
+      "lens": "Amplificação sensorial",
+      "imagePath": "/cards/generated/july-deck/35-05eeb264-c707-4418-8b61-43964d9dbb26.png",
+      "altText": "Uma cerejeira em flor em uma praça escura, cujas pétalas ao caírem se acendem como pequenas faíscas brilhantes em tons de rosa vibrante e brasas quentes.",
+      "provocation": "Como podemos transformar interações diárias e silenciosas dos clientes em momentos de divulgação extraordinários e vibrantes?"
+    },
+    {
+      "id": "ebc35501-b928-4ec9-8863-888155110cb1",
+      "stage": "SALES",
+      "title": "Troca de Energia Vital",
+      "lens": "Conexão Profunda",
+      "imagePath": "/cards/generated/july-deck/36-ebc35501-b928-4ec9-8863-888155110cb1.png",
+      "altText": "Duas mãos trocam uma pequena esfera brilhante de luz solar dentro de uma câmara cerimonial de pedra.",
+      "provocation": "Como podemos estruturar nossa abordagem comercial para que o cliente sinta que está recebendo algo de valor essencial e transformador?"
+    },
+    {
+      "id": "898bd86e-aa02-442c-bb61-454ecb4cc683",
+      "stage": "SALES",
+      "title": "Equilíbrio Perfeito de Valor",
+      "lens": "Percepção de Valor",
+      "imagePath": "/cards/generated/july-deck/37-898bd86e-aa02-442c-bb61-454ecb4cc683.png",
+      "altText": "Uma balança dourada equilibrando uma pena em um dos pratos e uma estrela cristalina reluzente no outro prato.",
+      "provocation": "Como podemos demonstrar ao cliente que os benefícios intangíveis da nossa oferta têm tanto valor quanto os resultados concretos?"
+    },
+    {
+      "id": "09da4a31-862a-4c48-b72d-2e1f0da01d6a",
+      "stage": "SALES",
+      "title": "A Verdadeira Riqueza",
+      "lens": "Valor Humano",
+      "imagePath": "/cards/generated/july-deck/38-09da4a31-862a-4c48-b72d-2e1f0da01d6a.png",
+      "altText": "Um baú de tesouro de madeira transborda uma luz suave e radiante no lugar de moedas, iluminando os rostos sorridentes de pessoas reunidas ao seu redor em um ambiente acolhedor.",
+      "provocation": "Como podemos transformar o momento da venda em uma celebração que gere uma conexão comunitária duradoura com nossos clientes?"
+    },
+    {
+      "id": "6bb2f971-a0d7-4e45-b86b-f49df2fa291f",
+      "stage": "SALES",
+      "title": "Frutos Imediatos da Parceria",
+      "lens": "Geração Instantânea de Valor",
+      "imagePath": "/cards/generated/july-deck/39-6bb2f971-a0d7-4e45-b86b-f49df2fa291f.png",
+      "altText": "Uma semente na terra brota instantaneamente em uma árvore dourada repleta de frutos brilhantes, que caem suavemente em mãos estendidas sob uma iluminação quente ao pôr do sol.",
+      "provocation": "Como nossa proposta comercial pode demonstrar um retorno visível e imediato para o cliente já no primeiro dia?"
+    },
+    {
+      "id": "378c5bae-5955-473b-82ab-1210c45b276e",
+      "stage": "SALES",
+      "title": "Abertura para Novos Mundos",
+      "lens": "Acesso Transformador",
+      "imagePath": "/cards/generated/july-deck/40-378c5bae-5955-473b-82ab-1210c45b276e.png",
+      "altText": "Uma chave reluzente feita de luz entra em uma fechadura formada por vinhas antigas, abrindo uma passagem iluminada para um cenário paradisíaco.",
+      "provocation": "Como podemos posicionar o fechamento da venda como a chave que dá ao cliente acesso permanente a um futuro transformador?"
+    }
+  ]
+}

@@ -4,9 +4,12 @@
   "version": "0.1.0",
   "type": "module",
   "scripts": {
+    "narration:elevenlabs": "node scripts/generate-elevenlabs-narration.mjs",
     "studio": "remotion studio src/index.ts --public-dir ../public",
     "render": "remotion render src/index.ts IdeaHeroTutorial out/idea-hero-tutorial.mp4 --public-dir ../public --codec h264 --crf 18",
+    "render:vertical": "remotion render src/index.ts IdeaHeroVertical out/idea-hero-vertical.mp4 --public-dir ../public --codec h264 --crf 18",
     "still": "remotion still src/index.ts IdeaHeroTutorial out/preview.png --public-dir ../public --frame 1110",
+    "still:vertical": "remotion still src/index.ts IdeaHeroVertical out/preview-vertical.png --public-dir ../public --frame 1320",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {

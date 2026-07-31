@@ -1,3 +1,5 @@
+import { GENERATED_CARD_CATALOG } from "./generated-cards.ts";
+
 const BASE_CARD_CATALOG = [
   {
     id: "00a3fd49-a67d-4438-92e8-2dc61ef93b98",
@@ -448,8 +450,46 @@ const CARD_VARIANTS: Record<
   ],
 };
 
-export const CARD_CATALOG = [...BASE_CARD_CATALOG].flatMap((card) => {
-  const variants = CARD_VARIANTS[card.stage];
+export interface Card {
+  id: string;
+  stage: string;
+  title: string;
+  lens: string;
+  imagePath: string;
+  altText: string;
+  provocation: string;
+}
+
+const STAGE_ALIAS_MAP: Record<string, string> = {
+  POLISHING: "SOLUTION",
+  TESTING: "PILOT",
+  CONQUERING: "MARKETING",
+  FINAL: "SALES",
+};
+
+const combinedMap = new Map<string, Card>();
+for (const card of BASE_CARD_CATALOG) {
+  combinedMap.set(card.id, card);
+}
+for (const card of GENERATED_CARD_CATALOG) {
+  combinedMap.set(card.id, card);
+}
+const allUniqueCards: Card[] = Array.from(combinedMap.values());
+
+const fullCatalogRaw: Card[] = [...allUniqueCards];
+for (const [targetStage, sourceStage] of Object.entries(STAGE_ALIAS_MAP)) {
+  const sourceCards = allUniqueCards.filter((c) => c.stage === sourceStage);
+  for (const c of sourceCards) {
+    fullCatalogRaw.push({
+      ...c,
+      id: `${targetStage.toLowerCase()}-${c.id}`,
+      stage: targetStage,
+    });
+  }
+}
+
+export const CARD_CATALOG: Card[] = fullCatalogRaw.flatMap((card) => {
+  const variants = CARD_VARIANTS[card.stage] ?? [];
   return [
     card,
     ...variants.map((variant) => ({
