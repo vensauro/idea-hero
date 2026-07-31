@@ -37,11 +37,11 @@ export const STAGE_GUIDANCE: Record<
   },
   INSIGHT: {
     steps: [
-      "Use a carta para olhar o problema por outro ângulo.",
-      "Compartilhe uma forma possível de tratar o problema.",
-      "Todos os insights ficam registrados para a próxima etapa.",
+      "Use a carta para imaginar uma direção diferente.",
+      "Compartilhe um caminho, conexão ou abertura que possa inspirar uma ideia.",
+      "Todos os caminhos ficam registrados para alimentar a etapa de Ideias.",
     ],
-    placeholder: "Talvez o problema exista porque…",
+    placeholder: "Um caminho possível seria…",
     next: "Depois, vocês entram nas duas rodadas de Ideias: criar e votar.",
   },
   SOLUTION: {

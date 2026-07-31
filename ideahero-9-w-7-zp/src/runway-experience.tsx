@@ -57,7 +57,7 @@ const STAGE_LABELS: Record<string, string> = {
   POLISHING: "Lapidando",
   PROTOTYPE: "Protótipo",
   TESTING: "Testando",
-  CONQUERING: "Conquistando",
+  CONQUERING: "Convidando",
   FINAL: "Final",
 };
 
@@ -65,7 +65,7 @@ const STAGE_TITLES: Record<string, string> = {
   POLISHING: "Vamos lapidar a ideia",
   PROTOTYPE: "Vamos criar o protótipo",
   TESTING: "Vamos testar com recursos",
-  CONQUERING: "Vamos conquistar adesão",
+  CONQUERING: "Vamos convidar o mundo",
   FINAL: "Vamos revelar a jornada",
 };
 
@@ -2023,11 +2023,7 @@ export function StageInsightResponse({
   );
 }
 
-export function StageAudienceReaction({
-  insight,
-}: {
-  insight: StageInsight;
-}) {
+export function StageAudienceReaction({ insight }: { insight: StageInsight }) {
   return (
     <section className="pilot-feedback">
       <div className="section-heading">

@@ -1,0 +1,22 @@
+{
+  "name": "idea-hero-video",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "studio": "remotion studio src/index.ts --public-dir ../public",
+    "render": "remotion render src/index.ts IdeaHeroTutorial out/idea-hero-tutorial.mp4 --public-dir ../public --codec h264 --crf 18",
+    "still": "remotion still src/index.ts IdeaHeroTutorial out/preview.png --public-dir ../public --frame 1110",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@remotion/cli": "^4.0.335",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "remotion": "^4.0.335"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.18",
+    "typescript": "~5.6.2"
+  }
+}

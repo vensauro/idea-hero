@@ -183,8 +183,8 @@ const STAGE_CONTENT: Record<
     title: "Vamos encontrar insights",
     eyebrow: "Insights",
     objective:
-      "Cada pessoa compartilha formas de tratar o problema; o grupo registra todas.",
-    prompt: "Que insight pode abrir um novo caminho para o problema?",
+      "Cada pessoa aponta caminhos, conexões e aberturas que podem levar a uma ideia; o grupo registra todos.",
+    prompt: "Que caminho pode inspirar a próxima ideia do grupo?",
     icon: "✦",
   },
   SOLUTION: {
@@ -220,10 +220,10 @@ const STAGE_CONTENT: Record<
     icon: "↗",
   },
   CONQUERING: {
-    title: "Vamos conquistar adesão",
-    eyebrow: "Conquistando",
+    title: "Vamos convidar o mundo",
+    eyebrow: "Convidando",
     objective:
-      "Cada pessoa propõe uma forma de conquistar a adesão da galera; o jogador da vez abre a votação.",
+      "Cada pessoa propõe uma forma de convidar a galera a participar da ideia; o jogador da vez abre a votação.",
     prompt: "Como convidar a galera a aderir a esta ideia?",
     icon: "◎",
   },
@@ -261,7 +261,8 @@ const GAME_FLOW_STEPS = [
   {
     title: "Insights",
     description: "Procurem novos jeitos de enxergar o desafio.",
-    instruction: "Cada pessoa compartilha uma descoberta ou hipótese.",
+    instruction:
+      "Cada pessoa compartilha um caminho, uma conexão ou uma abertura para inspirar ideias.",
   },
   {
     title: "Ideias",
@@ -284,9 +285,9 @@ const GAME_FLOW_STEPS = [
     instruction: "Usem o resultado para decidir o que melhorar.",
   },
   {
-    title: "Conquistar",
+    title: "Convidar",
     description: "Planejem como convidar pessoas para a ideia.",
-    instruction: "Criem e escolham uma forma de gerar adesão.",
+    instruction: "Criem e escolham uma forma de convidar pessoas a participar.",
   },
   {
     title: "Final",
@@ -296,9 +297,21 @@ const GAME_FLOW_STEPS = [
 ] as const;
 
 const GAME_FLOW_CHAPTERS = [
-  { title: "1. Descobrir", description: "Entendam o desafio", steps: [0, 1, 2] },
-  { title: "2. Criar", description: "Deem forma a uma resposta", steps: [3, 4, 5] },
-  { title: "3. Lançar", description: "Testem e façam a ideia ganhar vida", steps: [6, 7, 8] },
+  {
+    title: "1. Descobrir",
+    description: "Entendam o desafio",
+    steps: [0, 1, 2],
+  },
+  {
+    title: "2. Criar",
+    description: "Deem forma a uma resposta",
+    steps: [3, 4, 5],
+  },
+  {
+    title: "3. Lançar",
+    description: "Testem e façam a ideia ganhar vida",
+    steps: [6, 7, 8],
+  },
 ] as const;
 
 const AVATARS = ["seedling", "comet", "prism", "whale", "owl", "fox"] as const;
@@ -1169,7 +1182,9 @@ function Lobby({
                       return (
                         <button
                           type="button"
-                          className={selectedFlowStep === index ? "is-selected" : ""}
+                          className={
+                            selectedFlowStep === index ? "is-selected" : ""
+                          }
                           key={step.title}
                           aria-pressed={selectedFlowStep === index}
                           onClick={() => setSelectedFlowStep(index)}
@@ -2611,7 +2626,7 @@ function GameBoard({
                       </button>
                     )
                   ))}
-              </section>
+              </>
             )}
           {stage === "POLISHING" &&
             phase === "CONTRIBUTING" &&
@@ -2824,15 +2839,15 @@ function GameBoard({
             )}
 
           {stage === "TESTING" && insightForStage && (
-              <StageInsightResponse
-                room={room}
-                stage={stage}
-                insight={insightForStage}
-                groupVotes={groupVotes}
-                currentPlayer={currentPlayer}
-                players={players}
-              />
-            )}
+            <StageInsightResponse
+              room={room}
+              stage={stage}
+              insight={insightForStage}
+              groupVotes={groupVotes}
+              currentPlayer={currentPlayer}
+              players={players}
+            />
+          )}
           {stage === "CONQUERING" && insightForStage && (
             <StageAudienceReaction insight={insightForStage} />
           )}

@@ -60,6 +60,8 @@ function json(body: unknown, status = 200) {
   return Response.json(body, { status });
 }
 
+const STORYTELLING_TONE = `Preserve o universo, a linguagem e as imagens que o grupo criou. Quando a historia for fantastica, narre como uma aventura de RPG magico: pessoas, lugares e descobertas fazem parte de uma jornada encantada. Nao acrescente elementos que nao existam no historico.`;
+
 function testingReactionPrompt(context: string) {
   return `Voce e a voz do mercado em um jogo colaborativo de ideia em portugues brasileiro.
 Neste momento, o grupo acabou de escolher uma forma de testar o prototipo com recursos. Descreva a reacao das pessoas que participaram do teste diante do prototipo e da ideia construida, com base exclusivamente na historia abaixo.
@@ -78,12 +80,12 @@ Devolva apenas o objeto solicitado:
   - description: o que fazer (ate 160 caracteres)
   - learning: uma palavra ou expressao curta (ate 40 caracteres) que sintetiza o aprendizado da escolha
 
-Mantenha o tom respeitoso, encorajador e em portugues brasileiro.`;
+${STORYTELLING_TONE}`;
 }
 
 function publicReactionPrompt(context: string) {
   return `Voce e a voz do publico em um jogo colaborativo de ideia em portugues brasileiro.
-O grupo acabou de decidir como vai conquistar a adesao das pessoas. Descreva a reacao do publico-alvo ao conhecer a estrategia escolhida, usando exclusivamente a historia abaixo.
+O grupo acabou de decidir como convidar pessoas a participar da ideia. Descreva a reacao do publico-alvo ao conhecer esse convite, usando exclusivamente a historia abaixo.
 
 Historia construida pela equipe ate agora:
 """
@@ -94,12 +96,12 @@ Devolva apenas o objeto solicitado:
 - headline: um titulo curto e concreto descrevendo a reacao observada (ex.: "As pessoas se interessaram, mas ainda nao entenderam como participar"). Seja realista, especifico e coerente com a ideia da equipe.
 - body: uma unica frase de ate 280 caracteres relatando o que o publico sentiu, entendeu ou questionou. Nao proponha proximos passos, alternativas, escolhas ou votos. Nao invente produtos, numeros ou promessas.
 
-Esta e apenas uma reacao informativa, nao uma nova decisao da equipe. Mantenha o tom respeitoso, encorajador e em portugues brasileiro.`;
+Esta e apenas uma reacao informativa, nao uma nova decisao da equipe. Nao descreva o convite como vitoria, conquista, dominacao ou recompensa. ${STORYTELLING_TONE}`;
 }
 
 function journeyPrompt(context: string) {
-  return `Voce consolida o manifesto final de um jogo colaborativo de ideia em portugues brasileiro.
-Reescreva, a partir da historia abaixo, um titulo e um resumo que unifiquem o que o grupo construiu ao longo da jornada.
+  return `Voce narra o epilogo de uma jornada colaborativa de ideia em portugues brasileiro.
+Reescreva, a partir da historia abaixo, um titulo e um resumo que unifiquem o que o grupo construiu ao longo da jornada e mostrem como a ideia convida outras pessoas a participar.
 
 Historia construida pela equipe:
 """
@@ -108,9 +110,9 @@ ${context}
 
 Devolva apenas o objeto solicitado:
 - title: um titulo memoravel para a ideia (ate 80 caracteres). Pode ser criativo, mas precisa refletir a ideia real.
-- summary: um paragrafo (ate 400 caracteres) que consolide cenario, problema, solucao, prototipo e conquistas em uma narrativa unica. Use apenas o que existe na historia; nao invente dados, metricas ou promessas.
+- summary: um paragrafo (ate 400 caracteres) que consolide cenario, problema, solucao, prototipo e o convite para participar em uma narrativa unica. O convite e uma forma de as pessoas se aproximarem da ideia; nao e uma vitoria, conquista, dominio ou resultado garantido. Use apenas o que existe na historia; nao invente dados, metricas ou promessas.
 
-Tom: entusiasmado, claro e em portugues brasileiro.`;
+${STORYTELLING_TONE}`;
 }
 
 function testingOptionsPrompt(context: string) {
@@ -123,19 +125,19 @@ ${context}
 """
 
 Devolva um objeto com question e options. question deve ser uma pergunta concreta que ajude o grupo a escolher o teste certo. options deve ser uma lista com 5 opcoes; cada item deve ter key ("A" a "E", sem repetir), title, description, cost (inteiro entre 0 e 2.000 creditos) e impact.
-As opcoes devem ser viaveis para um grupo pequeno, ter niveis de investimento variados e testar hipoteses diferentes. Nao invente fatos sobre a ideia ou o publico. Tom claro e encorajador, em portugues brasileiro.`;
+As opcoes devem ser viaveis para um grupo pequeno, ter niveis de investimento variados e testar hipoteses diferentes. Nao invente fatos sobre a ideia ou o publico. ${STORYTELLING_TONE}`;
 }
 
 function conqueringQuestionPrompt(context: string) {
-  return `Voce facilita a etapa de conquista de adesao em um jogo colaborativo de ideia em portugues brasileiro.
-Com base exclusivamente na historia abaixo, escreva uma unica pergunta concreta que ajude o grupo a propor como conquistar a adesao das pessoas para esta ideia.
+  return `Voce facilita a etapa de convite ao mundo em um jogo colaborativo de ideia em portugues brasileiro.
+Com base exclusivamente na historia abaixo, escreva uma unica pergunta concreta que ajude o grupo a propor como convidar pessoas a participar desta ideia.
 
 Historia construida pela equipe:
 """
 ${context}
 """
 
-A pergunta deve ter ate 180 caracteres, estimular propostas praticas e especificas, e nao inventar fatos sobre a ideia ou o publico. Devolva apenas o objeto solicitado com a propriedade question.`;
+A pergunta deve ter ate 180 caracteres, estimular propostas praticas e especificas, e nao inventar fatos sobre a ideia ou o publico. Nao use vitoria, conquista ou convencimento como objetivo. ${STORYTELLING_TONE} Devolva apenas o objeto solicitado com a propriedade question.`;
 }
 
 export async function action({ request }: { request: Request }) {

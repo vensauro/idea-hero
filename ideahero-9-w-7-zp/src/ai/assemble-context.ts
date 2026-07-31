@@ -61,7 +61,7 @@ const STAGE_LABELS: Record<string, string> = {
   POLISHING: "Lapidacao",
   PROTOTYPE: "Prototipo",
   TESTING: "Teste",
-  CONQUERING: "Conquista",
+  CONQUERING: "Convite ao mundo",
   FINAL: "Final",
 };
 

@@ -154,9 +154,9 @@ const COLLABORATIVE_STAGE_PLANS: Record<string, CollaborativeStagePlan> = {
     actions: [
       {
         key: "CONQUEST",
-        title: "Sua proposta de adesão",
-        prompt: "Como conquistar a adesão da galera para esta ideia?",
-        placeholder: "Para conquistar a adesão, eu proporia...",
+        title: "Seu convite ao mundo",
+        prompt: "Como convidar pessoas a participar desta ideia?",
+        placeholder: "Para convidar pessoas a participar, eu proporia...",
       },
     ],
   },
