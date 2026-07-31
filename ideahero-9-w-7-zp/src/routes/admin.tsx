@@ -1,6 +1,18 @@
 import { useEffect, useState, useTransition } from "react";
+import type { MetaFunction } from "react-router";
 import type { CardItem } from "./api.admin.cards";
 import "../admin.css";
+
+export const meta: MetaFunction = () => {
+  return [
+    { title: "Painel de Administração — Idea Hero" },
+    {
+      name: "description",
+      content: "Gestão do catálogo de cartas e metadados com IA no Idea Hero.",
+    },
+  ];
+};
+
 
 const CARD_STAGES_SET = new Set(["SCENARIO", "PROBLEM", "INSIGHT", "SOLUTION"]);
 
