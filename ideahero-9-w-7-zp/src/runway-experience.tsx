@@ -239,43 +239,10 @@ function AnimatedEventValue({
 }
 
 export function TopbarMoneyChip({ balance }: { balance: number }) {
-  const prevRef = useRef(balance);
-  const [animating, setAnimating] = useState<"deduct" | "credit" | null>(null);
-  const [delta, setDelta] = useState<number | null>(null);
-
-  useEffect(() => {
-    const diff = balance - prevRef.current;
-    if (diff !== 0) {
-      setAnimating(diff < 0 ? "deduct" : "credit");
-      setDelta(diff);
-      const timer = setTimeout(() => {
-        setAnimating(null);
-        setDelta(null);
-      }, 3500);
-      prevRef.current = balance;
-      return () => clearTimeout(timer);
-    }
-  }, [balance]);
-
   return (
-    <summary
-      className={`topbar-timer-chip topbar-money-chip ${
-        animating === "deduct"
-          ? "is-deduct-animating"
-          : animating === "credit"
-            ? "is-credit-animating"
-            : ""
-      }`}
-    >
+    <summary className="topbar-timer-chip topbar-money-chip">
       <span className="money-coin-icon">◌</span>
       <strong className="money-amount">{formatCredits(balance)}</strong>
-      {delta !== null && (
-        <span
-          className={`money-delta-float ${delta < 0 ? "is-minus" : "is-plus"}`}
-        >
-          {delta > 0 ? `+${formatCredits(delta)}` : formatCredits(delta)}
-        </span>
-      )}
     </summary>
   );
 }
@@ -652,7 +619,6 @@ export function RunwayFinalStage(props: RunwayFinalStageProps) {
 
   return (
     <main className="game-shell runway-game-shell">
-      <EconomyEventOverlay roomId={room.id} transactions={transactions} />
       <details className="room-sheet" name="journey-controls">
         <summary aria-label="Opções da sala">•••</summary>
         <div className="room-sheet-panel">

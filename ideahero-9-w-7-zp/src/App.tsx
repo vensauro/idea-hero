@@ -56,7 +56,6 @@ import { VoiceInputButton, type VoiceInputResult } from "./VoiceInputButton";
 import { JourneySummary } from "./JourneySummary";
 import {
   CardChangeButton,
-  EconomyEventOverlay,
   MarketingStage,
   PilotStage,
   PolishingStage,
@@ -2122,10 +2121,6 @@ function GameBoard({
 
   return (
     <main className="game-shell">
-      <EconomyEventOverlay
-        roomId={room.id}
-        transactions={economyTransactions}
-      />
       <header className="game-topbar">
         <div className="game-topbar-left">
           <span className="game-topbar-mark" aria-hidden="true">
