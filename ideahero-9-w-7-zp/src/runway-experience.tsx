@@ -29,7 +29,7 @@ import type {
   VisibleContribution,
 } from "./module_bindings/types";
 import { JourneySummary } from "./JourneySummary";
-import { formatCredits } from "./runway-format";
+import { formatCredits, formatAbbreviatedCredits } from "./runway-format";
 import {
   CARD_REDRAW_COST,
   MARKETING_LAUNCH_OPTIONS,
@@ -240,9 +240,10 @@ function AnimatedEventValue({
 
 export function TopbarMoneyChip({ balance }: { balance: number }) {
   return (
-    <summary className="topbar-timer-chip topbar-money-chip">
-      <span className="money-coin-icon">◌</span>
-      <strong className="money-amount">{formatCredits(balance)}</strong>
+    <summary className="topbar-timer-chip topbar-money-chip" title={`${formatCredits(balance)} créditos`}>
+      <span className="money-coin-icon" aria-hidden="true">◌</span>
+      <strong className="money-amount money-amount-full">{formatCredits(balance)}</strong>
+      <strong className="money-amount money-amount-short">{formatAbbreviatedCredits(balance)}</strong>
     </summary>
   );
 }

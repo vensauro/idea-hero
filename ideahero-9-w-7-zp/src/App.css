@@ -364,6 +364,9 @@ textarea:focus {
 }
 .topbar,
 .game-header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -371,6 +374,7 @@ textarea:focus {
   padding: 1rem clamp(1rem, 4vw, 3rem);
   border-bottom: 2px solid var(--line);
   background: rgba(255, 248, 236, 0.94);
+  backdrop-filter: blur(12px);
 }
 .mini-brand,
 .game-brand {
