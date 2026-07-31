@@ -1889,10 +1889,12 @@ export function TestingStage({
               key={option.optionKey}
               onClick={() => void choose(option.optionKey)}
             >
-              <span>{formatCredits(option.cost)}</span>
               <strong>{option.title}</strong>
               <p>{option.description}</p>
               <em>{option.impact}</em>
+              <p className="pilot-option-cost">
+                {formatCredits(option.cost)} moedas de ouro
+              </p>
               <small>
                 {count} {count === 1 ? "voto" : "votos"}
               </small>

@@ -125,7 +125,7 @@ ${context}
 """
 
 Devolva um objeto com question e options. question deve ser uma pergunta concreta que ajude o grupo a escolher o teste certo. options deve ser uma lista com 5 opcoes; cada item deve ter key ("A" a "E", sem repetir), title, description, cost (inteiro entre 0 e 2.000 creditos) e impact.
-As opcoes devem ser viaveis para um grupo pequeno, ter niveis de investimento variados e testar hipoteses diferentes. Nao invente fatos sobre a ideia ou o publico. ${STORYTELLING_TONE}`;
+As opcoes devem ser viaveis para um grupo pequeno, ter niveis de investimento variados e testar hipoteses diferentes. Nao invente fatos sobre a ideia ou o publico. Nao mencione desenhos, fotografias, imagens, audios, artefatos ou materiais especificos, a menos que estejam explicitamente registrados na historia. ${STORYTELLING_TONE}`;
 }
 
 function conqueringQuestionPrompt(context: string) {
