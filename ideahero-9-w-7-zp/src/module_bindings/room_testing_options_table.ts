@@ -18,6 +18,8 @@ export default __t.row({
   description: __t.string(),
   cost: __t.u32(),
   impact: __t.string(),
+  outcomeHeadline: __t.string().name("outcome_headline"),
+  outcomeBody: __t.string().name("outcome_body"),
   question: __t.string(),
   selected: __t.bool(),
   createdAt: __t.timestamp().name("created_at"),

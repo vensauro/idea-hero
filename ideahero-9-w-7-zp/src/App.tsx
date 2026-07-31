@@ -71,7 +71,6 @@ import {
   RunwayWallet,
   SalesStage,
   StageAudienceReaction,
-  StageInsightResponse,
   TestingStage,
   TopbarMoneyChip,
   artifactSource,
@@ -472,7 +471,6 @@ function App() {
   const [journeyFeedbacks, journeyFeedbacksReady] = useTable(
     tables.room_journey_feedbacks,
   );
-
 
   const currentProfile = identity
     ? profiles.find((item) => sameIdentity(item.identity, identity))
@@ -1818,14 +1816,13 @@ function GameBoard({
   }
 
   useEffect(() => {
-    if (!isHost || stage !== "FINAL" || finalInsight || finalInsightPending)
-      return;
+    if (stage !== "FINAL" || finalInsight || finalInsightPending) return;
     const key = room.id.toString();
     if (finalInsightAttemptedRef.current.has(key)) return;
     finalInsightAttemptedRef.current.add(key);
     void generateFinalInsight();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isHost, room.id, stage, finalInsight, finalInsightPending]);
+  }, [room.id, stage, finalInsight, finalInsightPending]);
 
   async function generateTestingOptions() {
     setTestingOptionsPending(true);
@@ -1955,7 +1952,7 @@ function GameBoard({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isHost, room.id, stage, phase]);
 
-  async function generateStageInsight(targetStage: "TESTING" | "CONQUERING") {
+  async function generateStageInsight(targetStage: "CONQUERING") {
     setInsightPending(true);
     setInsightError("");
     try {
@@ -2031,7 +2028,7 @@ function GameBoard({
 
   useEffect(() => {
     if (insightPending) return;
-    if (stage !== "TESTING" && stage !== "CONQUERING") return;
+    if (stage !== "CONQUERING") return;
     if (insightForStage || !insightTriggered) return;
     if (insightAttemptedRef.current.has(stage)) return;
     insightAttemptedRef.current.add(stage);
@@ -2593,25 +2590,27 @@ function GameBoard({
         <article className="stage-intro">
           <h1>{content.title}</h1>
           <p>{content.objective}</p>
-          {stage !== "PROTOTYPE" && (
-            <InspirationCard
-              card={stageCard}
-              stageLabel={content.eyebrow}
-              actionControl={
-                <CardChangeButton
-                  room={room}
-                  draw={stageDraw}
-                  economy={economy}
-                  locked={
-                    stageContributions.length > 0 || phase !== "CONTRIBUTING"
-                  }
-                  players={players}
-                  currentPlayer={currentPlayer}
-                  groupVotes={groupVotes}
-                />
-              }
-            />
-          )}
+          {stage !== "PROTOTYPE" &&
+            stage !== "TESTING" &&
+            stage !== "FINAL" && (
+              <InspirationCard
+                card={stageCard}
+                stageLabel={content.eyebrow}
+                actionControl={
+                  <CardChangeButton
+                    room={room}
+                    draw={stageDraw}
+                    economy={economy}
+                    locked={
+                      stageContributions.length > 0 || phase !== "CONTRIBUTING"
+                    }
+                    players={players}
+                    currentPlayer={currentPlayer}
+                    groupVotes={groupVotes}
+                  />
+                }
+              />
+            )}
         </article>
 
         <article className="contribution-panel">
@@ -2972,19 +2971,10 @@ function GameBoard({
               </div>
             )}
 
-          {stage === "TESTING" && insightForStage && (
-            <StageInsightResponse
-              room={room}
-              stage={stage}
-              insight={insightForStage}
-              groupVotes={groupVotes}
-              currentPlayer={currentPlayer}
-              players={players}
-            />
-          )}
-          {stage === "CONQUERING" && insightForStage && (
-            <StageAudienceReaction insight={insightForStage} />
-          )}
+          {(stage === "TESTING" || stage === "CONQUERING") &&
+            insightForStage && (
+              <StageAudienceReaction insight={insightForStage} />
+            )}
           {(stage === "TESTING" || stage === "CONQUERING") &&
             !insightForStage &&
             insightTriggered && (
@@ -3063,7 +3053,7 @@ function GameBoard({
                     <section className="pilot-learning" aria-live="polite">
                       <span aria-hidden="true">✦</span>
                       <div>
-                        <small>Final criado pela IA a partir da jornada</small>
+                        <small>Desfecho e resultado final da jornada</small>
                         <h2>{finalInsight.headline}</h2>
                         <p>{finalInsight.body}</p>
                       </div>
@@ -3073,23 +3063,9 @@ function GameBoard({
                       className="stage-insight-pending"
                       style={{ padding: "1rem 0" }}
                     >
-                      {finalInsightPending ? (
-                        <p className="empty-state">
-                          A IA está criando o final da jornada…
-                        </p>
-                      ) : isHost ? (
-                        <button
-                          type="button"
-                          className="primary-button"
-                          onClick={() => void generateFinalInsight()}
-                        >
-                          Criar final com IA
-                        </button>
-                      ) : (
-                        <p className="empty-state">
-                          A IA está criando o final da jornada…
-                        </p>
-                      )}
+                      <p className="empty-state">
+                        A IA está criando o desfecho da jornada…
+                      </p>
                       {finalInsightError && (
                         <p className="error-message">{finalInsightError}</p>
                       )}
@@ -3114,10 +3090,7 @@ function GameBoard({
                     stage === "PROTOTYPE"
                       ? !!projectPrototype?.committed
                       : stage === "TESTING"
-                        ? testingOptions
-                          ? testingOptions.some((o) => o.selected) &&
-                            (!testingInsight || testingInsight.completed)
-                          : true
+                        ? Boolean(testingInsight)
                         : stage === "FINAL"
                           ? Boolean(finalInsight)
                           : true
@@ -3126,11 +3099,9 @@ function GameBoard({
                     stage === "PROTOTYPE"
                       ? "Conclua o protótipo compartilhado antes de avançar."
                       : stage === "TESTING"
-                        ? testingInsight && !testingInsight.completed
-                          ? "Respondam à reação do teste antes de avançar."
-                          : "Selecione uma opção de teste antes de avançar."
+                        ? "Aguardem a reação do teste do protótipo antes de avançar."
                         : stage === "FINAL"
-                          ? "Aguarde o agente de IA criar o final da jornada."
+                          ? "Aguarde a IA criar o desfecho da jornada."
                           : ""
                   }
                 />
@@ -3892,7 +3863,8 @@ function JourneyResult({
 
           <div className="nps-container">
             <label className="nps-label">
-              Numa escala de 0 a 10, o quanto você recomendaria esta experiência?
+              Numa escala de 0 a 10, o quanto você recomendaria esta
+              experiência?
             </label>
             <div
               className="nps-selector"
@@ -3939,7 +3911,6 @@ function JourneyResult({
           {feedbackError && <p className="error-message">{feedbackError}</p>}
         </form>
       </section>
-
 
       <div className="document-heading">
         <div>

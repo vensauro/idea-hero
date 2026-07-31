@@ -1302,9 +1302,7 @@ export function PrototypeStage({
   const voteReady = useReducer(reducers.votePrototypeReady);
   const voteExtension = useReducer(reducers.votePrototypeExtension);
   const finishActivity = useReducer(reducers.finishPrototypeActivity);
-  const [mode, setMode] = useState<"DRAWING" | "IMAGE" | "AUDIO">(
-    "DRAWING",
-  );
+  const [mode, setMode] = useState<"DRAWING" | "IMAGE" | "AUDIO">("DRAWING");
   const [caption, setCaption] = useState("");
   const [pending, setPending] = useState(false);
   const [error, setError] = useState("");
@@ -1462,9 +1460,11 @@ export function PrototypeStage({
               <h3>Três formas de tornar a ideia real</h3>
             </div>
             <span>
-              {(["DRAWING", "IMAGE", "AUDIO"] as const).filter((k) =>
-                usedKinds.has(k),
-              ).length}
+              {
+                (["DRAWING", "IMAGE", "AUDIO"] as const).filter((k) =>
+                  usedKinds.has(k),
+                ).length
+              }
               /3 linguagens criativas
             </span>
           </div>
@@ -1829,19 +1829,7 @@ export function TestingStage({
     }
   }
 
-  if (selectedOption) {
-    return (
-      <section className="pilot-learning">
-        <span aria-hidden="true">✓</span>
-        <div>
-          <small>Teste escolhido pela equipe</small>
-          <h2>{selectedOption.title}</h2>
-          <p>{selectedOption.impact}</p>
-          <strong>Custo: {formatCredits(selectedOption.cost)}</strong>
-        </div>
-      </section>
-    );
-  }
+  if (selectedOption) return null;
 
   if (testOptions.length === 0) {
     return <p className="empty-state">Gerando opções de teste…</p>;
@@ -2412,9 +2400,11 @@ export function PrototypeShowcase({
           <h3>{prototype.caption || "Protótipo construído em grupo"}</h3>
         </div>
         <span>
-          {(["DRAWING", "IMAGE", "AUDIO"] as const).filter((k) =>
-            usedKinds.has(k),
-          ).length}
+          {
+            (["DRAWING", "IMAGE", "AUDIO"] as const).filter((k) =>
+              usedKinds.has(k),
+            ).length
+          }
           /3 linguagens criativas
         </span>
       </div>
@@ -2425,11 +2415,7 @@ export function PrototypeShowcase({
       >
         {(["DRAWING", "IMAGE", "AUDIO"] as const).map((kind) => (
           <span className={usedKinds.has(kind) ? "is-earned" : ""} key={kind}>
-            {kind === "DRAWING"
-              ? "Desenho"
-              : kind === "IMAGE"
-                ? "Foto"
-                : "Som"}
+            {kind === "DRAWING" ? "Desenho" : kind === "IMAGE" ? "Foto" : "Som"}
             <b>+{PROTOTYPE_CREATIVE_BONUS}</b>
           </span>
         ))}

@@ -424,6 +424,8 @@ export const TestingOption = __t.object("TestingOption", {
   description: __t.string(),
   cost: __t.u32(),
   impact: __t.string(),
+  outcomeHeadline: __t.string(),
+  outcomeBody: __t.string(),
   question: __t.string(),
   selected: __t.bool(),
   createdAt: __t.timestamp(),

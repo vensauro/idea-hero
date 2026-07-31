@@ -414,6 +414,8 @@ const testingOption = table(
     description: t.string(),
     cost: t.u32(),
     impact: t.string(),
+    outcomeHeadline: t.string().default(""),
+    outcomeBody: t.string().default(""),
     question: t.string().default(""),
     selected: t.bool(),
     createdAt: t.timestamp(),
@@ -2572,6 +2574,19 @@ export const select_test_option = spacetimedb.reducer(
       ...target,
       selected: true,
     });
+    ctx.db.stageInsight.insert({
+      id: 0n,
+      roomId,
+      stage: "TESTING",
+      headline: target.outcomeHeadline,
+      body: target.outcomeBody,
+      optionsJson: "[]",
+      selectedKey: "",
+      selectedLearning: "",
+      completed: true,
+      createdAt: ctx.timestamp,
+      updatedAt: ctx.timestamp,
+    });
     if (target.cost > 0) {
       let balance = economy.balance;
       let sequence = economy.nextSequence;
@@ -2662,6 +2677,8 @@ export const set_testing_options = spacetimedb.reducer(
       const title = String(value.title ?? "").trim();
       const description = String(value.description ?? "").trim();
       const impact = String(value.impact ?? "").trim();
+      const outcomeHeadline = String(value.outcomeHeadline ?? "").trim();
+      const outcomeBody = String(value.outcomeBody ?? "").trim();
       const cost = Number(value.cost);
       if (
         !/^[A-E]$/.test(key) ||
@@ -2669,6 +2686,10 @@ export const set_testing_options = spacetimedb.reducer(
         !title ||
         !description ||
         !impact ||
+        outcomeHeadline.length < 4 ||
+        outcomeHeadline.length > 120 ||
+        outcomeBody.length < 4 ||
+        outcomeBody.length > 280 ||
         !Number.isInteger(cost) ||
         cost < 0 ||
         cost > 2_000
@@ -2676,7 +2697,15 @@ export const set_testing_options = spacetimedb.reducer(
         throw new SenderError("Uma opção de teste gerada pela IA é inválida.");
       }
       keys.add(key);
-      return { key, title, description, impact, cost };
+      return {
+        key,
+        title,
+        description,
+        impact,
+        outcomeHeadline,
+        outcomeBody,
+        cost,
+      };
     });
     for (const option of options) {
       ctx.db.testingOption.insert({
@@ -2687,6 +2716,8 @@ export const set_testing_options = spacetimedb.reducer(
         description: option.description,
         cost: option.cost,
         impact: option.impact,
+        outcomeHeadline: option.outcomeHeadline,
+        outcomeBody: option.outcomeBody,
         question: trimmedQuestion,
         selected: false,
         createdAt: ctx.timestamp,
@@ -4120,7 +4151,6 @@ export const submit_journey_feedback = spacetimedb.reducer(
     }
   },
 );
-
 
 export const leave_room = spacetimedb.reducer(
   { roomId: t.u64() },

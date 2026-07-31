@@ -3,12 +3,7 @@ import { generateText, Output } from "ai";
 import { z } from "zod";
 
 export type StageInsightRequest = {
-  stage:
-    | "TESTING_OPTIONS"
-    | "CONQUERING_QUESTION"
-    | "TESTING"
-    | "CONQUERING"
-    | "FINAL";
+  stage: "TESTING_OPTIONS" | "CONQUERING_QUESTION" | "CONQUERING" | "FINAL";
   context: string;
 };
 
@@ -22,6 +17,8 @@ const TEST_OPTIONS_SCHEMA = z.object({
         description: z.string().min(8).max(180),
         cost: z.number().int().min(0).max(2_000),
         impact: z.string().min(8).max(160),
+        outcomeHeadline: z.string().min(4).max(120),
+        outcomeBody: z.string().min(4).max(280),
       }),
     )
     .length(5),
@@ -29,21 +26,6 @@ const TEST_OPTIONS_SCHEMA = z.object({
 
 const QUESTION_SCHEMA = z.object({
   question: z.string().min(12).max(180),
-});
-
-const REACTION_SCHEMA = z.object({
-  headline: z.string().min(4).max(120),
-  body: z.string().min(4).max(280),
-  options: z
-    .array(
-      z.object({
-        key: z.string().min(1).max(2),
-        title: z.string().min(2).max(80),
-        description: z.string().min(4).max(160),
-        learning: z.string().min(2).max(40),
-      }),
-    )
-    .length(3),
 });
 
 const PUBLIC_REACTION_SCHEMA = z.object({
@@ -62,27 +44,6 @@ function json(body: unknown, status = 200) {
 
 const STORYTELLING_TONE = `Preserve o universo, a linguagem e as imagens que o grupo criou. Quando a historia for fantastica, narre como uma aventura de RPG magico: pessoas, lugares e descobertas fazem parte de uma jornada encantada. Nao acrescente elementos que nao existam no historico.`;
 
-function testingReactionPrompt(context: string) {
-  return `Voce e a voz do mercado em um jogo colaborativo de ideia em portugues brasileiro.
-Neste momento, o grupo acabou de escolher uma forma de testar o prototipo com recursos. Descreva a reacao das pessoas que participaram do teste diante do prototipo e da ideia construida, com base exclusivamente na historia abaixo.
-
-Historia construida pela equipe ate agora:
-"""
-${context}
-"""
-
-Devolva apenas o objeto solicitado:
-- headline: um titulo curto e concreto descrevendo a reacao observada (ex.: "As pessoas gostaram, mas nao souberam por onde comecar"). Precisa ser realista, especifico e coerente com a ideia da equipe. Nao use termos genericos vazios.
-- body: uma frase (ate 280 caracteres) explicando o que aconteceu e o que ficou evidente. Baseie-se na historia; nao invente produtos, numeros ou promessas que nao existem.
-- options: exatamente 3 caminhos distintos que a equipe pode escolher para responder a essa reacao. Cada item:
-  - key: "A", "B" ou "C"
-  - title: nome curto da acao (ate 80 caracteres)
-  - description: o que fazer (ate 160 caracteres)
-  - learning: uma palavra ou expressao curta (ate 40 caracteres) que sintetiza o aprendizado da escolha
-
-${STORYTELLING_TONE}`;
-}
-
 function publicReactionPrompt(context: string) {
   return `Voce e a voz do publico em um jogo colaborativo de ideia em portugues brasileiro.
 O grupo acabou de decidir como convidar pessoas a participar da ideia. Descreva a reacao do publico-alvo ao conhecer esse convite, usando exclusivamente a historia abaixo.
@@ -100,8 +61,13 @@ Esta e apenas uma reacao informativa, nao uma nova decisao da equipe. Nao descre
 }
 
 function journeyPrompt(context: string) {
-  return `Voce narra o epilogo de uma jornada colaborativa de ideia em portugues brasileiro.
-Reescreva, a partir da historia abaixo, um titulo e um resumo que unifiquem o que o grupo construiu ao longo da jornada e mostrem como a ideia convida outras pessoas a participar.
+  return `Voce e o narrador supremo do DESFECHO FINAL de uma jornada criativa em portugues brasileiro.
+Sua missao e criar um FIM surpreendente, extremamente criativo e unico para a ideia da equipe.
+
+ATENCAO: O RESULTADO PODE SER BOM OU RUIM!
+- Nao tenha medo de gerar um final desastroso, um grande sucesso, um mal-entendido hilario, uma reviravolta inesperada ou uma licao agridoce.
+- Avalie a historia criada, a ideia, o prototipo e o convite: dependendo de como as escolhas foram feitas, a resposta do mundo pode ser incrivelmente bem-sucedida OU dar completamente errado de formas muito criativas e divertidas.
+- NAO fique apenas resumindo o passado. Conte O QUE ACONTECEU NO FINAL quando a ideia chegou nas pessoas.
 
 Historia construida pela equipe:
 """
@@ -109,8 +75,8 @@ ${context}
 """
 
 Devolva apenas o objeto solicitado:
-- title: um titulo memoravel para a ideia (ate 80 caracteres). Pode ser criativo, mas precisa refletir a ideia real.
-- summary: um paragrafo (ate 400 caracteres) que consolide cenario, problema, solucao, prototipo e o convite para participar em uma narrativa unica. O convite e uma forma de as pessoas se aproximarem da ideia; nao e uma vitoria, conquista, dominio ou resultado garantido. Use apenas o que existe na historia; nao invente dados, metricas ou promessas.
+- title: um titulo muito criativo e marcante para o desfecho (ate 80 caracteres). Pode refletir um sucesso estrondoso, um fiasco memoravel ou uma reviravolta surpreendente (ex: "O Encontro que Mudou a Cidade", "A Grande Confusao dos Relogios", "Sucesso Inesperado no Bairro", "O Fiasco Glorioso").
+- summary: um paragrafo narrativo envolvente (ate 400 caracteres) contando o FIM da historia, o resultado final e o impacto (bom, ruim ou inusitado) que a ideia causou no mundo real.
 
 ${STORYTELLING_TONE}`;
 }
@@ -124,7 +90,8 @@ Historia construida pela equipe:
 ${context}
 """
 
-Devolva um objeto com question e options. question deve ser uma pergunta concreta que ajude o grupo a escolher o teste certo. options deve ser uma lista com 5 opcoes; cada item deve ter key ("A" a "E", sem repetir), title, description, cost (inteiro entre 0 e 2.000 creditos) e impact.
+Devolva um objeto com question e options. question deve ser uma pergunta concreta que ajude o grupo a escolher o teste certo. options deve ser uma lista com 5 opcoes; cada item deve ter key ("A" a "E", sem repetir), title, description, cost (inteiro entre 0 e 2.000 creditos), impact, outcomeHeadline e outcomeBody.
+outcomeHeadline e outcomeBody devem narrar, antecipadamente, a reacao e o resultado que ocorrerao caso aquela opcao seja escolhida. outcomeHeadline deve ser um titulo curto e concreto; outcomeBody deve ser uma frase de ate 280 caracteres explicando o que os usuarios sentiram, viram ou descobriram no teste. Esses dois campos serao revelados sem uma nova chamada de IA quando o grupo selecionar a opcao.
 As opcoes devem ser viaveis para um grupo pequeno, ter niveis de investimento variados e testar hipoteses diferentes. Nao invente fatos sobre a ideia ou o publico. Nao mencione desenhos, fotografias, imagens, audios, artefatos ou materiais especificos, a menos que estejam explicitamente registrados na historia. ${STORYTELLING_TONE}`;
 }
 
@@ -197,16 +164,7 @@ export async function action({ request }: { request: Request }) {
       return json(result.output);
     }
 
-    if (stage !== "TESTING") {
-      return json({ error: "Etapa invalida para reacao da IA." }, 400);
-    }
-
-    const result = await generateText({
-      model: google("gemini-flash-latest"),
-      output: Output.object({ schema: REACTION_SCHEMA }),
-      prompt: testingReactionPrompt(context),
-    });
-    return json(result.output);
+    return json({ error: "Etapa invalida para reacao da IA." }, 400);
   } catch (error) {
     console.error("Stage insight generation failed", error);
     return json(
