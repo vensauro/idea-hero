@@ -2829,18 +2829,6 @@ function GameBoard({
               </small>
             </section>
           )}
-          {collaborative && phase === "VOTING" && (
-            <div className="section-heading">
-              <div>
-                <p className="kicker">✦ Escolha individual</p>
-                <h2>Qual proposta deve guiar esta etapa?</h2>
-              </div>
-              <span>
-                {activeStageVotes.length}/{participatingPlayers.length} votos
-              </span>
-            </div>
-          )}
-
           {collaborative &&
             phase === "CONTRIBUTING" &&
             stage !== "POLISHING" &&
