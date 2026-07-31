@@ -1535,7 +1535,7 @@ function GameBoard({
     ownAssignment?.actionPlaceholder ?? guidance?.placeholder ?? "";
   const conqueringQuestionReady =
     stage !== "CONQUERING" ||
-    !ownAssignment?.actionPrompt.includes("Como conquistar a adesão da galera");
+    !ownAssignment?.actionPrompt.includes("Como convidar pessoas a participar");
   const collaborative = COLLABORATIVE_STAGES.has(stage);
   const stageVotes = votes.filter(
     (item) => item.roomId === room.id && item.stage === stage,
@@ -2536,27 +2536,13 @@ function GameBoard({
               (phase === "REVIEW" &&
                 (canAdvanceStage ||
                   STAGES_REQUIRING_TEAM_CONFIRMATION.has(stage)))) && (
-              <section
-                className={`host-stage-action ${isHost || isFacilitator ? "is-host" : ""}`}
-                aria-label="Ação da etapa"
-              >
-                <div>
-                  <strong>
-                    {stage === "POLISHING"
-                      ? "Pronto para continuar"
-                      : phase === "CONTRIBUTING"
-                        ? "Pronto para abrir a votação"
-                        : phase === "VOTING"
-                          ? "Pronto para revelar a decisão"
-                          : "Pronto para avançar"}
-                  </strong>
-                </div>
+              <>
                 {phase === "CONTRIBUTING" &&
                   isHost &&
                   !usesUnion &&
                   !usesFacilitator && (
                     <button
-                      className="primary-button"
+                      className="primary-button host-stage-action"
                       disabled={actionPending}
                       onClick={() =>
                         void runStageAction(() =>
@@ -2571,7 +2557,7 @@ function GameBoard({
                   phase === "CONTRIBUTING" &&
                   isPolishingLead && (
                     <button
-                      className="primary-button"
+                      className="primary-button host-stage-action"
                       disabled={actionPending}
                       onClick={() =>
                         void runStageAction(() =>
@@ -2584,7 +2570,7 @@ function GameBoard({
                   )}
                 {phase === "VOTING" && isHost && (
                   <button
-                    className="primary-button"
+                    className="primary-button host-stage-action"
                     disabled={actionPending}
                     onClick={() =>
                       void runStageAction(() =>
@@ -2613,7 +2599,7 @@ function GameBoard({
                   ) : (
                     canAdvanceStage && (
                       <button
-                        className="primary-button"
+                        className="primary-button host-stage-action"
                         disabled={actionPending}
                         onClick={() =>
                           void runStageAction(() =>
