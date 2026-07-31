@@ -1678,9 +1678,6 @@ function GameBoard({
   const stageOutcome = stageOutcomes.find((item) => item.stage === stage);
   const assignedPlaceholder =
     ownAssignment?.actionPlaceholder ?? guidance?.placeholder ?? "";
-  const conqueringQuestionReady =
-    stage !== "CONQUERING" ||
-    !ownAssignment?.actionPrompt.includes("Como convidar pessoas a participar");
   const collaborative = COLLABORATIVE_STAGES.has(stage);
   const stageVotes = votes.filter(
     (item) => item.roomId === room.id && item.stage === stage,
@@ -2184,7 +2181,13 @@ function GameBoard({
   }, []);
 
   useEffect(() => {
-    setDraft(ownContribution?.content ?? "");
+    if (ownContribution?.content) {
+      setDraft(ownContribution.content);
+    } else if (stage === "CONQUERING") {
+      setDraft("Para conquistar a adesão da galera, eu proporia ");
+    } else {
+      setDraft("");
+    }
     setVoiceSuggestion("");
   }, [ownContribution?.content, stage]);
 
@@ -2841,13 +2844,32 @@ function GameBoard({
           {collaborative &&
             phase === "CONTRIBUTING" &&
             stage !== "POLISHING" &&
-            conqueringQuestionReady &&
             (!usesFacilitator || isFacilitator) && (
               <>
                 <form onSubmit={saveContribution} className="contribution-form">
                   <label className="sr-only" htmlFor="contribution">
                     Sua contribuição
                   </label>
+                  {stage === "CONQUERING" && conqueringQuestionPending && (
+                    <p className="simulation-disclaimer" style={{ fontStyle: "italic", opacity: 0.9 }}>
+                      ✦ A IA está gerando uma pergunta personalizada para o grupo… (você já pode responder)
+                    </p>
+                  )}
+                  {stage === "CONQUERING" && conqueringQuestionError && (
+                    <div className="error-message" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "0.5rem", marginBottom: "0.5rem" }}>
+                      <span>{conqueringQuestionError}</span>
+                      {isHost && (
+                        <button
+                          type="button"
+                          className="secondary-button"
+                          style={{ fontSize: "0.8rem", padding: "0.2rem 0.5rem" }}
+                          onClick={() => void generateConqueringQuestion()}
+                        >
+                          Tentar gerar novamente
+                        </button>
+                      )}
+                    </div>
+                  )}
                   {ownAssignment?.actionPrompt && (
                     <p className="simulation-disclaimer">
                       {ownAssignment.actionPrompt}
@@ -2918,36 +2940,6 @@ function GameBoard({
                   </div>
                 )}
               </>
-            )}
-
-          {stage === "CONQUERING" &&
-            phase === "CONTRIBUTING" &&
-            !conqueringQuestionReady && (
-              <div
-                className="stage-insight-pending"
-                style={{ padding: "1rem 0" }}
-              >
-                {conqueringQuestionPending ? (
-                  <p className="empty-state">
-                    Gerando a pergunta da etapa com IA…
-                  </p>
-                ) : isHost ? (
-                  <button
-                    type="button"
-                    className="primary-button"
-                    onClick={() => void generateConqueringQuestion()}
-                  >
-                    Gerar pergunta da etapa com IA
-                  </button>
-                ) : (
-                  <p className="empty-state">
-                    O anfitrião está gerando a pergunta da etapa com IA…
-                  </p>
-                )}
-                {conqueringQuestionError && (
-                  <p className="error-message">{conqueringQuestionError}</p>
-                )}
-              </div>
             )}
 
           {collaborative &&
