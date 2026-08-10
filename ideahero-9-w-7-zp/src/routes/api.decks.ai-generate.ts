@@ -9,10 +9,7 @@ const STAGES = [
   "INSIGHT",
   "SOLUTION",
   "POLISHING",
-  "PROTOTYPE",
-  "TESTING",
   "CONQUERING",
-  "FINAL",
 ] as const;
 
 const cardConceptSchema = z.object({

@@ -7,15 +7,15 @@ import { Button, Input, Select, Textarea, Badge, Card, Modal } from "../componen
 import "../idea-hero.css";
 
 const STAGES = [
-  { key: "SCENARIO", title: "SCENARIO — Cenário & Mundo", essential: true, desc: "Ideação inicial do ecossistema" },
-  { key: "PROBLEM", title: "PROBLEM — Fricção & Problema", essential: true, desc: "Identificação do desafio central" },
-  { key: "INSIGHT", title: "INSIGHT — Descoberta & Padrão", essential: true, desc: "Mudança de perspectiva e gatilhos" },
-  { key: "SOLUTION", title: "SOLUTION — Ideia & Solução", essential: true, desc: "Criação da proposta de valor" },
-  { key: "POLISHING", title: "POLISHING — Lapidação", essential: false, desc: "Detalhamento e refinamento" },
-  { key: "PROTOTYPE", title: "PROTOTYPE — Prototipagem", essential: false, desc: "Diretrizes de desenho e conceito" },
-  { key: "TESTING", title: "TESTING — Teste & Provação", essential: false, desc: "Feedback e validação" },
-  { key: "CONQUERING", title: "CONQUERING — Convite & Aliança", essential: false, desc: "Estratégia de pitch e adesão" },
-  { key: "FINAL", title: "FINAL — Transformação Final", essential: false, desc: "Fechamento da jornada" },
+  { key: "SCENARIO", title: "SCENARIO — Cenário & Mundo", usesCards: true, essential: true, desc: "Ideação de cenário (Exibe Carta no jogo)" },
+  { key: "PROBLEM", title: "PROBLEM — Fricção & Problema", usesCards: true, essential: true, desc: "Identificação do problema (Exibe Carta no jogo)" },
+  { key: "INSIGHT", title: "INSIGHT — Descoberta & Padrão", usesCards: true, essential: true, desc: "Gatilhos de insight (Exibe Carta no jogo)" },
+  { key: "SOLUTION", title: "SOLUTION — Ideia & Solução", usesCards: true, essential: true, desc: "Criação de solução (Exibe Carta no jogo)" },
+  { key: "POLISHING", title: "POLISHING — Lapidação", usesCards: true, essential: false, desc: "Refinamento da proposta (Exibe Carta no jogo)" },
+  { key: "CONQUERING", title: "CONQUERING — Convite & Aliança", usesCards: true, essential: false, desc: "Estratégia de adesão (Exibe Carta no jogo)" },
+  { key: "PROTOTYPE", title: "PROTOTYPE — Prototipagem", usesCards: false, essential: false, desc: "Sem cartas no jogo (Atividade usa Lousa de Desenho)" },
+  { key: "TESTING", title: "TESTING — Teste & Provação", usesCards: false, essential: false, desc: "Sem cartas no jogo (Atividade usa Opções de Teste)" },
+  { key: "FINAL", title: "FINAL — Transformação Final", usesCards: false, essential: false, desc: "Sem cartas no jogo (Atividade gera Relatório Final)" },
 ];
 
 const HOST = import.meta.env.VITE_SPACETIMEDB_HOST ?? "ws://localhost:3000";
@@ -351,14 +351,22 @@ function DeckDetailContent() {
             const stageCards = cardsInDeck.filter((c) => c.stage === stageObj.key);
 
             return (
-              <div key={stageObj.key} className="stage-cards-group">
+              <div key={stageObj.key} className={`stage-cards-group ${!stageObj.usesCards ? "non-card-stage" : ""}`}>
                 <div className="stage-group-header">
                   <h3>{stageObj.title}</h3>
-                  <Badge variant={stageObj.essential ? "pink" : "neutral"} size="sm">
-                    {stageObj.essential ? "⭐ Essencial" : "Opcional (Fallback)"}
-                  </Badge>
-                  <span className="stage-card-count">{stageCards.length} cartas</span>
-                  {isOwner && (
+                  {stageObj.usesCards ? (
+                    <Badge variant={stageObj.essential ? "pink" : "teal"} size="sm">
+                      {stageObj.essential ? "⭐ Carta no Jogo (Essencial)" : "🎴 Carta no Jogo"}
+                    </Badge>
+                  ) : (
+                    <Badge variant="neutral" size="sm">
+                      🚫 Sem Carta no Jogo
+                    </Badge>
+                  )}
+                  {stageObj.usesCards && (
+                    <span className="stage-card-count">{stageCards.length} cartas</span>
+                  )}
+                  {isOwner && stageObj.usesCards && (
                     <Button
                       variant="secondary"
                       size="sm"
@@ -374,9 +382,13 @@ function DeckDetailContent() {
                   )}
                 </div>
 
-                {stageCards.length === 0 ? (
+                {!stageObj.usesCards ? (
+                  <div className="stage-empty-placeholder" style={{ color: "var(--muted)", fontSize: "0.85rem", background: "rgba(0,0,0,0.03)", padding: "0.85rem 1rem", borderRadius: "12px", border: "1.5px dashed rgba(0,0,0,0.15)" }}>
+                    🎨 <strong>Etapa Sem Cartas no Jogo:</strong> {stageObj.desc}. Não é necessário criar cartas para esta etapa.
+                  </div>
+                ) : stageCards.length === 0 ? (
                   <div className="stage-empty-placeholder" style={{ color: "var(--muted)", fontStyle: "italic", fontSize: "0.85rem" }}>
-                    Nenhuma carta cadastrada para esta etapa. O jogo usará o catálogo padrão como fallback.
+                    Nenhuma carta cadastrada para esta etapa. O jogo usará o catálogo padrão como fallback automático.
                   </div>
                 ) : (
                   <div className="cards-stage-grid">
