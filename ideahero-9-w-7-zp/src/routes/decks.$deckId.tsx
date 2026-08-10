@@ -7,15 +7,15 @@ import { Button, Input, Select, Textarea, Badge, Card, Modal } from "../componen
 import "../idea-hero.css";
 
 const STAGES = [
-  { key: "SCENARIO", title: "SCENARIO — Cenário & Mundo" },
-  { key: "PROBLEM", title: "PROBLEM — Fricção & Problema" },
-  { key: "INSIGHT", title: "INSIGHT — Descoberta & Padrão" },
-  { key: "SOLUTION", title: "SOLUTION — Ideia & Solução" },
-  { key: "POLISHING", title: "POLISHING — Lapidação" },
-  { key: "PROTOTYPE", title: "PROTOTYPE — Prototipagem" },
-  { key: "TESTING", title: "TESTING — Teste & Provação" },
-  { key: "CONQUERING", title: "CONQUERING — Convite & Aliança" },
-  { key: "FINAL", title: "FINAL — Transformação Final" },
+  { key: "SCENARIO", title: "SCENARIO — Cenário & Mundo", essential: true, desc: "Ideação inicial do ecossistema" },
+  { key: "PROBLEM", title: "PROBLEM — Fricção & Problema", essential: true, desc: "Identificação do desafio central" },
+  { key: "INSIGHT", title: "INSIGHT — Descoberta & Padrão", essential: true, desc: "Mudança de perspectiva e gatilhos" },
+  { key: "SOLUTION", title: "SOLUTION — Ideia & Solução", essential: true, desc: "Criação da proposta de valor" },
+  { key: "POLISHING", title: "POLISHING — Lapidação", essential: false, desc: "Detalhamento e refinamento" },
+  { key: "PROTOTYPE", title: "PROTOTYPE — Prototipagem", essential: false, desc: "Diretrizes de desenho e conceito" },
+  { key: "TESTING", title: "TESTING — Teste & Provação", essential: false, desc: "Feedback e validação" },
+  { key: "CONQUERING", title: "CONQUERING — Convite & Aliança", essential: false, desc: "Estratégia de pitch e adesão" },
+  { key: "FINAL", title: "FINAL — Transformação Final", essential: false, desc: "Fechamento da jornada" },
 ];
 
 const HOST = import.meta.env.VITE_SPACETIMEDB_HOST ?? "ws://localhost:3000";
@@ -245,9 +245,19 @@ function DeckDetailContent() {
   };
 
   // Process Manual Add
-  const handleManualAdd = (e: React.FormEvent) => {
+  const handleManualAdd = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!cardTitle.trim()) return;
+
+    let finalImagePath = cardImagePath.trim() || "/cards/idea-hero-logo.svg";
+
+    if (uploadFile) {
+      const reader = new FileReader();
+      finalImagePath = await new Promise<string>((resolve) => {
+        reader.onload = () => resolve(reader.result as string);
+        reader.readAsDataURL(uploadFile);
+      });
+    }
 
     conn?.reducers.addCardToDeck({
       id: crypto.randomUUID(),
@@ -255,7 +265,7 @@ function DeckDetailContent() {
       stage: selectedStage,
       title: cardTitle.trim(),
       lens: cardLens.trim() || "Geral",
-      imagePath: cardImagePath.trim() || "/cards/idea-hero-logo.svg",
+      imagePath: finalImagePath,
       altText: cardAltText.trim() || cardTitle,
       provocation: cardProvocation.trim() || "Como esta carta se aplica à ideia?",
       tags: JSON.stringify(cardTags.split(",").map((t) => t.trim()).filter(Boolean)),
@@ -317,6 +327,9 @@ function DeckDetailContent() {
                 {currentDeck.isPublic ? "🌐 Público" : "🔒 Privado"}
               </Badge>
             </div>
+            <p style={{ marginTop: "0.75rem", fontSize: "0.825rem", color: "var(--muted)", fontStyle: "italic" }}>
+              💡 <strong>Dica:</strong> Não é preciso ter cartas em todas as 9 etapas. Se uma etapa não tiver cartas no baralho, o jogo usará o catálogo padrão como fallback automático!
+            </p>
           </div>
           {isOwner && (
             <Button
@@ -341,6 +354,9 @@ function DeckDetailContent() {
               <div key={stageObj.key} className="stage-cards-group">
                 <div className="stage-group-header">
                   <h3>{stageObj.title}</h3>
+                  <Badge variant={stageObj.essential ? "pink" : "neutral"} size="sm">
+                    {stageObj.essential ? "⭐ Essencial" : "Opcional (Fallback)"}
+                  </Badge>
                   <span className="stage-card-count">{stageCards.length} cartas</span>
                   {isOwner && (
                     <Button
@@ -497,49 +513,59 @@ function DeckDetailContent() {
           </div>
         )}
 
-        {/* Mode 3: Manual Card */}
-        {creationMode === "manual" && (
-          <form onSubmit={handleManualAdd} className="studio-mode-box">
-            <Input
-              label="Título da Carta:"
-              placeholder="Ex: O Relógio de Sol"
-              value={cardTitle}
-              onChange={(e) => setCardTitle(e.target.value)}
-              required
-            />
+            {/* Mode 3: Manual Card */}
+            {creationMode === "manual" && (
+              <form onSubmit={handleManualAdd} className="studio-mode-box">
+                <Input
+                  label="Título da Carta:"
+                  placeholder="Ex: O Relógio de Sol"
+                  value={cardTitle}
+                  onChange={(e) => setCardTitle(e.target.value)}
+                  required
+                />
 
-            <Input
-              label="Lente / Ângulo:"
-              placeholder="Ex: Tempo & Ciclos"
-              value={cardLens}
-              onChange={(e) => setCardLens(e.target.value)}
-            />
+                <div className="ui-field">
+                  <label className="ui-field__label">Upload de Imagem (ou selecione arquivo):</label>
+                  <input type="file" accept="image/*" onChange={handleFileChange} style={{ width: "100%", padding: "0.5rem" }} />
+                  {uploadPreview && (
+                    <div className="upload-preview-box" style={{ marginTop: "0.5rem" }}>
+                      <img src={uploadPreview} alt="Preview" style={{ width: "100%", height: "120px", objectFit: "cover", borderRadius: "10px", border: "2px solid var(--line)" }} />
+                    </div>
+                  )}
+                </div>
 
-            <Textarea
-              label="Pergunta Provocativa:"
-              placeholder="Ex: O que se torna visível quando paramos de medir o tempo em minutos?"
-              value={cardProvocation}
-              onChange={(e) => setCardProvocation(e.target.value)}
-              rows={2}
-            />
+                <Input
+                  label="Ou URL / Caminho da Imagem:"
+                  placeholder="/cards/00a3fd49-a67d-4438-92e8-2dc61ef93b98.webp"
+                  value={cardImagePath}
+                  onChange={(e) => setCardImagePath(e.target.value)}
+                />
 
-            <Input
-              label="URL / Caminho da Imagem:"
-              placeholder="/cards/00a3fd49-a67d-4438-92e8-2dc61ef93b98.webp"
-              value={cardImagePath}
-              onChange={(e) => setCardImagePath(e.target.value)}
-            />
+                <Input
+                  label="Lente / Ângulo:"
+                  placeholder="Ex: Tempo & Ciclos"
+                  value={cardLens}
+                  onChange={(e) => setCardLens(e.target.value)}
+                />
 
-            <div style={{ display: "flex", gap: "0.75rem", justifyContent: "flex-end", marginTop: "1.5rem" }}>
-              <Button variant="ghost" onClick={() => setShowAddModal(false)}>
-                Cancelar
-              </Button>
-              <Button type="submit" variant="primary">
-                Adicionar Carta Manual
-              </Button>
-            </div>
-          </form>
-        )}
+                <Textarea
+                  label="Pergunta Provocativa:"
+                  placeholder="Ex: O que se torna visível quando paramos de medir o tempo em minutos?"
+                  value={cardProvocation}
+                  onChange={(e) => setCardProvocation(e.target.value)}
+                  rows={2}
+                />
+
+                <div style={{ display: "flex", gap: "0.75rem", justifyContent: "flex-end", marginTop: "1.5rem" }}>
+                  <Button variant="ghost" onClick={() => setShowAddModal(false)}>
+                    Cancelar
+                  </Button>
+                  <Button type="submit" variant="primary">
+                    Adicionar Carta Manual
+                  </Button>
+                </div>
+              </form>
+            )}
       </Modal>
     </div>
   );
