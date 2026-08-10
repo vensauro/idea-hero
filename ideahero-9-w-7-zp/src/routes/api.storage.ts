@@ -39,7 +39,7 @@ export async function action({ request }: { request: Request }) {
     const kind = String(formData.get("kind") ?? "");
     const file = formData.get("file");
 
-    if (!/^\d+$/.test(roomId)) {
+    if (!/^[a-z0-9-]+$/i.test(roomId)) {
       return json({ error: "A sala informada não é válida." }, 400);
     }
     if (!(file instanceof File) || file.size === 0) {

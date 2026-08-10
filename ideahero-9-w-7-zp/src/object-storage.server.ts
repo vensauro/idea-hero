@@ -39,7 +39,7 @@ function storageKey(key: string, folder: string) {
 }
 
 export function isPrototypeObjectKey(key: string) {
-  return /^idea-hero\/prototype\/\d+\/[a-z0-9-]+\.(?:jpe?g|png|webp|gif|mp3|wav|ogg|webm|m4a)$/i.test(
+  return /^idea-hero\/prototype\/[a-z0-9-]+\/[a-z0-9-]+\.(?:jpe?g|png|webp|gif|mp3|wav|ogg|webm|m4a)$/i.test(
     key,
   );
 }
