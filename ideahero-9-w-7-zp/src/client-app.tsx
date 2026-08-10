@@ -8,8 +8,24 @@ const HOST = import.meta.env.VITE_SPACETIMEDB_HOST ?? "ws://localhost:3000";
 const DB_NAME = import.meta.env.VITE_SPACETIMEDB_DB_NAME ?? "ideahero-9w7zp";
 const TOKEN_KEY = `${HOST}/${DB_NAME}/auth_token`;
 
-const onConnect = (conn: DbConnection, identity: Identity, token: string) => {
-  localStorage.setItem(TOKEN_KEY, token);
+function getSavedToken(): string | undefined {
+  if (typeof window === "undefined" || typeof localStorage === "undefined") return undefined;
+  try {
+    return localStorage.getItem(TOKEN_KEY) || undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+function setSavedToken(token: string) {
+  if (typeof window === "undefined" || typeof localStorage === "undefined") return;
+  try {
+    localStorage.setItem(TOKEN_KEY, token);
+  } catch {}
+}
+
+const onConnect = (_conn: DbConnection, identity: Identity, token: string) => {
+  setSavedToken(token);
   console.log(
     "Connected to SpacetimeDB with identity:",
     identity.toHexString(),
@@ -27,7 +43,7 @@ const onConnectError = (_ctx: ErrorContext, err: Error) => {
 const connectionBuilder = DbConnection.builder()
   .withUri(HOST)
   .withDatabaseName(DB_NAME)
-  .withToken(localStorage.getItem(TOKEN_KEY) || undefined)
+  .withToken(getSavedToken())
   .withCompression("none")
   .onConnect(onConnect)
   .onDisconnect(onDisconnect)

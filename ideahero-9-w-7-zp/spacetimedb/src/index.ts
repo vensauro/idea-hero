@@ -4,6 +4,7 @@ import {
   CARD_CATALOG,
   cardForRoomStage,
   replacementCardForRoomStage,
+  stableHash,
 } from "./cards";
 import {
   CARD_REDRAW_COST,
@@ -193,6 +194,7 @@ const room = table(
     round: t.u32(),
     createdAt: t.timestamp(),
     updatedAt: t.timestamp(),
+    deckId: t.string().default("default"),
   },
 );
 
@@ -461,6 +463,60 @@ const card = table(
   },
 );
 
+const deck = table(
+  { name: "deck", public: true },
+  {
+    id: t.string().primaryKey(),
+    ownerIdentity: t.identity().index("btree"),
+    name: t.string(),
+    description: t.string(),
+    coverImagePath: t.string(),
+    isPublic: t.bool(),
+    isOfficial: t.bool(),
+    createdAt: t.timestamp(),
+    updatedAt: t.timestamp(),
+  },
+);
+
+const deckCard = table(
+  { name: "deck_card", public: true },
+  {
+    id: t.string().primaryKey(),
+    deckId: t.string().index("btree"),
+    stage: t.string().index("btree"),
+    title: t.string(),
+    lens: t.string(),
+    imagePath: t.string(),
+    altText: t.string(),
+    provocation: t.string(),
+    tags: t.string().default("[]"),
+    createdAt: t.timestamp(),
+    updatedAt: t.timestamp(),
+  },
+);
+
+const userPoints = table(
+  { name: "user_points", public: true },
+  {
+    identity: t.identity().primaryKey(),
+    balance: t.u32(),
+    totalSpent: t.u32(),
+    updatedAt: t.timestamp(),
+  },
+);
+
+const pointsTransaction = table(
+  { name: "points_transaction", public: true },
+  {
+    id: t.u64().primaryKey().autoInc(),
+    identity: t.identity().index("btree"),
+    amount: t.i32(),
+    reason: t.string(),
+    balanceAfter: t.u32(),
+    createdAt: t.timestamp(),
+  },
+);
+
 const cardDraw = table(
   { name: "card_draw" },
   {
@@ -644,6 +700,10 @@ const spacetimedb = schema({
   journey,
   publishedResult,
   journeyFeedback,
+  deck,
+  deckCard,
+  userPoints,
+  pointsTransaction,
 });
 export default spacetimedb;
 
@@ -861,6 +921,372 @@ export const room_card_draws = spacetimedb.view(
       draws.push(...ctx.db.cardDraw.roomId.filter(membership.roomId));
     }
     return draws;
+  },
+);
+
+function drawCardForRoom(
+  ctx: any,
+  roomId: bigint,
+  stage: string,
+  drawIndex = 0,
+) {
+  const currentRoom = ctx.db.room.id.find(roomId);
+  const selectedDeckId = currentRoom?.deckId || "default";
+
+  if (selectedDeckId !== "default") {
+    const customCards = [...ctx.db.deckCard.deckId.filter(selectedDeckId)].filter(
+      (c: any) => c.stage === stage,
+    );
+    if (customCards.length > 0) {
+      const hash = stableHash(`${roomId}:${stage}:deck-v1:${drawIndex}`);
+      const c = customCards[hash % customCards.length];
+      return {
+        id: c.id,
+        stage: c.stage,
+        title: c.title,
+        lens: c.lens,
+        imagePath: c.imagePath,
+        altText: c.altText,
+        provocation: c.provocation,
+      };
+    }
+  }
+
+  return cardForRoomStage(roomId.toString(), stage, drawIndex);
+}
+
+export const user_decks = spacetimedb.view(
+  { name: "user_decks", public: true },
+  t.array(deck.rowType),
+  (ctx) => {
+    const result: any[] = [];
+    for (const d of ctx.db.deck.iter()) {
+      if (d.isPublic || d.isOfficial || d.ownerIdentity.isEqual(ctx.sender)) {
+        result.push(d);
+      }
+    }
+    return result;
+  },
+);
+
+export const deck_cards = spacetimedb.view(
+  { name: "deck_cards", public: true },
+  t.array(deckCard.rowType),
+  (ctx) => [...ctx.db.deckCard.iter()],
+);
+
+export const my_points = spacetimedb.view(
+  { name: "my_points", public: true },
+  t.option(userPoints.rowType),
+  (ctx) => ctx.db.userPoints.identity.find(ctx.sender) ?? undefined,
+);
+
+export const my_points_history = spacetimedb.view(
+  { name: "my_points_history", public: true },
+  t.array(pointsTransaction.rowType),
+  (ctx) => [...ctx.db.pointsTransaction.identity.filter(ctx.sender)],
+);
+
+export const create_deck = spacetimedb.reducer(
+  {
+    id: t.string(),
+    name: t.string(),
+    description: t.string(),
+    coverImagePath: t.string(),
+    isPublic: t.bool(),
+  },
+  (ctx, { id, name, description, coverImagePath, isPublic }) => {
+    if (!name.trim()) throw new SenderError("O baralho precisa de um nome.");
+    ctx.db.deck.insert({
+      id,
+      ownerIdentity: ctx.sender,
+      name: name.trim(),
+      description: description.trim(),
+      coverImagePath: coverImagePath.trim() || "/cards/idea-hero-logo.svg",
+      isPublic,
+      isOfficial: false,
+      createdAt: ctx.timestamp,
+      updatedAt: ctx.timestamp,
+    });
+  },
+);
+
+export const update_deck = spacetimedb.reducer(
+  {
+    deckId: t.string(),
+    name: t.string(),
+    description: t.string(),
+    coverImagePath: t.string(),
+    isPublic: t.bool(),
+  },
+  (ctx, { deckId, name, description, coverImagePath, isPublic }) => {
+    const existing = ctx.db.deck.id.find(deckId);
+    if (!existing) throw new SenderError("Baralho não encontrado.");
+    if (!existing.ownerIdentity.isEqual(ctx.sender)) {
+      throw new SenderError("Apenas o criador pode editar este baralho.");
+    }
+    ctx.db.deck.id.update({
+      ...existing,
+      name: name.trim() || existing.name,
+      description: description.trim(),
+      coverImagePath: coverImagePath.trim() || existing.coverImagePath,
+      isPublic,
+      updatedAt: ctx.timestamp,
+    });
+  },
+);
+
+export const delete_deck = spacetimedb.reducer(
+  { deckId: t.string() },
+  (ctx, { deckId }) => {
+    const existing = ctx.db.deck.id.find(deckId);
+    if (!existing) throw new SenderError("Baralho não encontrado.");
+    if (!existing.ownerIdentity.isEqual(ctx.sender)) {
+      throw new SenderError("Apenas o criador pode excluir este baralho.");
+    }
+    for (const cardItem of [...ctx.db.deckCard.deckId.filter(deckId)]) {
+      ctx.db.deckCard.id.delete(cardItem.id);
+    }
+    ctx.db.deck.id.delete(deckId);
+  },
+);
+
+export const add_card_to_deck = spacetimedb.reducer(
+  {
+    id: t.string(),
+    deckId: t.string(),
+    stage: t.string(),
+    title: t.string(),
+    lens: t.string(),
+    imagePath: t.string(),
+    altText: t.string(),
+    provocation: t.string(),
+    tags: t.string(),
+  },
+  (
+    ctx,
+    { id, deckId, stage, title, lens, imagePath, altText, provocation, tags },
+  ) => {
+    const existingDeck = ctx.db.deck.id.find(deckId);
+    if (!existingDeck) throw new SenderError("Baralho não encontrado.");
+    if (!existingDeck.ownerIdentity.isEqual(ctx.sender)) {
+      throw new SenderError("Apenas o dono do baralho pode adicionar cartas.");
+    }
+    ctx.db.deckCard.insert({
+      id,
+      deckId,
+      stage: stage.toUpperCase(),
+      title: title.trim(),
+      lens: lens.trim() || "Geral",
+      imagePath: imagePath.trim() || "/cards/idea-hero-logo.svg",
+      altText: altText.trim() || title,
+      provocation:
+        provocation.trim() ||
+        "Qual é a sua perspectiva sobre esta imagem?",
+      tags: tags || "[]",
+      createdAt: ctx.timestamp,
+      updatedAt: ctx.timestamp,
+    });
+    ctx.db.deck.id.update({
+      ...existingDeck,
+      updatedAt: ctx.timestamp,
+    });
+  },
+);
+
+export const update_deck_card = spacetimedb.reducer(
+  {
+    cardId: t.string(),
+    title: t.string(),
+    lens: t.string(),
+    imagePath: t.string(),
+    altText: t.string(),
+    provocation: t.string(),
+    tags: t.string(),
+  },
+  (ctx, { cardId, title, lens, imagePath, altText, provocation, tags }) => {
+    const existingCard = ctx.db.deckCard.id.find(cardId);
+    if (!existingCard) throw new SenderError("Carta não encontrada.");
+    const existingDeck = ctx.db.deck.id.find(existingCard.deckId);
+    if (!existingDeck?.ownerIdentity.isEqual(ctx.sender)) {
+      throw new SenderError("Apenas o dono do baralho pode editar esta carta.");
+    }
+    ctx.db.deckCard.id.update({
+      ...existingCard,
+      title: title.trim() || existingCard.title,
+      lens: lens.trim() || existingCard.lens,
+      imagePath: imagePath.trim() || existingCard.imagePath,
+      altText: altText.trim() || existingCard.altText,
+      provocation: provocation.trim() || existingCard.provocation,
+      tags: tags || existingCard.tags,
+      updatedAt: ctx.timestamp,
+    });
+  },
+);
+
+export const delete_deck_card = spacetimedb.reducer(
+  { cardId: t.string() },
+  (ctx, { cardId }) => {
+    const existingCard = ctx.db.deckCard.id.find(cardId);
+    if (!existingCard) throw new SenderError("Carta não encontrada.");
+    const existingDeck = ctx.db.deck.id.find(existingCard.deckId);
+    if (!existingDeck?.ownerIdentity.isEqual(ctx.sender)) {
+      throw new SenderError("Apenas o dono do baralho pode remover esta carta.");
+    }
+    ctx.db.deckCard.id.delete(cardId);
+  },
+);
+
+export const select_room_deck = spacetimedb.reducer(
+  { roomId: t.u64(), deckId: t.string() },
+  (ctx, { roomId, deckId }) => {
+    const currentRoom = ctx.db.room.id.find(roomId);
+    if (!currentRoom) throw new SenderError("Sala não encontrada.");
+    if (!currentRoom.ownerIdentity.isEqual(ctx.sender)) {
+      throw new SenderError(
+        "Apenas o anfitrião pode alterar o baralho da partida.",
+      );
+    }
+    if (currentRoom.status !== "LOBBY") {
+      throw new SenderError(
+        "Não é possível alterar o baralho após iniciar a partida.",
+      );
+    }
+    ctx.db.room.id.update({
+      ...currentRoom,
+      deckId,
+      updatedAt: ctx.timestamp,
+    });
+  },
+);
+
+export const claim_free_points = spacetimedb.reducer((ctx) => {
+  let existing = ctx.db.userPoints.identity.find(ctx.sender);
+  const amount = 50;
+  if (!existing) {
+    existing = {
+      identity: ctx.sender,
+      balance: 100 + amount,
+      totalSpent: 0,
+      updatedAt: ctx.timestamp,
+    };
+    ctx.db.userPoints.insert(existing);
+  } else {
+    existing = {
+      ...existing,
+      balance: existing.balance + amount,
+      updatedAt: ctx.timestamp,
+    };
+    ctx.db.userPoints.identity.update(existing);
+  }
+  ctx.db.pointsTransaction.insert({
+    id: 0n,
+    identity: ctx.sender,
+    amount: amount,
+    reason: "DAILY_REFILL",
+    balanceAfter: existing.balance,
+    createdAt: ctx.timestamp,
+  });
+});
+
+export const purchase_points = spacetimedb.reducer(
+  { amount: t.u32() },
+  (ctx, { amount }) => {
+    if (amount === 0) return;
+    let existing = ctx.db.userPoints.identity.find(ctx.sender);
+    if (!existing) {
+      existing = {
+        identity: ctx.sender,
+        balance: 100 + amount,
+        totalSpent: 0,
+        updatedAt: ctx.timestamp,
+      };
+      ctx.db.userPoints.insert(existing);
+    } else {
+      existing = {
+        ...existing,
+        balance: existing.balance + amount,
+        updatedAt: ctx.timestamp,
+      };
+      ctx.db.userPoints.identity.update(existing);
+    }
+    ctx.db.pointsTransaction.insert({
+      id: 0n,
+      identity: ctx.sender,
+      amount: Number(amount),
+      reason: "RECHARGE",
+      balanceAfter: existing.balance,
+      createdAt: ctx.timestamp,
+    });
+  },
+);
+
+export const deduct_user_points = spacetimedb.reducer(
+  { amount: t.u32(), reason: t.string() },
+  (ctx, { amount, reason }) => {
+    let existing = ctx.db.userPoints.identity.find(ctx.sender);
+    const currentBalance = existing ? existing.balance : 100;
+    if (currentBalance < amount) {
+      throw new SenderError(
+        `Saldo insuficiente de pontos (${currentBalance}/${amount}).`,
+      );
+    }
+    const newBalance = currentBalance - amount;
+    const totalSpent = (existing ? existing.totalSpent : 0) + amount;
+    if (!existing) {
+      ctx.db.userPoints.insert({
+        identity: ctx.sender,
+        balance: newBalance,
+        totalSpent,
+        updatedAt: ctx.timestamp,
+      });
+    } else {
+      ctx.db.userPoints.identity.update({
+        ...existing,
+        balance: newBalance,
+        totalSpent,
+        updatedAt: ctx.timestamp,
+      });
+    }
+    ctx.db.pointsTransaction.insert({
+      id: 0n,
+      identity: ctx.sender,
+      amount: -Number(amount),
+      reason,
+      balanceAfter: newBalance,
+      createdAt: ctx.timestamp,
+    });
+  },
+);
+
+export const admin_grant_points = spacetimedb.reducer(
+  { targetIdentity: t.identity(), amount: t.u32() },
+  (ctx, { targetIdentity, amount }) => {
+    let existing = ctx.db.userPoints.identity.find(targetIdentity);
+    if (!existing) {
+      existing = {
+        identity: targetIdentity,
+        balance: 100 + amount,
+        totalSpent: 0,
+        updatedAt: ctx.timestamp,
+      };
+      ctx.db.userPoints.insert(existing);
+    } else {
+      existing = {
+        ...existing,
+        balance: existing.balance + amount,
+        updatedAt: ctx.timestamp,
+      };
+      ctx.db.userPoints.identity.update(existing);
+    }
+    ctx.db.pointsTransaction.insert({
+      id: 0n,
+      identity: targetIdentity,
+      amount: Number(amount),
+      reason: "ADMIN_GRANT",
+      balanceAfter: existing.balance,
+      createdAt: ctx.timestamp,
+    });
   },
 );
 
@@ -1141,6 +1567,7 @@ export const create_room = spacetimedb.reducer(
       round: 1,
       createdAt: ctx.timestamp,
       updatedAt: ctx.timestamp,
+      deckId: "default",
     });
 
     ctx.db.roomCode.insert({
@@ -1329,8 +1756,9 @@ export const start_game = spacetimedb.reducer(
       updatedAt: ctx.timestamp,
     });
 
-    const drawnCard = cardForRoomStage(
-      currentRoom.id.toString(),
+    const drawnCard = drawCardForRoom(
+      ctx,
+      currentRoom.id,
       BOARD_STATES[0],
     );
     if (!ctx.db.card.id.find(drawnCard.id)) {
@@ -3449,7 +3877,7 @@ export const vote_stage_advance = spacetimedb.reducer(
     }
 
     const nextStage = BOARD_STATES[nextIndex];
-    const drawnCard = cardForRoomStage(roomId.toString(), nextStage);
+    const drawnCard = drawCardForRoom(ctx, roomId, nextStage);
     if (!ctx.db.card.id.find(drawnCard.id)) {
       ctx.db.card.insert({
         id: drawnCard.id,
@@ -3836,7 +4264,7 @@ export const advance_stage = spacetimedb.reducer(
     }
 
     const nextStage = BOARD_STATES[nextIndex];
-    const drawnCard = cardForRoomStage(roomId.toString(), nextStage);
+    const drawnCard = drawCardForRoom(ctx, roomId, nextStage);
     if (!ctx.db.card.id.find(drawnCard.id)) {
       ctx.db.card.insert({
         id: drawnCard.id,

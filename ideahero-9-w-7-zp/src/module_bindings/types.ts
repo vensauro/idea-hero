@@ -68,6 +68,37 @@ export const Decision = __t.object("Decision", {
 });
 export type Decision = __Infer<typeof Decision>;
 
+export const Deck = __t.object("Deck", {
+  id: __t.string(),
+  ownerIdentity: __t.identity(),
+  name: __t.string(),
+  description: __t.string(),
+  coverImagePath: __t.string(),
+  isPublic: __t.bool(),
+  isOfficial: __t.bool(),
+  createdAt: __t.timestamp(),
+  updatedAt: __t.timestamp(),
+});
+export type Deck = __Infer<typeof Deck>;
+
+export const DeckCard = __t.object("DeckCard", {
+  id: __t.string(),
+  deckId: __t.string(),
+  stage: __t.string(),
+  title: __t.string(),
+  lens: __t.string(),
+  imagePath: __t.string(),
+  altText: __t.string(),
+  provocation: __t.string(),
+  tags: __t.string(),
+  createdAt: __t.timestamp(),
+  updatedAt: __t.timestamp(),
+});
+export type DeckCard = __Infer<typeof DeckCard>;
+
+export const DeckCards = __t.object("DeckCards", {});
+export type DeckCards = __Infer<typeof DeckCards>;
+
 export const EconomyTransaction = __t.object("EconomyTransaction", {
   id: __t.u64(),
   roomId: __t.u64(),
@@ -140,6 +171,12 @@ export type MarketingPlans = __Infer<typeof MarketingPlans>;
 export const MemberRooms = __t.object("MemberRooms", {});
 export type MemberRooms = __Infer<typeof MemberRooms>;
 
+export const MyPoints = __t.object("MyPoints", {});
+export type MyPoints = __Infer<typeof MyPoints>;
+
+export const MyPointsHistory = __t.object("MyPointsHistory", {});
+export type MyPointsHistory = __Infer<typeof MyPointsHistory>;
+
 export const OwnVotes = __t.object("OwnVotes", {});
 export type OwnVotes = __Infer<typeof OwnVotes>;
 
@@ -180,6 +217,16 @@ export const Player = __t.object("Player", {
   active: __t.bool(),
 });
 export type Player = __Infer<typeof Player>;
+
+export const PointsTransaction = __t.object("PointsTransaction", {
+  id: __t.u64(),
+  identity: __t.identity(),
+  amount: __t.i32(),
+  reason: __t.string(),
+  balanceAfter: __t.u32(),
+  createdAt: __t.timestamp(),
+});
+export type PointsTransaction = __Infer<typeof PointsTransaction>;
 
 export const Profile = __t.object("Profile", {
   identity: __t.identity(),
@@ -265,6 +312,7 @@ export const Room = __t.object("Room", {
   round: __t.u32(),
   createdAt: __t.timestamp(),
   updatedAt: __t.timestamp(),
+  deckId: __t.string(),
 });
 export type Room = __Infer<typeof Room>;
 
@@ -432,6 +480,17 @@ export const TestingOption = __t.object("TestingOption", {
   createdAt: __t.timestamp(),
 });
 export type TestingOption = __Infer<typeof TestingOption>;
+
+export const UserDecks = __t.object("UserDecks", {});
+export type UserDecks = __Infer<typeof UserDecks>;
+
+export const UserPoints = __t.object("UserPoints", {
+  identity: __t.identity(),
+  balance: __t.u32(),
+  totalSpent: __t.u32(),
+  updatedAt: __t.timestamp(),
+});
+export type UserPoints = __Infer<typeof UserPoints>;
 
 export const VisibleContribution = __t.object("VisibleContribution", {
   id: __t.u64(),

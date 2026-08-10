@@ -11,15 +11,15 @@ import {
 } from "spacetimedb";
 
 export default __t.row({
-  id: __t.u64().primaryKey(),
-  code: __t.string(),
-  ownerIdentity: __t.identity().name("owner_identity"),
-  status: __t.string(),
-  mode: __t.string(),
-  currentStage: __t.string().name("current_stage"),
-  stageIndex: __t.u8().name("stage_index"),
-  round: __t.u32(),
+  id: __t.string().primaryKey(),
+  deckId: __t.string().name("deck_id"),
+  stage: __t.string(),
+  title: __t.string(),
+  lens: __t.string(),
+  imagePath: __t.string().name("image_path"),
+  altText: __t.string().name("alt_text"),
+  provocation: __t.string(),
+  tags: __t.string(),
   createdAt: __t.timestamp().name("created_at"),
   updatedAt: __t.timestamp().name("updated_at"),
-  deckId: __t.string().name("deck_id"),
 });

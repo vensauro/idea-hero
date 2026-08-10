@@ -12,14 +12,9 @@ import {
 
 export default __t.row({
   id: __t.u64().primaryKey(),
-  code: __t.string(),
-  ownerIdentity: __t.identity().name("owner_identity"),
-  status: __t.string(),
-  mode: __t.string(),
-  currentStage: __t.string().name("current_stage"),
-  stageIndex: __t.u8().name("stage_index"),
-  round: __t.u32(),
+  identity: __t.identity(),
+  amount: __t.i32(),
+  reason: __t.string(),
+  balanceAfter: __t.u32().name("balance_after"),
   createdAt: __t.timestamp().name("created_at"),
-  updatedAt: __t.timestamp().name("updated_at"),
-  deckId: __t.string().name("deck_id"),
 });

@@ -35,19 +35,28 @@ import {
 
 // Import all reducer arg schemas
 import AcknowledgeStageGuidanceReducer from "./acknowledge_stage_guidance_reducer";
+import AddCardToDeckReducer from "./add_card_to_deck_reducer";
+import AdminGrantPointsReducer from "./admin_grant_points_reducer";
 import AdvanceStageReducer from "./advance_stage_reducer";
 import CastVoteReducer from "./cast_vote_reducer";
+import ClaimFreePointsReducer from "./claim_free_points_reducer";
 import ClearOwnPrototypeDrawingReducer from "./clear_own_prototype_drawing_reducer";
+import CreateDeckReducer from "./create_deck_reducer";
 import CreateRoomReducer from "./create_room_reducer";
+import DeductUserPointsReducer from "./deduct_user_points_reducer";
+import DeleteDeckReducer from "./delete_deck_reducer";
+import DeleteDeckCardReducer from "./delete_deck_card_reducer";
 import EndJourneyReducer from "./end_journey_reducer";
 import FinishPrototypeActivityReducer from "./finish_prototype_activity_reducer";
 import JoinRoomReducer from "./join_room_reducer";
 import LeaveRoomReducer from "./leave_room_reducer";
 import OpenVotingReducer from "./open_voting_reducer";
 import PublishJourneyReducer from "./publish_journey_reducer";
+import PurchasePointsReducer from "./purchase_points_reducer";
 import RefreshRedrawnCardReducer from "./refresh_redrawn_card_reducer";
 import ResolveStageReducer from "./resolve_stage_reducer";
 import RespondStageInsightReducer from "./respond_stage_insight_reducer";
+import SelectRoomDeckReducer from "./select_room_deck_reducer";
 import SelectTestOptionReducer from "./select_test_option_reducer";
 import SetProfileReducer from "./set_profile_reducer";
 import SetReadyReducer from "./set_ready_reducer";
@@ -60,6 +69,8 @@ import SubmitContributionReducer from "./submit_contribution_reducer";
 import SubmitJourneyFeedbackReducer from "./submit_journey_feedback_reducer";
 import SubmitPrototypeArtifactReducer from "./submit_prototype_artifact_reducer";
 import SubmitPrototypeDrawingStrokeReducer from "./submit_prototype_drawing_stroke_reducer";
+import UpdateDeckReducer from "./update_deck_reducer";
+import UpdateDeckCardReducer from "./update_deck_card_reducer";
 import UpdateJourneyReducer from "./update_journey_reducer";
 import VoteCardChangeReducer from "./vote_card_change_reducer";
 import VoteMarketingPlanReducer from "./vote_marketing_plan_reducer";
@@ -73,10 +84,16 @@ import VoteStageAdvanceReducer from "./vote_stage_advance_reducer";
 // Import all table schema definitions
 import CardRow from "./card_table";
 import CurrentProfileRow from "./current_profile_table";
+import DeckRow from "./deck_table";
+import DeckCardRow from "./deck_card_table";
+import DeckCardsRow from "./deck_cards_table";
 import MarketingPlansRow from "./marketing_plans_table";
 import MemberRoomsRow from "./member_rooms_table";
+import MyPointsRow from "./my_points_table";
+import MyPointsHistoryRow from "./my_points_history_table";
 import OwnVotesRow from "./own_votes_table";
 import PilotSimulationsRow from "./pilot_simulations_table";
+import PointsTransactionRow from "./points_transaction_table";
 import ProjectPrototypesRow from "./project_prototypes_table";
 import PrototypeArtifactsRow from "./prototype_artifacts_table";
 import PrototypeDrawingStrokesRow from "./prototype_drawing_strokes_table";
@@ -98,6 +115,8 @@ import RoomStageSessionsRow from "./room_stage_sessions_table";
 import RoomTestingOptionsRow from "./room_testing_options_table";
 import RoomVoteStatusRow from "./room_vote_status_table";
 import SalesResultsRow from "./sales_results_table";
+import UserPointsRow from "./user_points_table";
+import UserDecksRow from "./user_decks_table";
 import VisibleContributionsRow from "./visible_contributions_table";
 
 /** Type-only namespace exports for generated type groups. */
@@ -118,6 +137,51 @@ const tablesSchema = __schema({
       { name: 'card_id_key', constraint: 'unique', columns: ['id'] },
     ],
   }, CardRow),
+  deck: __table({
+    name: 'deck',
+    indexes: [
+      { accessor: 'id', name: 'deck_id_idx_btree', algorithm: 'btree', columns: [
+        'id',
+      ] },
+      { accessor: 'ownerIdentity', name: 'deck_owner_identity_idx_btree', algorithm: 'btree', columns: [
+        'ownerIdentity',
+      ] },
+    ],
+    constraints: [
+      { name: 'deck_id_key', constraint: 'unique', columns: ['id'] },
+    ],
+  }, DeckRow),
+  deckCard: __table({
+    name: 'deck_card',
+    indexes: [
+      { accessor: 'deckId', name: 'deck_card_deck_id_idx_btree', algorithm: 'btree', columns: [
+        'deckId',
+      ] },
+      { accessor: 'id', name: 'deck_card_id_idx_btree', algorithm: 'btree', columns: [
+        'id',
+      ] },
+      { accessor: 'stage', name: 'deck_card_stage_idx_btree', algorithm: 'btree', columns: [
+        'stage',
+      ] },
+    ],
+    constraints: [
+      { name: 'deck_card_id_key', constraint: 'unique', columns: ['id'] },
+    ],
+  }, DeckCardRow),
+  pointsTransaction: __table({
+    name: 'points_transaction',
+    indexes: [
+      { accessor: 'id', name: 'points_transaction_id_idx_btree', algorithm: 'btree', columns: [
+        'id',
+      ] },
+      { accessor: 'identity', name: 'points_transaction_identity_idx_btree', algorithm: 'btree', columns: [
+        'identity',
+      ] },
+    ],
+    constraints: [
+      { name: 'points_transaction_id_key', constraint: 'unique', columns: ['id'] },
+    ],
+  }, PointsTransactionRow),
   publishedResult: __table({
     name: 'published_result',
     indexes: [
@@ -133,6 +197,17 @@ const tablesSchema = __schema({
       { name: 'published_result_token_key', constraint: 'unique', columns: ['token'] },
     ],
   }, PublishedResultRow),
+  userPoints: __table({
+    name: 'user_points',
+    indexes: [
+      { accessor: 'identity', name: 'user_points_identity_idx_btree', algorithm: 'btree', columns: [
+        'identity',
+      ] },
+    ],
+    constraints: [
+      { name: 'user_points_identity_key', constraint: 'unique', columns: ['identity'] },
+    ],
+  }, UserPointsRow),
   current_profile: __table({
     name: 'current_profile',
     indexes: [
@@ -140,6 +215,13 @@ const tablesSchema = __schema({
     constraints: [
     ],
   }, CurrentProfileRow),
+  deck_cards: __table({
+    name: 'deck_cards',
+    indexes: [
+    ],
+    constraints: [
+    ],
+  }, DeckCardsRow),
   marketing_plans: __table({
     name: 'marketing_plans',
     indexes: [
@@ -154,6 +236,20 @@ const tablesSchema = __schema({
     constraints: [
     ],
   }, MemberRoomsRow),
+  my_points: __table({
+    name: 'my_points',
+    indexes: [
+    ],
+    constraints: [
+    ],
+  }, MyPointsRow),
+  my_points_history: __table({
+    name: 'my_points_history',
+    indexes: [
+    ],
+    constraints: [
+    ],
+  }, MyPointsHistoryRow),
   own_votes: __table({
     name: 'own_votes',
     indexes: [
@@ -308,6 +404,13 @@ const tablesSchema = __schema({
     constraints: [
     ],
   }, SalesResultsRow),
+  user_decks: __table({
+    name: 'user_decks',
+    indexes: [
+    ],
+    constraints: [
+    ],
+  }, UserDecksRow),
   visible_contributions: __table({
     name: 'visible_contributions',
     indexes: [
@@ -320,19 +423,28 @@ const tablesSchema = __schema({
 /** The schema information for all reducers in this module. This is defined the same way as the reducers would have been defined in the server, except the body of the reducer is omitted in code generation. */
 const reducersSchema = __reducers(
   __reducerSchema("acknowledge_stage_guidance", AcknowledgeStageGuidanceReducer),
+  __reducerSchema("add_card_to_deck", AddCardToDeckReducer),
+  __reducerSchema("admin_grant_points", AdminGrantPointsReducer),
   __reducerSchema("advance_stage", AdvanceStageReducer),
   __reducerSchema("cast_vote", CastVoteReducer),
+  __reducerSchema("claim_free_points", ClaimFreePointsReducer),
   __reducerSchema("clear_own_prototype_drawing", ClearOwnPrototypeDrawingReducer),
+  __reducerSchema("create_deck", CreateDeckReducer),
   __reducerSchema("create_room", CreateRoomReducer),
+  __reducerSchema("deduct_user_points", DeductUserPointsReducer),
+  __reducerSchema("delete_deck", DeleteDeckReducer),
+  __reducerSchema("delete_deck_card", DeleteDeckCardReducer),
   __reducerSchema("end_journey", EndJourneyReducer),
   __reducerSchema("finish_prototype_activity", FinishPrototypeActivityReducer),
   __reducerSchema("join_room", JoinRoomReducer),
   __reducerSchema("leave_room", LeaveRoomReducer),
   __reducerSchema("open_voting", OpenVotingReducer),
   __reducerSchema("publish_journey", PublishJourneyReducer),
+  __reducerSchema("purchase_points", PurchasePointsReducer),
   __reducerSchema("refresh_redrawn_card", RefreshRedrawnCardReducer),
   __reducerSchema("resolve_stage", ResolveStageReducer),
   __reducerSchema("respond_stage_insight", RespondStageInsightReducer),
+  __reducerSchema("select_room_deck", SelectRoomDeckReducer),
   __reducerSchema("select_test_option", SelectTestOptionReducer),
   __reducerSchema("set_profile", SetProfileReducer),
   __reducerSchema("set_ready", SetReadyReducer),
@@ -345,6 +457,8 @@ const reducersSchema = __reducers(
   __reducerSchema("submit_journey_feedback", SubmitJourneyFeedbackReducer),
   __reducerSchema("submit_prototype_artifact", SubmitPrototypeArtifactReducer),
   __reducerSchema("submit_prototype_drawing_stroke", SubmitPrototypeDrawingStrokeReducer),
+  __reducerSchema("update_deck", UpdateDeckReducer),
+  __reducerSchema("update_deck_card", UpdateDeckCardReducer),
   __reducerSchema("update_journey", UpdateJourneyReducer),
   __reducerSchema("vote_card_change", VoteCardChangeReducer),
   __reducerSchema("vote_marketing_plan", VoteMarketingPlanReducer),

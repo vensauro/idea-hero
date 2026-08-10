@@ -1054,6 +1054,17 @@ function RoomEntry({
             {error}
           </p>
         )}
+        <div className="decks-home-banner-box">
+          <a href="/decks" className="decks-home-banner">
+            <span className="decks-banner-badge">🎴 BARALHOS</span>
+            <div className="decks-banner-info">
+              <strong>Estúdio de Baralhos</strong>
+              <small>Crie, edite ou gere baralhos de cartas com IA</small>
+            </div>
+            <span className="decks-banner-cta">Explorar →</span>
+          </a>
+        </div>
+
         <button
           type="button"
           className="intro-video-trigger"
@@ -1136,6 +1147,8 @@ function Lobby({
 }) {
   const setReady = useReducer(reducers.setReady);
   const startGame = useReducer(reducers.startGame);
+  const selectRoomDeck = useReducer(reducers.selectRoomDeck);
+  const [userDecks] = useTable(tables.user_decks);
   const [error, setError] = useState("");
   const [copied, setCopied] = useState(false);
   const [selectedFlowStep, setSelectedFlowStep] = useState(0);
@@ -1361,6 +1374,44 @@ function Lobby({
               </span>
             </article>
           ))}
+        </div>
+      </section>
+
+      <section className="deck-selection-panel">
+        <div className="section-heading">
+          <h2>🎴 Baralho da Jornada</h2>
+          <a
+            href="/decks"
+            target="_blank"
+            rel="noreferrer"
+            className="secondary-button mini-btn"
+          >
+            + Estúdio de Baralhos
+          </a>
+        </div>
+        <p className="panel-desc">
+          {isHost
+            ? "Escolha qual baralho o grupo utilizará nas etapas da jornada:"
+            : "O anfitrião escolheu este baralho para a jornada:"}
+        </p>
+
+        <div className="deck-selector-box">
+          <select
+            className="deck-select-input"
+            value={room.deckId || "default"}
+            disabled={!isHost}
+            onChange={(e) => {
+              const val = e.target.value;
+              void invoke(() => selectRoomDeck({ roomId: room.id, deckId: val }));
+            }}
+          >
+            <option value="default">✨ Idea Hero Original (Catálogo Padrão)</option>
+            {userDecks.map((d) => (
+              <option key={d.id} value={d.id}>
+                {d.isOfficial ? "🏆 " : d.isPublic ? "🌐 " : "🔒 "} {d.name}
+              </option>
+            ))}
+          </select>
         </div>
       </section>
 

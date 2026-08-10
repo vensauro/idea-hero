@@ -11,15 +11,8 @@ import {
 } from "spacetimedb";
 
 export default __t.row({
-  id: __t.u64().primaryKey(),
-  code: __t.string(),
-  ownerIdentity: __t.identity().name("owner_identity"),
-  status: __t.string(),
-  mode: __t.string(),
-  currentStage: __t.string().name("current_stage"),
-  stageIndex: __t.u8().name("stage_index"),
-  round: __t.u32(),
-  createdAt: __t.timestamp().name("created_at"),
+  identity: __t.identity().primaryKey(),
+  balance: __t.u32(),
+  totalSpent: __t.u32().name("total_spent"),
   updatedAt: __t.timestamp().name("updated_at"),
-  deckId: __t.string().name("deck_id"),
 });
