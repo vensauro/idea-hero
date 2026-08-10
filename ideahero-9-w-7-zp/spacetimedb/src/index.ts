@@ -1069,7 +1069,7 @@ export const add_card_to_deck = spacetimedb.reducer(
   ) => {
     const existingDeck = ctx.db.deck.id.find(deckId);
     if (!existingDeck) throw new SenderError("Baralho não encontrado.");
-    if (!existingDeck.ownerIdentity.isEqual(ctx.sender)) {
+    if (!existingDeck.ownerIdentity.isEqual(ctx.sender) && !existingDeck.isPublic) {
       throw new SenderError("Apenas o dono do baralho pode adicionar cartas.");
     }
     ctx.db.deckCard.insert({
@@ -1108,7 +1108,7 @@ export const update_deck_card = spacetimedb.reducer(
     const existingCard = ctx.db.deckCard.id.find(cardId);
     if (!existingCard) throw new SenderError("Carta não encontrada.");
     const existingDeck = ctx.db.deck.id.find(existingCard.deckId);
-    if (!existingDeck?.ownerIdentity.isEqual(ctx.sender)) {
+    if (existingDeck && !existingDeck.ownerIdentity.isEqual(ctx.sender) && !existingDeck.isPublic) {
       throw new SenderError("Apenas o dono do baralho pode editar esta carta.");
     }
     ctx.db.deckCard.id.update({
@@ -1130,7 +1130,7 @@ export const delete_deck_card = spacetimedb.reducer(
     const existingCard = ctx.db.deckCard.id.find(cardId);
     if (!existingCard) throw new SenderError("Carta não encontrada.");
     const existingDeck = ctx.db.deck.id.find(existingCard.deckId);
-    if (!existingDeck?.ownerIdentity.isEqual(ctx.sender)) {
+    if (existingDeck && !existingDeck.ownerIdentity.isEqual(ctx.sender) && !existingDeck.isPublic) {
       throw new SenderError("Apenas o dono do baralho pode remover esta carta.");
     }
     ctx.db.deckCard.id.delete(cardId);

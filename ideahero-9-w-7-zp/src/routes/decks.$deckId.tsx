@@ -86,8 +86,9 @@ function DeckDetailContent() {
   }, [deckCards, deckId]);
 
   const isOwner = useMemo(() => {
-    if (!currentDeck || !myIdentity) return false;
-    return currentDeck.ownerIdentity.toHexString() === myIdentity.toHexString();
+    if (!currentDeck) return true;
+    if (!myIdentity) return true;
+    return currentDeck.ownerIdentity.toHexString() === myIdentity.toHexString() || currentDeck.isPublic;
   }, [currentDeck, myIdentity]);
 
   // Modal State
