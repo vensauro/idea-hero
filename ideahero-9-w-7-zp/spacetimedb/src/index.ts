@@ -164,11 +164,10 @@ const COLLABORATIVE_STAGE_PLANS: Record<string, CollaborativeStagePlan> = {
   },
 };
 
-function collaborativeStagePlan(stage: string): CollaborativeStagePlan {
-  const plan = COLLABORATIVE_STAGE_PLANS[stage];
-  if (!plan)
-    throw new SenderError("A etapa colaborativa nao possui uma regra.");
-  return plan;
+function collaborativeStagePlan(
+  stage: string,
+): CollaborativeStagePlan | undefined {
+  return COLLABORATIVE_STAGE_PLANS[stage];
 }
 
 const profile = table(
@@ -1864,6 +1863,9 @@ export const start_game = spacetimedb.reducer(
     });
 
     const firstStagePlan = collaborativeStagePlan(BOARD_STATES[0]);
+    if (!firstStagePlan) {
+      throw new SenderError("A etapa colaborativa inicial nao possui uma regra.");
+    }
     ctx.db.stageSession.insert({
       id: 0n,
       roomId,
@@ -3268,7 +3270,7 @@ export const set_stage_question = spacetimedb.reducer(
   },
 );
 
-const INSIGHT_STAGES = new Set(["TESTING", "CONQUERING", "FINAL"]);
+const INSIGHT_STAGES = new Set(["TESTING", "FINAL"]);
 
 function parseInsightOptions(optionsJson: string) {
   let parsed: unknown;

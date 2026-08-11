@@ -1819,15 +1819,11 @@ function GameBoard({
   const insightForStage =
     stage === "TESTING"
       ? testingInsight
-      : stage === "CONQUERING"
-        ? conqueringInsight
-        : undefined;
+      : undefined;
   const insightTriggered =
     stage === "TESTING"
       ? Boolean(selectedTestingOption)
-      : stage === "CONQUERING"
-        ? Boolean(conqueringDecision)
-        : false;
+      : false;
   const insightAttemptedRef = useRef<Set<string>>(new Set());
   const [insightPending, setInsightPending] = useState(false);
   const [insightError, setInsightError] = useState("");
@@ -2120,14 +2116,9 @@ function GameBoard({
   }
 
   useEffect(() => {
-    if (insightPending) return;
-    if (stage !== "CONQUERING") return;
-    if (insightForStage || !insightTriggered) return;
-    if (insightAttemptedRef.current.has(stage)) return;
-    insightAttemptedRef.current.add(stage);
-    void generateStageInsight(stage);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [stage, insightForStage, insightTriggered, insightPending]);
+    // Stage 8 (CONQUERING) does not use AI insight generation
+    return;
+  }, []);
 
   const guidanceTopic = `STAGE_GUIDANCE_${stage}`;
   const guidanceAcknowledgements = groupVotes.filter(
