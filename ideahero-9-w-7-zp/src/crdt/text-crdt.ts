@@ -177,7 +177,8 @@ export function applyTextDiffToCRDT(
   for (let i = 0; i < insertedText.length; i++) {
     const charVal = insertedText[i];
     clock++;
-    const newCharId = `${siteId}:${clock}:${Math.random().toString(36).slice(2, 7)}`;
+    const randomPart = siteId === "ai-init" ? "init" : Math.random().toString(36).slice(2, 7);
+    const newCharId = `${siteId}:${clock}:${randomPart}`;
     const newChar: CRDTChar = {
       id: newCharId,
       char: charVal,
