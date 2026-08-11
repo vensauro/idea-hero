@@ -38,6 +38,7 @@ const BOARD_STATES = [
 const COLLABORATIVE_STAGES = new Set<string>([
   ...BOARD_STATES.slice(0, 5),
   "CONQUERING",
+  "FINAL",
 ]);
 const MIN_PLAYERS = 2;
 const ROOM_CODE_TTL_MICROS = 24n * 60n * 60n * 1_000_000n;
@@ -646,6 +647,53 @@ const journeyFeedback = table(
   },
 );
 
+const aiStoryFeedback = table(
+  {
+    name: "ai_story_feedback",
+    indexes: [
+      {
+        accessor: "by_room_author",
+        algorithm: "btree",
+        columns: ["roomId", "authorIdentity"],
+      },
+    ],
+  },
+  {
+    id: t.u64().primaryKey().autoInc(),
+    roomId: t.u64().index("btree"),
+    authorIdentity: t.identity().index("btree"),
+    rating: t.u8(),
+    emojiReaction: t.string(),
+    customEnding: t.string().default(""),
+    createdAt: t.timestamp(),
+    updatedAt: t.timestamp(),
+  },
+);
+
+const collaborativeCrdtDoc = table(
+  {
+    name: "collaborative_crdt_doc",
+    indexes: [
+      {
+        accessor: "by_room_stage",
+        algorithm: "btree",
+        columns: ["roomId", "stage"],
+      },
+    ],
+  },
+  {
+    id: t.u64().primaryKey().autoInc(),
+    roomId: t.u64().index("btree"),
+    stage: t.string(),
+    content: t.string(),
+    crdtStateJson: t.string(),
+    lastAuthorIdentity: t.identity(),
+    clock: t.u64(),
+    createdAt: t.timestamp(),
+    updatedAt: t.timestamp(),
+  },
+);
+
 const contributionStatus = t.object("ContributionStatus", {
   id: t.u64(),
   roomId: t.u64(),
@@ -700,6 +748,8 @@ const spacetimedb = schema({
   journey,
   publishedResult,
   journeyFeedback,
+  aiStoryFeedback,
+  collaborativeCrdtDoc,
   deck,
   deckCard,
   userPoints,
@@ -1463,6 +1513,36 @@ export const room_journey_feedbacks = spacetimedb.view(
       );
     }
     return feedbacks;
+  },
+);
+
+export const room_ai_story_feedbacks = spacetimedb.view(
+  { name: "room_ai_story_feedbacks", public: true },
+  t.array(aiStoryFeedback.rowType),
+  (ctx) => {
+    const feedbacks = [];
+    for (const membership of ctx.db.player.identity.filter(ctx.sender)) {
+      if (!membership.active) continue;
+      feedbacks.push(
+        ...ctx.db.aiStoryFeedback.roomId.filter(membership.roomId),
+      );
+    }
+    return feedbacks;
+  },
+);
+
+export const room_collaborative_crdt_docs = spacetimedb.view(
+  { name: "room_collaborative_crdt_docs", public: true },
+  t.array(collaborativeCrdtDoc.rowType),
+  (ctx) => {
+    const docs = [];
+    for (const membership of ctx.db.player.identity.filter(ctx.sender)) {
+      if (!membership.active) continue;
+      docs.push(
+        ...ctx.db.collaborativeCrdtDoc.roomId.filter(membership.roomId),
+      );
+    }
+    return docs;
   },
 );
 
@@ -4689,6 +4769,61 @@ export const submit_journey_feedback = spacetimedb.reducer(
   },
 );
 
+export const submit_ai_story_feedback = spacetimedb.reducer(
+  {
+    roomId: t.u64(),
+    rating: t.u8(),
+    emojiReaction: t.string(),
+    customEnding: t.string(),
+  },
+  (ctx, { roomId, rating, emojiReaction, customEnding }) => {
+    const currentRoom = ctx.db.room.id.find(roomId);
+    if (!currentRoom) {
+      throw new SenderError("Sala não encontrada.");
+    }
+    const currentPlayer = Array.from(ctx.db.player.roomId.filter(roomId)).find(
+      (item) => item.active && item.identity.isEqual(ctx.sender),
+    );
+    if (!currentPlayer) {
+      throw new SenderError("Você não pertence a esta sala.");
+    }
+
+    if (rating < 1 || rating > 5) {
+      throw new SenderError(
+        "A nota de criatividade da IA deve ser entre 1 e 5 estrelas.",
+      );
+    }
+
+    const existing = Array.from(
+      ctx.db.aiStoryFeedback.roomId.filter(roomId),
+    ).find((item) => item.authorIdentity.isEqual(ctx.sender));
+
+    const trimmedEmoji = emojiReaction.trim();
+    const trimmedEnding = customEnding.trim();
+
+    if (existing) {
+      ctx.db.aiStoryFeedback.id.update({
+        ...existing,
+        rating,
+        emojiReaction: trimmedEmoji,
+        customEnding: trimmedEnding,
+        updatedAt: ctx.timestamp,
+      });
+    } else {
+      ctx.db.aiStoryFeedback.insert({
+        id: 0n,
+        roomId,
+        authorIdentity: ctx.sender,
+        rating,
+        emojiReaction: trimmedEmoji,
+        customEnding: trimmedEnding,
+        createdAt: ctx.timestamp,
+        updatedAt: ctx.timestamp,
+      });
+    }
+  },
+);
+
 export const leave_room = spacetimedb.reducer(
   { roomId: t.u64() },
   (ctx, { roomId }) => {
@@ -4833,3 +4968,51 @@ export const onDisconnect = spacetimedb.clientDisconnected((ctx) => {
     });
   }
 });
+
+export const submit_collaborative_crdt_update = spacetimedb.reducer(
+  {
+    roomId: t.u64(),
+    stage: t.string(),
+    crdtStateJson: t.string(),
+    content: t.string(),
+  },
+  (ctx, { roomId, stage, crdtStateJson, content }) => {
+    const currentRoom = ctx.db.room.id.find(roomId);
+    if (!currentRoom) {
+      throw new SenderError("Sala não encontrada.");
+    }
+    const currentPlayer = Array.from(ctx.db.player.roomId.filter(roomId)).find(
+      (item) => item.active && item.identity.isEqual(ctx.sender),
+    );
+    if (!currentPlayer) {
+      throw new SenderError("Você não pertence a esta sala.");
+    }
+
+    const existing = Array.from(
+      ctx.db.collaborativeCrdtDoc.roomId.filter(roomId),
+    ).find((item) => item.stage === stage);
+
+    if (existing) {
+      ctx.db.collaborativeCrdtDoc.id.update({
+        ...existing,
+        content: content.trim(),
+        crdtStateJson,
+        lastAuthorIdentity: ctx.sender,
+        clock: existing.clock + 1n,
+        updatedAt: ctx.timestamp,
+      });
+    } else {
+      ctx.db.collaborativeCrdtDoc.insert({
+        id: 0n,
+        roomId,
+        stage,
+        content: content.trim(),
+        crdtStateJson,
+        lastAuthorIdentity: ctx.sender,
+        clock: 1n,
+        createdAt: ctx.timestamp,
+        updatedAt: ctx.timestamp,
+      });
+    }
+  },
+);

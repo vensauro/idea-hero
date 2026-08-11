@@ -65,6 +65,8 @@ import SetStageQuestionReducer from "./set_stage_question_reducer";
 import SetTestingOptionsReducer from "./set_testing_options_reducer";
 import StartGameReducer from "./start_game_reducer";
 import StartPrototypeActivityReducer from "./start_prototype_activity_reducer";
+import SubmitAiStoryFeedbackReducer from "./submit_ai_story_feedback_reducer";
+import SubmitCollaborativeCrdtUpdateReducer from "./submit_collaborative_crdt_update_reducer";
 import SubmitContributionReducer from "./submit_contribution_reducer";
 import SubmitJourneyFeedbackReducer from "./submit_journey_feedback_reducer";
 import SubmitPrototypeArtifactReducer from "./submit_prototype_artifact_reducer";
@@ -98,7 +100,9 @@ import ProjectPrototypesRow from "./project_prototypes_table";
 import PrototypeArtifactsRow from "./prototype_artifacts_table";
 import PrototypeDrawingStrokesRow from "./prototype_drawing_strokes_table";
 import PublishedResultRow from "./published_result_table";
+import RoomAiStoryFeedbacksRow from "./room_ai_story_feedbacks_table";
 import RoomCardDrawsRow from "./room_card_draws_table";
+import RoomCollaborativeCrdtDocsRow from "./room_collaborative_crdt_docs_table";
 import RoomContributionStatusRow from "./room_contribution_status_table";
 import RoomDecisionsRow from "./room_decisions_table";
 import RoomEconomiesRow from "./room_economies_table";
@@ -285,6 +289,13 @@ const tablesSchema = __schema({
     constraints: [
     ],
   }, PrototypeDrawingStrokesRow),
+  room_ai_story_feedbacks: __table({
+    name: 'room_ai_story_feedbacks',
+    indexes: [
+    ],
+    constraints: [
+    ],
+  }, RoomAiStoryFeedbacksRow),
   room_card_draws: __table({
     name: 'room_card_draws',
     indexes: [
@@ -292,6 +303,13 @@ const tablesSchema = __schema({
     constraints: [
     ],
   }, RoomCardDrawsRow),
+  room_collaborative_crdt_docs: __table({
+    name: 'room_collaborative_crdt_docs',
+    indexes: [
+    ],
+    constraints: [
+    ],
+  }, RoomCollaborativeCrdtDocsRow),
   room_contribution_status: __table({
     name: 'room_contribution_status',
     indexes: [
@@ -453,6 +471,8 @@ const reducersSchema = __reducers(
   __reducerSchema("set_testing_options", SetTestingOptionsReducer),
   __reducerSchema("start_game", StartGameReducer),
   __reducerSchema("start_prototype_activity", StartPrototypeActivityReducer),
+  __reducerSchema("submit_ai_story_feedback", SubmitAiStoryFeedbackReducer),
+  __reducerSchema("submit_collaborative_crdt_update", SubmitCollaborativeCrdtUpdateReducer),
   __reducerSchema("submit_contribution", SubmitContributionReducer),
   __reducerSchema("submit_journey_feedback", SubmitJourneyFeedbackReducer),
   __reducerSchema("submit_prototype_artifact", SubmitPrototypeArtifactReducer),

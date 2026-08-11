@@ -3,8 +3,10 @@ import "./App.css";
 import "./idea-hero.css";
 import { reducers, tables } from "./module_bindings";
 import type {
+  AiStoryFeedback,
   Card,
   CardDraw,
+  CollaborativeCrdtDoc,
   Contribution,
   ContributionStatus,
   Decision,
@@ -82,6 +84,7 @@ import {
   serializeInsightContext,
 } from "./ai/assemble-context";
 import { PILOT_FEEDBACK } from "../spacetimedb/src/economy";
+import { FinalStageValidationAndCustomEnding } from "./components/FinalStageValidationAndCustomEnding";
 
 export const BOARD_STATES = [
   "SCENARIO",
@@ -1727,7 +1730,13 @@ function GameBoard({
   const setStageInsight = useReducer(reducers.setStageInsight);
   const setTestingOptions = useReducer(reducers.setTestingOptions);
   const setStageQuestion = useReducer(reducers.setStageQuestion);
+  const submitAiStoryFeedback = useReducer(reducers.submitAiStoryFeedback);
+  const submitCollaborativeCrdtUpdate = useReducer(
+    reducers.submitCollaborativeCrdtUpdate,
+  );
   const [stageInsights] = useTable(tables.room_stage_insights);
+  const [aiStoryFeedbacks] = useTable(tables.room_ai_story_feedbacks);
+  const [crdtDocs] = useTable(tables.room_collaborative_crdt_docs);
   const stage = room.currentStage as BoardState;
   const content = STAGE_CONTENT[stage] ?? STAGE_CONTENT.SCENARIO;
   const guidance =
@@ -3116,14 +3125,52 @@ function GameBoard({
                     transactions={economyTransactions}
                   />
                   {finalInsight ? (
-                    <section className="pilot-learning" aria-live="polite">
-                      <span aria-hidden="true">✦</span>
-                      <div>
-                        <small>Desfecho e resultado final da jornada</small>
-                        <h2>{finalInsight.headline}</h2>
-                        <p>{finalInsight.body}</p>
-                      </div>
-                    </section>
+                    <>
+                      <section className="pilot-learning" aria-live="polite">
+                        <span aria-hidden="true">✦</span>
+                        <div>
+                          <small>Desfecho e resultado final da jornada</small>
+                          <h2>{finalInsight.headline}</h2>
+                          <p>{finalInsight.body}</p>
+                        </div>
+                      </section>
+
+                      <FinalStageValidationAndCustomEnding
+                        room={room}
+                        currentPlayer={currentPlayer}
+                        players={players}
+                        aiStoryFeedbacks={aiStoryFeedbacks}
+                        contributions={contributions}
+                        crdtDocs={crdtDocs}
+                        onSubmitAiFeedback={async (rating, emojiReaction, customEnding) => {
+                          await runStageAction(() =>
+                            submitAiStoryFeedback({
+                              roomId: room.id,
+                              rating,
+                              emojiReaction,
+                              customEnding,
+                            }),
+                          );
+                        }}
+                        onSubmitContribution={async (content) => {
+                          await runStageAction(() =>
+                            submitContribution({
+                              roomId: room.id,
+                              content,
+                            }),
+                          );
+                        }}
+                        onSubmitCrdtUpdate={async (crdtStateJson, content) => {
+                          await submitCollaborativeCrdtUpdate({
+                            roomId: room.id,
+                            stage: "FINAL",
+                            crdtStateJson,
+                            content,
+                          });
+                        }}
+                        actionPending={actionPending}
+                      />
+                    </>
                   ) : (
                     <div
                       className="stage-insight-pending"
@@ -3841,87 +3888,6 @@ function JourneyResult({
         </section>
       )}
 
-      <section className="manifest-editor" aria-labelledby="manifest-title">
-        <div className="manifest-heading">
-          <div>
-            <p className="kicker">Manifesto final</p>
-            <h2 id="manifest-title">Dê um nome ao que vocês criaram</h2>
-          </div>
-          <span>
-            {isHost ? "Você edita para o grupo" : "Editado pelo anfitrião"}
-          </span>
-        </div>
-        <form onSubmit={saveManifest}>
-          <label htmlFor="journey-title">
-            Nome do projeto
-            <input
-              id="journey-title"
-              value={title}
-              onChange={(event) => setTitle(event.target.value)}
-              maxLength={80}
-              disabled={!isHost || !!busyAction}
-            />
-          </label>
-          <label htmlFor="journey-summary">
-            Manifesto em uma frase
-            <textarea
-              id="journey-summary"
-              value={summary}
-              onChange={(event) => setSummary(event.target.value)}
-              maxLength={400}
-              disabled={!isHost || !!busyAction}
-            />
-          </label>
-          {isHost && (
-            <div className="manifest-voice-control">
-              <p>
-                <strong>Prefere falar?</strong> O ditado adiciona sua voz ao
-                manifesto; revise e salve quando terminar.
-              </p>
-              <VoiceInputButton
-                stage="JOURNEY"
-                target="journey-summary"
-                disabled={!!busyAction}
-                idleLabel="Ditar manifesto"
-                onResult={applyManifestVoice}
-              />
-            </div>
-          )}
-          {isHost && voiceSuggestion && (
-            <div className="voice-suggestion">
-              <p>Versao curta sugerida: {voiceSuggestion}</p>
-              <button
-                type="button"
-                className="secondary-button"
-                onClick={() => {
-                  setSummary(voiceSuggestion);
-                  setVoiceSuggestion("");
-                }}
-              >
-                Usar versao curta
-              </button>
-            </div>
-          )}
-          <div className="manifest-footer">
-            <small>
-              {consolidating
-                ? "Consolidando a jornada com IA…"
-                : syncingManifest
-                  ? "Sincronizando com o grupo…"
-                  : `${summary.length}/400 caracteres`}
-            </small>
-            {isHost && (
-              <button
-                className="primary-button"
-                disabled={!manifestChanged || !!busyAction}
-              >
-                {busyAction === "save" ? "Salvando…" : "Salvar manifesto"}
-              </button>
-            )}
-          </div>
-        </form>
-      </section>
-
       <section className="feedback-editor" aria-labelledby="feedback-title">
         <div className="feedback-heading">
           <div>
@@ -4130,6 +4096,16 @@ function JourneyResult({
               ? "Preparando para compartilhar…"
               : "Compartilhar resultado"}
           </button>
+          <button
+            className="secondary-button start-new-journey"
+            disabled={!!busyAction}
+            onClick={() => void startAnotherJourney()}
+          >
+            {busyAction === "leave" ? "Preparando…" : "Começar nova jornada"}
+          </button>
+        </div>
+
+        <div className="result-secondary-actions">
           {isHost && !publishedResult && (
             <button
               className="secondary-button"
@@ -4147,7 +4123,7 @@ function JourneyResult({
               disabled={!!busyAction}
               onClick={() => void copyPublicResultLink()}
             >
-              {busyAction === "copy-link" ? "Copiando…" : "Copiar link publico"}
+              {busyAction === "copy-link" ? "Copiando…" : "Copiar link público"}
             </button>
           )}
           <button
@@ -4164,44 +4140,7 @@ function JourneyResult({
           >
             Imprimir jornada
           </button>
-          <button
-            className="secondary-button start-new-journey"
-            disabled={!!busyAction}
-            onClick={() => void startAnotherJourney()}
-          >
-            {busyAction === "leave" ? "Preparando…" : "Começar nova jornada"}
-          </button>
         </div>
-        <details className="result-more-actions">
-          <summary>✦ Mais opções</summary>
-          <div className="result-more-body">
-            {publishedUrl && (
-              <button
-                className="secondary-button"
-                disabled={!!busyAction}
-                onClick={() => void copyPublicResultLink()}
-              >
-                {busyAction === "copy-link"
-                  ? "Copiando..."
-                  : "Copiar link público"}
-              </button>
-            )}
-            <button
-              className="secondary-button"
-              disabled={!!busyAction}
-              onClick={downloadResult}
-            >
-              Baixar jornada (.md)
-            </button>
-            <button
-              className="secondary-button"
-              disabled={!!busyAction}
-              onClick={() => window.print()}
-            >
-              Imprimir jornada
-            </button>
-          </div>
-        </details>
         <div className="result-feedback" aria-live="polite">
           {notice && <p className="success-message">✓ {notice}</p>}
           {error && <p className="error-message">{error}</p>}

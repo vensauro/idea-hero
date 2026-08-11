@@ -10,6 +10,18 @@ import {
   type Infer as __Infer,
 } from "spacetimedb";
 
+export const AiStoryFeedback = __t.object("AiStoryFeedback", {
+  id: __t.u64(),
+  roomId: __t.u64(),
+  authorIdentity: __t.identity(),
+  rating: __t.u8(),
+  emojiReaction: __t.string(),
+  customEnding: __t.string(),
+  createdAt: __t.timestamp(),
+  updatedAt: __t.timestamp(),
+});
+export type AiStoryFeedback = __Infer<typeof AiStoryFeedback>;
+
 export const Card = __t.object("Card", {
   id: __t.string(),
   stage: __t.string(),
@@ -32,6 +44,19 @@ export const CardDraw = __t.object("CardDraw", {
   reason: __t.string(),
 });
 export type CardDraw = __Infer<typeof CardDraw>;
+
+export const CollaborativeCrdtDoc = __t.object("CollaborativeCrdtDoc", {
+  id: __t.u64(),
+  roomId: __t.u64(),
+  stage: __t.string(),
+  content: __t.string(),
+  crdtStateJson: __t.string(),
+  lastAuthorIdentity: __t.identity(),
+  clock: __t.u64(),
+  createdAt: __t.timestamp(),
+  updatedAt: __t.timestamp(),
+});
+export type CollaborativeCrdtDoc = __Infer<typeof CollaborativeCrdtDoc>;
 
 export const Contribution = __t.object("Contribution", {
   id: __t.u64(),
@@ -316,6 +341,9 @@ export const Room = __t.object("Room", {
 });
 export type Room = __Infer<typeof Room>;
 
+export const RoomAiStoryFeedbacks = __t.object("RoomAiStoryFeedbacks", {});
+export type RoomAiStoryFeedbacks = __Infer<typeof RoomAiStoryFeedbacks>;
+
 export const RoomCardDraws = __t.object("RoomCardDraws", {});
 export type RoomCardDraws = __Infer<typeof RoomCardDraws>;
 
@@ -325,6 +353,9 @@ export const RoomCode = __t.object("RoomCode", {
   expiresAt: __t.timestamp(),
 });
 export type RoomCode = __Infer<typeof RoomCode>;
+
+export const RoomCollaborativeCrdtDocs = __t.object("RoomCollaborativeCrdtDocs", {});
+export type RoomCollaborativeCrdtDocs = __Infer<typeof RoomCollaborativeCrdtDocs>;
 
 export const RoomContributionStatus = __t.object("RoomContributionStatus", {});
 export type RoomContributionStatus = __Infer<typeof RoomContributionStatus>;
