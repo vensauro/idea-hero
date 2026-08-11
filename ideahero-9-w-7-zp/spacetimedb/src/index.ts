@@ -4165,8 +4165,11 @@ export const advance_stage = spacetimedb.reducer(
       const isOptionalPolishingRound =
         currentRoom.currentStage === "POLISHING" &&
         currentSession?.phase === "CONTRIBUTING";
+      const isDirectAdvanceStage =
+        ["CONQUERING", "FINAL"].includes(currentRoom.currentStage);
       if (
         !isOptionalPolishingRound &&
+        !isDirectAdvanceStage &&
         (!currentSession ||
           currentSession.phase !== "REVIEW" ||
           (["UNION", "FACILITATOR"].includes(currentSession.resolution)
@@ -4223,7 +4226,7 @@ export const advance_stage = spacetimedb.reducer(
     }
 
     if (
-      ["PROTOTYPE", "TESTING", "CONQUERING"].includes(currentRoom.currentStage)
+      ["PROTOTYPE", "TESTING"].includes(currentRoom.currentStage)
     ) {
       const eligiblePlayers = Array.from(
         ctx.db.player.roomId.filter(roomId),
@@ -4239,19 +4242,6 @@ export const advance_stage = spacetimedb.reducer(
       );
       if (confirmedVotes.length < eligiblePlayers.length) {
         throw new SenderError("Toda a equipe precisa confirmar para avançar.");
-      }
-    }
-
-    if (currentRoom.currentStage === "FINAL") {
-      const activePlayers = Array.from(ctx.db.player.roomId.filter(roomId))
-        .filter((item) => item.active && item.online)
-        .sort((a, b) => (a.id < b.id ? -1 : 1));
-      const activePlayer =
-        activePlayers[Number(currentRoom.stageIndex) % activePlayers.length];
-      if (!activePlayer || !activePlayer.identity.isEqual(ctx.sender)) {
-        throw new SenderError(
-          "Apenas o jogador ativo pode concluir a jornada.",
-        );
       }
     }
 

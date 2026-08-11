@@ -1558,27 +1558,16 @@ function StageAdvanceConfirmationPanel({
   if (isFinal) {
     return (
       <div className="stage-advance-minimal-container" aria-live="polite">
-        {!stagePrerequisiteMet ? (
-          <div className="minimal-prereq-alert">
-            <span>{prerequisiteMessage}</span>
-          </div>
-        ) : isActivePlayer ? (
-          <button
-            type="button"
-            className="primary-button minimal-advance-btn"
-            disabled={actionPending}
-            onClick={() =>
-              void runStageAction(() => advanceStage({ roomId: room.id }))
-            }
-          >
-            {targetLabel}
-          </button>
-        ) : (
-          <p className="waiting-note">
-            {activePlayer?.displayName ?? "O jogador ativo"} pode concluir a
-            jornada.
-          </p>
-        )}
+        <button
+          type="button"
+          className="primary-button minimal-advance-btn"
+          disabled={actionPending}
+          onClick={() =>
+            void runStageAction(() => advanceStage({ roomId: room.id }))
+          }
+        >
+          {targetLabel}
+        </button>
       </div>
     );
   }
@@ -2353,6 +2342,7 @@ function GameBoard({
         salesResult={salesResult}
         publishedResult={publishedResult}
         journeyFeedbacks={journeyFeedbacks}
+        crdtDocs={crdtDocs}
       />
     );
   }
@@ -3196,18 +3186,14 @@ function GameBoard({
                       ? !!projectPrototype?.committed
                       : stage === "TESTING"
                         ? Boolean(testingInsight)
-                        : stage === "FINAL"
-                          ? Boolean(finalInsight)
-                          : true
+                        : true
                   }
                   prerequisiteMessage={
                     stage === "PROTOTYPE"
                       ? "Conclua o protótipo compartilhado antes de avançar."
                       : stage === "TESTING"
                         ? "Aguardem a reação do teste do protótipo antes de avançar."
-                        : stage === "FINAL"
-                          ? "Aguarde a IA criar o desfecho da jornada."
-                          : ""
+                        : ""
                   }
                 />
               </div>
@@ -3434,6 +3420,7 @@ function JourneyResult({
   salesResult,
   publishedResult,
   journeyFeedbacks = [],
+  crdtDocs = [],
 }: {
   room: Room;
   players: Player[];
@@ -3455,6 +3442,7 @@ function JourneyResult({
   salesResult?: SalesResult;
   publishedResult?: PublishedResult;
   journeyFeedbacks?: readonly JourneyFeedback[];
+  crdtDocs?: readonly CollaborativeCrdtDoc[];
 }) {
   const roomStageInsights = stageInsights.filter(
     (item) => item.roomId === room.id,
@@ -3524,11 +3512,19 @@ function JourneyResult({
   const solutionContribution = contributions.find(
     (item) => item.stage === "SOLUTION",
   );
+  const finalCrdtDoc = crdtDocs.find(
+    (item) => item.roomId === room.id && item.stage === "FINAL",
+  );
+  const finalContribution = contributions.find(
+    (item) => item.roomId === room.id && item.stage === "FINAL",
+  );
   const fallbackTitle = `Ideia da sala ${room.code.toUpperCase()}`;
   const fallbackSummary =
-    solutionDecision?.summary ??
-    solutionContribution?.content ??
-    "Uma ideia construída coletivamente para transformar o mundo.";
+    finalCrdtDoc?.content ||
+    finalContribution?.content ||
+    solutionDecision?.summary ||
+    solutionContribution?.content ||
+    "Uma história construída coletivamente para transformar o mundo.";
   const [title, setTitle] = useState(journey?.title ?? fallbackTitle);
   const [summary, setSummary] = useState(journey?.summary ?? fallbackSummary);
   const [busyAction, setBusyAction] = useState<string>();

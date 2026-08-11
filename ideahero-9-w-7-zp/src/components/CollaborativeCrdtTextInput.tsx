@@ -45,7 +45,7 @@ export function CollaborativeCrdtTextInput({
   onSubmitCrdtUpdate,
   initialText = "",
   disabled = false,
-  placeholder = "Digite ou fale por voz... Todos na sala podem editar simultaneamente em tempo real!",
+  placeholder = "Reescreva o desfecho da jornada aqui...",
   onTextChange,
 }: CollaborativeCrdtTextInputProps) {
   const siteId = useMemo(
@@ -57,6 +57,8 @@ export function CollaborativeCrdtTextInput({
     (item) => item.roomId === room.id && item.stage === stage,
   );
 
+  const textareaRef = useRef<HTMLTextAreaElement | null>(null);
+
   // Local CRDT State
   const [localCrdtState, setLocalCrdtState] = useState<CRDTDocState>(() =>
     createCRDTState(siteId),
@@ -64,13 +66,30 @@ export function CollaborativeCrdtTextInput({
 
   const initializedRef = useRef(false);
 
-  // Sync remote CRDT state changes instantly
+  // Sync remote CRDT state changes instantly while preserving cursor selection
   useEffect(() => {
     if (!docRecord?.crdtStateJson) return;
     try {
       const remoteState = JSON.parse(docRecord.crdtStateJson) as CRDTDocState;
-      setLocalCrdtState((prev) => mergeCRDTStates(prev, remoteState));
+
+      // Record cursor position if active textarea is focused
+      const textarea = textareaRef.current;
+      const isFocused = document.activeElement === textarea;
+      const selStart = textarea?.selectionStart;
+      const selEnd = textarea?.selectionEnd;
+
+      setLocalCrdtState((prev) => {
+        const merged = mergeCRDTStates(prev, remoteState);
+        return merged;
+      });
       initializedRef.current = true;
+
+      // Restore cursor position after state merge render
+      if (isFocused && textarea && selStart !== undefined && selEnd !== undefined) {
+        requestAnimationFrame(() => {
+          textarea.setSelectionRange(selStart, selEnd);
+        });
+      }
     } catch {
       // Fallback
     }
@@ -98,10 +117,6 @@ export function CollaborativeCrdtTextInput({
     onTextChange?.(currentText);
   }, [currentText, onTextChange]);
 
-  const lastAuthor = docRecord?.lastAuthorIdentity
-    ? players.find((p) => sameIdentity(p.identity, docRecord.lastAuthorIdentity))
-    : undefined;
-
   async function syncCrdtUpdate(nextState: CRDTDocState) {
     const text = renderCRDTText(nextState);
     const jsonState = JSON.stringify(nextState);
@@ -116,7 +131,7 @@ export function CollaborativeCrdtTextInput({
     const nextText = e.target.value;
     const updatedState = applyTextDiffToCRDT(localCrdtState, nextText, siteId);
     setLocalCrdtState(updatedState);
-    // Instant real-time transmission without delay
+    // Instant real-time transmission on every keystroke
     void syncCrdtUpdate(updatedState);
   }
 
@@ -124,6 +139,7 @@ export function CollaborativeCrdtTextInput({
     <div className="crdt-editor-container">
       <div className="crdt-input-wrapper">
         <textarea
+          ref={textareaRef}
           rows={6}
           className="custom-ending-textarea crdt-textarea"
           placeholder={placeholder}

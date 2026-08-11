@@ -305,41 +305,6 @@ export function FinalStageValidationAndCustomEnding({
             </button>
           </div>
         </form>
-
-        {/* GALLERY OF PLAYERS' CUSTOM ENDINGS */}
-        {(finalContributions.length > 0 || aiStoryFeedbacks.some((f) => f.customEnding)) && (
-          <div className="custom-endings-gallery">
-            <h4>✨ Desfechos da Inteligência Humana da Sala</h4>
-            <div className="endings-grid">
-              {players.map((player) => {
-                const playerFeedback = aiStoryFeedbacks.find((fb) =>
-                  sameIdentity(fb.authorIdentity, player.identity),
-                );
-                const playerContribs = finalContributions.filter((c) =>
-                  sameIdentity(c.authorIdentity, player.identity),
-                );
-                const endingContent =
-                  playerFeedback?.customEnding ||
-                  playerContribs[playerContribs.length - 1]?.content;
-
-                if (!endingContent) return null;
-
-                return (
-                  <article key={player.id.toString()} className="custom-ending-card">
-                    <header className="card-author">
-                      <b aria-hidden="true">{AVATAR_GLYPHS[player.avatarId] ?? "✦"}</b>
-                      <strong>{player.displayName}</strong>
-                      {playerFeedback?.emojiReaction && (
-                        <span className="author-reaction">{playerFeedback.emojiReaction}</span>
-                      )}
-                    </header>
-                    <p className="card-text">“{endingContent}”</p>
-                  </article>
-                );
-              })}
-            </div>
-          </div>
-        )}
       </section>
     </div>
   );
