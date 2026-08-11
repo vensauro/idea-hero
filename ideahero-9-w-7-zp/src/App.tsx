@@ -3133,6 +3133,7 @@ function GameBoard({
                         aiStoryFeedbacks={aiStoryFeedbacks}
                         contributions={contributions}
                         crdtDocs={crdtDocs}
+                        aiStory={finalInsight?.body}
                         onSubmitAiFeedback={async (rating, emojiReaction, customEnding) => {
                           await runStageAction(() =>
                             submitAiStoryFeedback({

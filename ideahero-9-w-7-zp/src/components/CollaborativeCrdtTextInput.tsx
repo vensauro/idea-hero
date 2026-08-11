@@ -30,9 +30,10 @@ type CollaborativeCrdtTextInputProps = {
   players: readonly Player[];
   crdtDocs: readonly CollaborativeCrdtDoc[];
   onSubmitCrdtUpdate: (crdtStateJson: string, content: string) => Promise<void>;
+  initialText?: string;
   disabled?: boolean;
   placeholder?: string;
-  label?: string;
+  onTextChange?: (text: string) => void;
 };
 
 export function CollaborativeCrdtTextInput({
@@ -42,9 +43,10 @@ export function CollaborativeCrdtTextInput({
   players,
   crdtDocs,
   onSubmitCrdtUpdate,
+  initialText = "",
   disabled = false,
-  placeholder = "Digite aqui... Todos na sala podem editar simultaneamente em tempo real!",
-  label = "✍️ Texto Colaborativo em Tempo Real (CRDT)",
+  placeholder = "Digite ou fale por voz... Todos na sala podem editar simultaneamente em tempo real!",
+  onTextChange,
 }: CollaborativeCrdtTextInputProps) {
   const siteId = useMemo(
     () => currentPlayer.identity.toHexString?.() || currentPlayer.id.toString(),
@@ -60,21 +62,41 @@ export function CollaborativeCrdtTextInput({
     createCRDTState(siteId),
   );
 
-  const isDebouncingRef = useRef(false);
-  const debounceTimerRef = useRef<number | null>(null);
+  const initializedRef = useRef(false);
 
-  // Synchronize remote CRDT state changes
+  // Sync remote CRDT state changes instantly
   useEffect(() => {
     if (!docRecord?.crdtStateJson) return;
     try {
       const remoteState = JSON.parse(docRecord.crdtStateJson) as CRDTDocState;
       setLocalCrdtState((prev) => mergeCRDTStates(prev, remoteState));
+      initializedRef.current = true;
     } catch {
-      // Fallback if JSON parse fails
+      // Fallback
     }
   }, [docRecord?.crdtStateJson, docRecord?.clock]);
 
+  // Pre-populate CRDT with initial AI story if database record does not exist yet
+  useEffect(() => {
+    if (initializedRef.current || docRecord) return;
+    if (!initialText || initialText.trim().length === 0) return;
+
+    initializedRef.current = true;
+    const initState = applyTextDiffToCRDT(
+      createCRDTState("ai-init"),
+      initialText.trim(),
+      "ai-init",
+    );
+    setLocalCrdtState(initState);
+    void syncCrdtUpdate(initState);
+  }, [initialText, docRecord]);
+
   const currentText = renderCRDTText(localCrdtState);
+
+  // Notify parent component of text state
+  useEffect(() => {
+    onTextChange?.(currentText);
+  }, [currentText, onTextChange]);
 
   const lastAuthor = docRecord?.lastAuthorIdentity
     ? players.find((p) => sameIdentity(p.identity, docRecord.lastAuthorIdentity))
@@ -94,35 +116,15 @@ export function CollaborativeCrdtTextInput({
     const nextText = e.target.value;
     const updatedState = applyTextDiffToCRDT(localCrdtState, nextText, siteId);
     setLocalCrdtState(updatedState);
-
-    // Debounce network dispatch to prevent spamming transactions
-    if (debounceTimerRef.current !== null) {
-      window.clearTimeout(debounceTimerRef.current);
-    }
-    isDebouncingRef.current = true;
-    debounceTimerRef.current = window.setTimeout(() => {
-      isDebouncingRef.current = false;
-      void syncCrdtUpdate(updatedState);
-    }, 200);
+    // Instant real-time transmission without delay
+    void syncCrdtUpdate(updatedState);
   }
 
   return (
-    <section className="feedback-editor crdt-text-section" aria-labelledby="crdt-title">
-      <div className="feedback-heading">
-        <div>
-          <p className="kicker">Algoritmo CRDT · Tempo Real</p>
-          <h2 id="crdt-title">{label}</h2>
-        </div>
-        <span>⚡ Convergência Livre de Conflito</span>
-      </div>
-
-      <p className="crdt-info-note">
-        Qualquer pessoa na sala pode editar este texto ao mesmo tempo. As alterações são sincronizadas usando <strong>CRDT (Conflict-free Replicated Data Type)</strong> para convergência automática sem perda de dados.
-      </p>
-
+    <div className="crdt-editor-container">
       <div className="crdt-input-wrapper">
         <textarea
-          rows={5}
+          rows={6}
           className="custom-ending-textarea crdt-textarea"
           placeholder={placeholder}
           value={currentText}
@@ -130,17 +132,6 @@ export function CollaborativeCrdtTextInput({
           disabled={disabled}
         />
       </div>
-
-      <div className="crdt-status-bar">
-        <span className="crdt-badge">
-          🟢 CRDT Ativo ({Object.keys(localCrdtState.chars).length} nós)
-        </span>
-        {lastAuthor && (
-          <span className="crdt-last-editor">
-            Última edição: <strong>{lastAuthor.displayName}</strong>
-          </span>
-        )}
-      </div>
-    </section>
+    </div>
   );
 }

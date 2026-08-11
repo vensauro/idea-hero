@@ -2,6 +2,7 @@ import { useState, type FormEvent } from "react";
 import type { AiStoryFeedback, CollaborativeCrdtDoc, Player, Room, VisibleContribution } from "../module_bindings/types";
 import { VoiceInputButton, type VoiceInputResult } from "../VoiceInputButton";
 import { CollaborativeCrdtTextInput } from "./CollaborativeCrdtTextInput";
+import { applyTextDiffToCRDT, createCRDTState, renderCRDTText, type CRDTDocState } from "../crdt/text-crdt";
 
 const EMOJI_REACTIONS = [
   { emoji: "🤯", label: "Épico", value: "🤯 Épico" },
@@ -42,6 +43,7 @@ type FinalStageValidationAndCustomEndingProps = {
   aiStoryFeedbacks: readonly AiStoryFeedback[];
   contributions: readonly VisibleContribution[];
   crdtDocs: readonly CollaborativeCrdtDoc[];
+  aiStory?: string;
   onSubmitAiFeedback: (
     rating: number,
     emojiReaction: string,
@@ -59,11 +61,14 @@ export function FinalStageValidationAndCustomEnding({
   aiStoryFeedbacks,
   contributions,
   crdtDocs,
+  aiStory = "",
   onSubmitAiFeedback,
   onSubmitContribution,
   onSubmitCrdtUpdate,
   actionPending,
 }: FinalStageValidationAndCustomEndingProps) {
+  const siteId = currentPlayer.identity.toHexString?.() || currentPlayer.id.toString();
+
   const myAiFeedback = aiStoryFeedbacks.find((item) =>
     sameIdentity(item.authorIdentity, currentPlayer.identity),
   );
@@ -78,9 +83,7 @@ export function FinalStageValidationAndCustomEnding({
   const [feedbackError, setFeedbackError] = useState("");
   const [feedbackSubmitting, setFeedbackSubmitting] = useState(false);
 
-  const [customEndingText, setCustomEndingText] = useState(
-    myAiFeedback?.customEnding || "",
-  );
+  const [currentCrdtText, setCurrentCrdtText] = useState("");
   const [endingNotice, setEndingNotice] = useState("");
   const [endingError, setEndingError] = useState("");
   const [endingSubmitting, setEndingSubmitting] = useState(false);
@@ -96,7 +99,7 @@ export function FinalStageValidationAndCustomEnding({
     setFeedbackSavedNotice("");
     setFeedbackSubmitting(true);
     try {
-      await onSubmitAiFeedback(selectedRating, selectedEmoji, customEndingText);
+      await onSubmitAiFeedback(selectedRating, selectedEmoji, currentCrdtText);
       setFeedbackSavedNotice("✓ Sua avaliação da IA foi salva!");
     } catch (caught) {
       setFeedbackError(
@@ -109,7 +112,7 @@ export function FinalStageValidationAndCustomEnding({
 
   async function handleCustomEndingSubmit(e: FormEvent) {
     e.preventDefault();
-    const text = customEndingText.trim();
+    const text = currentCrdtText.trim();
     if (!text) {
       setEndingError("Escreva ou grave um texto para o seu desfecho.");
       return;
@@ -120,7 +123,7 @@ export function FinalStageValidationAndCustomEnding({
     try {
       await onSubmitContribution(text);
       await onSubmitAiFeedback(selectedRating, selectedEmoji, text);
-      setEndingNotice("✓ Seu desfecho foi gravado e compartilhado com a equipe!");
+      setEndingNotice("✓ Seu desfecho foi compartilhado com a equipe!");
     } catch (caught) {
       setEndingError(
         caught instanceof Error ? caught.message : "Falha ao salvar desfecho.",
@@ -131,10 +134,28 @@ export function FinalStageValidationAndCustomEnding({
   }
 
   function handleVoiceResult(result: VoiceInputResult) {
-    const text = (result.summary || result.transcript).trim();
-    if (text) {
-      setCustomEndingText((prev) => (prev ? `${prev} ${text}` : text));
+    const spokenText = (result.summary || result.transcript).trim();
+    if (!spokenText) return;
+
+    const docRecord = crdtDocs.find(
+      (item) => item.roomId === room.id && item.stage === "FINAL",
+    );
+    let currentDocState: CRDTDocState = createCRDTState(siteId);
+
+    if (docRecord?.crdtStateJson) {
+      try {
+        currentDocState = JSON.parse(docRecord.crdtStateJson) as CRDTDocState;
+      } catch {
+        // Fallback
+      }
+    } else if (aiStory) {
+      currentDocState = applyTextDiffToCRDT(createCRDTState("ai-init"), aiStory.trim(), "ai-init");
     }
+
+    const currentText = renderCRDTText(currentDocState);
+    const updatedText = currentText ? `${currentText} ${spokenText}` : spokenText;
+    const updatedState = applyTextDiffToCRDT(currentDocState, updatedText, siteId);
+    void onSubmitCrdtUpdate(JSON.stringify(updatedState), updatedText);
   }
 
   return (
@@ -227,36 +248,23 @@ export function FinalStageValidationAndCustomEnding({
         )}
       </section>
 
-      {/* SECTION 2: REAL-TIME CRDT COLLABORATIVE TEXT INPUT */}
-      <CollaborativeCrdtTextInput
-        room={room}
-        stage="FINAL"
-        currentPlayer={currentPlayer}
-        players={players}
-        crdtDocs={crdtDocs}
-        onSubmitCrdtUpdate={onSubmitCrdtUpdate}
-        disabled={actionPending}
-        label="✍️ Texto Colaborativo em Tempo Real (CRDT)"
-        placeholder="Escreva ou edite a história aqui. Qualquer pessoa na sala pode digitar ao mesmo tempo sem conflitos!"
-      />
-
-      {/* SECTION 3: HUMAN INTELLIGENCE CHALLENGE (VOICE & TEXT CUSTOM ENDING) */}
+      {/* SECTION 2: HUMAN INTELLIGENCE CHALLENGE (REAL-TIME COLLABORATIVE CRDT ENDING) */}
       <section className="feedback-editor human-challenge-section" aria-labelledby="human-challenge-title">
         <div className="feedback-heading">
           <div>
             <p className="kicker">Desafio da Inteligência Humana</p>
-            <h2 id="human-challenge-title">Agora é a sua vez! Crie o SEU desfecho</h2>
+            <h2 id="human-challenge-title">Agora é a sua vez! Reescreva o desfecho com a equipe</h2>
           </div>
           <span>🧠 Desafio Final</span>
         </div>
 
         <p className="challenge-prompt">
-          A IA fez a versão dela, mas nada substitui a criatividade humana! Use a sua própria inteligência para gravar por voz ou escrever o final definitivo da história.
+          A IA gerou a versão inicial abaixo. Agora use a sua inteligência para reescrever ou ditar o final definitivo da história.
         </p>
 
         <form onSubmit={handleCustomEndingSubmit}>
-          <div className="voice-recorder-wrapper">
-            <label className="nps-label">Gravador de Voz & Texto</label>
+          <div className="voice-recorder-wrapper" style={{ marginBottom: "1rem" }}>
+            <label className="nps-label">Gravador de Voz</label>
             <div className="voice-recorder-controls">
               <VoiceInputButton
                 stage="FINAL"
@@ -268,20 +276,24 @@ export function FinalStageValidationAndCustomEnding({
             </div>
           </div>
 
-          <label htmlFor="custom-ending-input" className="nps-label" style={{ marginTop: "0.75rem" }}>
-            Seu desfecho da jornada
+          <label className="nps-label" style={{ marginTop: "0.75rem", marginBottom: "0.5rem" }}>
+            Desfecho Coletivo da Jornada
           </label>
-          <textarea
-            id="custom-ending-input"
-            rows={4}
-            className="custom-ending-textarea"
-            placeholder="Neste final surpreendente, nossa equipe conseguiu..."
-            value={customEndingText}
-            onChange={(e) => setCustomEndingText(e.target.value)}
+
+          <CollaborativeCrdtTextInput
+            room={room}
+            stage="FINAL"
+            currentPlayer={currentPlayer}
+            players={players}
+            crdtDocs={crdtDocs}
+            initialText={aiStory}
+            onSubmitCrdtUpdate={onSubmitCrdtUpdate}
+            onTextChange={setCurrentCrdtText}
             disabled={endingSubmitting || actionPending}
+            placeholder="Reescreva o desfecho da jornada aqui..."
           />
 
-          <div className="feedback-footer" style={{ marginTop: "0.5rem" }}>
+          <div className="feedback-footer" style={{ marginTop: "1rem" }}>
             {endingNotice && <small className="success-message">{endingNotice}</small>}
             {endingError && <small className="error-message">{endingError}</small>}
             <button
@@ -289,7 +301,7 @@ export function FinalStageValidationAndCustomEnding({
               className="primary-button"
               disabled={endingSubmitting || actionPending}
             >
-              {endingSubmitting ? "Gravando desfecho..." : "Gravar & Compartilhar Meu Desfecho"}
+              {endingSubmitting ? "Gravando desfecho..." : "Gravar & Compartilhar Desfecho Coletivo"}
             </button>
           </div>
         </form>
